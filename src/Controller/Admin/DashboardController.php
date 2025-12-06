@@ -2,6 +2,8 @@
 
 namespace App\Controller\Admin;
 
+use App\Entity\Agency;
+use App\Entity\LicPlan;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
@@ -39,12 +41,19 @@ class DashboardController extends AbstractDashboardController
     public function configureDashboard(): Dashboard
     {
         return Dashboard::new()
-            ->setTitle('Simplify Them');
+            ->setTitle('SimplifyThem');
     }
 
     public function configureMenuItems(): iterable
     {
         yield MenuItem::linkToDashboard('Dashboard', 'fa fa-home');
-        // yield MenuItem::linkToCrud('The Label', 'fas fa-list', EntityClass::class);
+        
+        // SUPER ADMIN
+        yield MenuItem::section('PLATFORM ADMIN');
+        yield MenuItem::linkToCrud('Agencies (Tenants)', 'fa fa-building', Agency::class);
+        yield MenuItem::linkToCrud('LIC Plans', 'fa fa-book', LicPlan::class);
+    
+        // AGENT TOOLS
+        yield MenuItem::section('MY OFFICE');
     }
 }
