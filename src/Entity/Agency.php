@@ -45,10 +45,17 @@ class Agency
     #[ORM\OneToMany(targetEntity: Client::class, mappedBy: 'agency')]
     private Collection $clients;
 
+    /**
+     * @var Collection<int, Policy>
+     */
+    #[ORM\OneToMany(targetEntity: Policy::class, mappedBy: 'agency')]
+    private Collection $policies;
+
     public function __construct()
     {
         $this->staff = new ArrayCollection();
         $this->clients = new ArrayCollection();
+        $this->policies = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -191,5 +198,35 @@ class Agency
     public function __toString(): string
     {
         return (string) $this->businessName;
+    }
+
+    /**
+     * @return Collection<int, Policy>
+     */
+    public function getPolicies(): Collection
+    {
+        return $this->policies;
+    }
+
+    public function addPolicy(Policy $policy): static
+    {
+        if (!$this->policies->contains($policy)) {
+            $this->policies->add($policy);
+            $policy->setAgency($this);
+        }
+
+        return $this;
+    }
+
+    public function removePolicy(Policy $policy): static
+    {
+        if ($this->policies->removeElement($policy)) {
+            // set the owning side to null (unless already changed)
+            if ($policy->getAgency() === $this) {
+                $policy->setAgency(null);
+            }
+        }
+
+        return $this;
     }
 }

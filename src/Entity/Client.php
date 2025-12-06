@@ -53,9 +53,16 @@ class Client
     #[ORM\OneToMany(targetEntity: self::class, mappedBy: 'headOfFamily')]
     private Collection $familyMembers;
 
+    /**
+     * @var Collection<int, Policy>
+     */
+    #[ORM\OneToMany(targetEntity: Policy::class, mappedBy: 'client')]
+    private Collection $policies;
+
     public function __construct()
     {
         $this->familyMembers = new ArrayCollection();
+        $this->policies = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -207,6 +214,36 @@ class Client
             // set the owning side to null (unless already changed)
             if ($familyMember->getHeadOfFamily() === $this) {
                 $familyMember->setHeadOfFamily(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Policy>
+     */
+    public function getPolicies(): Collection
+    {
+        return $this->policies;
+    }
+
+    public function addPolicy(Policy $policy): static
+    {
+        if (!$this->policies->contains($policy)) {
+            $this->policies->add($policy);
+            $policy->setClient($this);
+        }
+
+        return $this;
+    }
+
+    public function removePolicy(Policy $policy): static
+    {
+        if ($this->policies->removeElement($policy)) {
+            // set the owning side to null (unless already changed)
+            if ($policy->getClient() === $this) {
+                $policy->setClient(null);
             }
         }
 
