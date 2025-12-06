@@ -3,6 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Client;
+use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateField;
@@ -45,5 +46,21 @@ class ClientCrudController extends AbstractCrudController
             // We HIDE the Agency field because it's set automatically behind the scenes
             AssociationField::new('agency')->hideOnForm(),
         ];
+    }
+
+    public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
+    {
+        // Check if we are saving a Client
+        if ($entityInstance instanceof Client) {
+            // Get the current User and their Agency
+            $user = $this->getUser();
+            if ($user && $user->getAgency()) {
+                // Set the Agency automatically
+                $entityInstance->setAgency($user->getAgency());
+            }
+        }
+
+        // Continue with the standard save process
+        parent::persistEntity($entityManager, $entityInstance);
     }
 }
