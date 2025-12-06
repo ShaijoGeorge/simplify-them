@@ -3,11 +3,13 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Client;
+use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\EmailField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\FormField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TelephoneField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
@@ -23,29 +25,50 @@ class ClientCrudController extends AbstractCrudController
 
     public function configureFields(string $pageName): iterable
     {
-        return [
-            // Personal Info
-            TextField::new('firstName', 'First Name')->setColumns(6),
-            TextField::new('lastName', 'Last Name')->setColumns(6),
-            DateField::new('dob', 'Date of Birth')->setColumns(6),
-            
-            // Family Grouping (The smart part)
-            AssociationField::new('headOfFamily', 'Head of Family')
-                ->setHelp('Leave empty if this person is the Family Head')
-                ->setColumns(6),
+        /** @var User $user */
+        $user = $this->getUser();
+        $isSuperAdmin = in_array('ROLE_SUPER_ADMIN', $user->getRoles());
 
-            // Contact Info
-            TelephoneField::new('mobile', 'Mobile No')->setColumns(6),
-            EmailField::new('email', 'Email')->setColumns(6),
-            
-            // Address
-            TextareaField::new('address')->hideOnIndex()->setColumns(12),
-            TextField::new('city')->setColumns(6),
-            TextField::new('pincode')->setColumns(6),
-            
-            // We HIDE the Agency field because it's set automatically behind the scenes
-            AssociationField::new('agency')->hideOnForm(),
-        ];
+        // LEFT COLUMN: IDENTITY
+        yield FormField::addColumn(6);
+        
+        yield FormField::addFieldset('Personal Information')
+            ->setIcon('fa fa-user');
+
+        yield TextField::new('firstName', 'First Name')->setColumns(6);
+        yield TextField::new('lastName', 'Last Name')->setColumns(6);
+        yield DateField::new('dob', 'Date of Birth')->setColumns(12);
+
+        yield FormField::addFieldset('Family Grouping')
+            ->setIcon('fa fa-users')
+            ->setHelp('Link this client to a family head for group management');
+
+        yield AssociationField::new('headOfFamily', 'Head of Family')
+            ->setColumns(12);
+
+        // RIGHT COLUMN: CONTACT
+        yield FormField::addColumn(6);
+
+        yield FormField::addFieldset('Contact Details')
+            ->setIcon('fa fa-address-book');
+
+        yield TelephoneField::new('mobile', 'Mobile No')->setColumns(6);
+        yield EmailField::new('email', 'Email')->setColumns(6);
+
+        yield FormField::addFieldset('Address & Location')
+            ->setIcon('fa fa-map-marker-alt');
+
+        yield TextareaField::new('address')->hideOnIndex()->setColumns(12);
+        yield TextField::new('city')->setColumns(6);
+        yield TextField::new('pincode')->setColumns(6);
+
+        // --- SYSTEM FIELDS ---
+        if ($isSuperAdmin) {
+            yield FormField::addFieldset('System Metadata')->setIcon('fa fa-database');
+            yield AssociationField::new('agency')->setColumns(12)->setHelp('Super Admin Only: Reassign policy to a different agency');
+        } else {
+            yield AssociationField::new('agency')->hideOnForm()->hideOnIndex();
+        }
     }
 
     public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
