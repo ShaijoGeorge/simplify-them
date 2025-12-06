@@ -249,4 +249,10 @@ class Client
 
         return $this;
     }
+
+    public function __toString(): string
+    {
+        // display "Rahul Gupta" in the dropdown
+        return $this->firstName . ' ' . ($this->lastName ?? '');
+    }
 }

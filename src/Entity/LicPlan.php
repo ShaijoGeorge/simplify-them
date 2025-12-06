@@ -93,4 +93,10 @@ class LicPlan
 
         return $this;
     }
+
+    // display "914 - New Endowment" in the dropdown
+    public function __toString(): string
+    {
+        return $this->tableNumber . ' - ' . $this->planName;
+    }
 }
