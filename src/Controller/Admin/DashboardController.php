@@ -3,6 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Agency;
+use App\Entity\Client;
 use App\Entity\LicPlan;
 use App\Entity\User;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
@@ -36,6 +37,7 @@ class DashboardController extends AbstractDashboardController
     
         // AGENT TOOLS
         yield MenuItem::section('MY OFFICE');
+        yield MenuItem::linkToCrud('Clients', 'fa fa-users', Client::class);
 
         // SETTINGS
         yield MenuItem::section('SETTINGS');
