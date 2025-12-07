@@ -7,6 +7,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PolicyRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Policy
 {
     #[ORM\Id]
@@ -246,4 +247,48 @@ class Policy
 
         return $this;
     }
+
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function calculateDates(): void
+    {
+        // Calculate Maturity Date (DOC + Term)
+        if ($this->commencementDate && $this->policyTerm) {
+            $maturity = clone $this->commencementDate;
+            $maturity->modify('+' . $this->policyTerm . ' years');
+            $this->setMaturityDate($maturity);
+        }
+
+        // Calculate Next Due Date (Only if not manually set)
+        // This is useful for NEW policies. For old policies, the agent usually types the date manually.
+        if ($this->commencementDate && $this->premiumMode && $this->nextDueDate === null) {
+            $nextDue = clone $this->commencementDate;
+            $shouldUpdate = true;
+            
+            switch ($this->premiumMode) {
+                case 'YLY':
+                    $nextDue->modify('+1 year');
+                    break;
+                case 'HLY':
+                    $nextDue->modify('+6 months');
+                    break;
+                case 'QLY':
+                    $nextDue->modify('+3 months');
+                    break;
+                case 'NACH':
+                case 'MLY':
+                    $nextDue->modify('+1 month');
+                    break;
+                case 'SINGLE':
+                    $shouldUpdate = false; // No next due date for Single Premium
+                    break;
+                default:
+                    $shouldUpdate = false;
+            }
+            if ($shouldUpdate) {
+                $this->setNextDueDate($nextDue);
+            }
+        }
+    }
+
 }
