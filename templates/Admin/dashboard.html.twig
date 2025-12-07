@@ -52,4 +52,85 @@
         </div>
     </div>
 </div>
+
+<div class="row mt-5">
+    <div class="col-12 mb-3">
+        <h5 class="text-gray-800 font-weight-bold pl-1 border-left-primary" style="border-left: 4px solid #4e73df; padding-left: 10px;">
+            ⚡ Quick Actions
+        </h5>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-4">
+        <a href="{{ ea_url() .setController('App\\Controller\\Admin\\ClientCrudController') .setAction('new') }}" class="text-decoration-none">
+            <div class="card border-left-primary shadow h-100 py-2 action-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">New Business</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">Add New Client</div>
+                            <small class="text-muted">Register a new person or family</small>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-plus fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-4">
+        <a href="{{ ea_url() .setController('App\\Controller\\Admin\\PolicyCrudController') .setAction('new') }}" class="text-decoration-none">
+            <div class="card border-left-info shadow h-100 py-2 action-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Insurance</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">Create Policy</div>
+                            <small class="text-muted">New Endowment, Money Back, etc.</small>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-file-contract fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-4">
+        <a href="{{ ea_url() .setController('App\\Controller\\Admin\\PremiumReceiptCrudController') .setAction('new') }}" class="text-decoration-none">
+            <div class="card border-left-success shadow h-100 py-2 action-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Finance</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">Collect Premium</div>
+                            <small class="text-muted">Record payment & download receipt</small>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-rupee-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<style>
+    .action-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s;
+        border: none;
+    }
+    .action-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+        cursor: pointer;
+    }
+    .border-left-primary { border-left: 0.25rem solid #4e73df !important; }
+    .border-left-success { border-left: 0.25rem solid #1cc88a !important; }
+    .border-left-info    { border-left: 0.25rem solid #36b9cc !important; }
+    .text-gray-300 { color: #dddfeb !important; }
+</style>
 {% endblock %}
