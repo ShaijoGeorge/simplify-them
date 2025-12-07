@@ -23,5 +23,33 @@
             </div>
         </div>
     </div>
+
+    <div class="col-md-6">
+        <div class="card mb-4 shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">🎂 Birthdays in {{ current_month }}</h6>
+            </div>
+            <div class="card-body">
+                {% if birthdays is empty %}
+                    <p class="text-muted text-center">No birthdays this month.</p>
+                {% else %}
+                    <ul class="list-group list-group-flush">
+                        {% for client in birthdays %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ client.first_name }} {{ client.last_name }}</strong>
+                                    <br>
+                                    <small class="text-muted">Turns {{ date('now').diff(date(client.dob)).y + 1 }} on {{ client.dob|date('d M') }}</small>
+                                </div>
+                                <a href="https://wa.me/91{{ client.mobile }}?text=Happy%20Birthday%20{{ client.first_name }}!" target="_blank" class="btn btn-sm btn-success">
+                                    <i class="fab fa-whatsapp"></i> Wish
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

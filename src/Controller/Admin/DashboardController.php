@@ -8,20 +8,20 @@ use App\Entity\LicPlan;
 use App\Entity\Policy;
 use App\Entity\PremiumReceipt;
 use App\Entity\User;
+use App\Repository\ClientRepository;
 use App\Repository\PolicyRepository;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Route;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[AdminDashboard(routePath: '/admin', routeName: 'admin')]
 class DashboardController extends AbstractDashboardController
 {
     public function __construct(
-        private PolicyRepository $policyRepository
+        private PolicyRepository $policyRepository,
+        private ClientRepository $clientRepository
     ) {}
 
     public function index(): Response
@@ -32,9 +32,11 @@ class DashboardController extends AbstractDashboardController
 
         // Fetch Data
         $dueAmount = $this->policyRepository->getPremiumDueAmountThisMonth($agencyId);
+        $birthdays = $this->clientRepository->findBirthdaysThisMonth($agencyId);
 
         return $this->render('admin/dashboard.html.twig', [
             'due_amount' => $dueAmount,
+            'birthdays' => $birthdays,
             'current_month' => date('F'),
         ]);
     }
