@@ -6,6 +6,7 @@ use App\Entity\Agency;
 use App\Entity\Client;
 use App\Entity\LicPlan;
 use App\Entity\Policy;
+use App\Entity\PremiumReceipt;
 use App\Entity\User;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
@@ -40,6 +41,7 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::section('MY OFFICE');
         yield MenuItem::linkToCrud('Clients', 'fa fa-users', Client::class);
         yield MenuItem::linkToCrud('Policies', 'fa fa-file-contract', Policy::class);
+        yield MenuItem::linkToCrud('Premium Collection', 'fa fa-rupee-sign', PremiumReceipt::class);
 
         // SETTINGS
         yield MenuItem::section('SETTINGS');
