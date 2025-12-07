@@ -110,4 +110,9 @@ class PremiumReceipt
 
         return $this;
     }
+
+    public function __toString(): string
+    {
+        return $this->receiptNumber ?? 'New Receipt';
+    }
 }
