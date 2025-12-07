@@ -8,18 +8,35 @@ use App\Entity\LicPlan;
 use App\Entity\Policy;
 use App\Entity\PremiumReceipt;
 use App\Entity\User;
+use App\Repository\PolicyRepository;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[AdminDashboard(routePath: '/admin', routeName: 'admin')]
 class DashboardController extends AbstractDashboardController
 {
+    public function __construct(
+        private PolicyRepository $policyRepository
+    ) {}
+
     public function index(): Response
     {
-        return $this->render('admin/dashboard.html.twig');
+        // Get the current User and Agency
+        $user = $this->getUser();
+        $agencyId = $user->getAgency() ? $user->getAgency()->getId() : 0;
+
+        // Fetch Data
+        $dueAmount = $this->policyRepository->getPremiumDueAmountThisMonth($agencyId);
+
+        return $this->render('admin/dashboard.html.twig', [
+            'due_amount' => $dueAmount,
+            'current_month' => date('F'),
+        ]);
     }
 
     public function configureDashboard(): Dashboard

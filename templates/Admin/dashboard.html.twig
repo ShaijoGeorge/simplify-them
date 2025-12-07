@@ -1,12 +1,27 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
 
-{% block page_title %}
-    <h1 class="title">Admin Dashboard</h1>
-{% endblock %}
+{% block content_title %}Dashboard - {{ current_month }}{% endblock %}
 
-{% block page_content %}
-    <div class="dashboard-welcome">
-        <h2>Welcome to the SimplifyThem Admin Dashboard</h2>
-        <p>Use the menu on the left to manage agencies, license plans, and more.</p>
+{% block main %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4 border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Premiums Due ({{ current_month }})</div>
+                        <div class="h3 mb-0 font-weight-bold text-gray-800">
+                            ₹ {{ due_amount|number_format(2) }}
+                        </div>
+                        <p class="text-muted mt-2"><small>Total expected collection from active policies.</small></p>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-rupee-sign fa-2x text-gray-300" style="color: #28a745;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+</div>
 {% endblock %}
