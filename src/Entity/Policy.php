@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\PolicyRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -62,6 +64,17 @@ class Policy
     #[ORM\ManyToOne(inversedBy: 'policies')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Agency $agency = null;
+
+    /**
+     * @var Collection<int, PremiumReceipt>
+     */
+    #[ORM\OneToMany(targetEntity: PremiumReceipt::class, mappedBy: 'policy')]
+    private Collection $premiumReceipts;
+
+    public function __construct()
+    {
+        $this->premiumReceipts = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -289,6 +302,36 @@ class Policy
                 $this->setNextDueDate($nextDue);
             }
         }
+    }
+
+    /**
+     * @return Collection<int, PremiumReceipt>
+     */
+    public function getPremiumReceipts(): Collection
+    {
+        return $this->premiumReceipts;
+    }
+
+    public function addPremiumReceipt(PremiumReceipt $premiumReceipt): static
+    {
+        if (!$this->premiumReceipts->contains($premiumReceipt)) {
+            $this->premiumReceipts->add($premiumReceipt);
+            $premiumReceipt->setPolicy($this);
+        }
+
+        return $this;
+    }
+
+    public function removePremiumReceipt(PremiumReceipt $premiumReceipt): static
+    {
+        if ($this->premiumReceipts->removeElement($premiumReceipt)) {
+            // set the owning side to null (unless already changed)
+            if ($premiumReceipt->getPolicy() === $this) {
+                $premiumReceipt->setPolicy(null);
+            }
+        }
+
+        return $this;
     }
 
 }

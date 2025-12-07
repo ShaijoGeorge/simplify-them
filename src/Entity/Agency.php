@@ -51,11 +51,18 @@ class Agency
     #[ORM\OneToMany(targetEntity: Policy::class, mappedBy: 'agency')]
     private Collection $policies;
 
+    /**
+     * @var Collection<int, PremiumReceipt>
+     */
+    #[ORM\OneToMany(targetEntity: PremiumReceipt::class, mappedBy: 'agency')]
+    private Collection $premiumReceipts;
+
     public function __construct()
     {
         $this->staff = new ArrayCollection();
         $this->clients = new ArrayCollection();
         $this->policies = new ArrayCollection();
+        $this->premiumReceipts = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -224,6 +231,36 @@ class Agency
             // set the owning side to null (unless already changed)
             if ($policy->getAgency() === $this) {
                 $policy->setAgency(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PremiumReceipt>
+     */
+    public function getPremiumReceipts(): Collection
+    {
+        return $this->premiumReceipts;
+    }
+
+    public function addPremiumReceipt(PremiumReceipt $premiumReceipt): static
+    {
+        if (!$this->premiumReceipts->contains($premiumReceipt)) {
+            $this->premiumReceipts->add($premiumReceipt);
+            $premiumReceipt->setAgency($this);
+        }
+
+        return $this;
+    }
+
+    public function removePremiumReceipt(PremiumReceipt $premiumReceipt): static
+    {
+        if ($this->premiumReceipts->removeElement($premiumReceipt)) {
+            // set the owning side to null (unless already changed)
+            if ($premiumReceipt->getAgency() === $this) {
+                $premiumReceipt->setAgency(null);
             }
         }
 
