@@ -1,0 +1,10 @@
+{# Extend the default EasyAdmin Index page #}
+{% extends '@EasyAdmin/crud/index.html.twig' %}
+
+{# Inject the Modal at the end of the content #}
+{% block main %}
+    {{ parent() }} {# Renders the Client List #}
+    
+    {# Include our Modal #}
+    {% include 'admin/client/_import_modal.html.twig' %}
+{% endblock %}

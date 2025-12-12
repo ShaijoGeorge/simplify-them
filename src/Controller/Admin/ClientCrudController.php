@@ -4,7 +4,11 @@ namespace App\Controller\Admin;
 
 use App\Entity\Client;
 use App\Entity\User;
+use App\Service\ClientImportService;
 use Doctrine\ORM\EntityManagerInterface;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateField;
@@ -15,12 +19,40 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\TelephoneField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextEditorField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\Routing\Attribute\Route;
 
 class ClientCrudController extends AbstractCrudController
 {
+    public function __construct(private ClientImportService $importService) {}
+
     public static function getEntityFqcn(): string
     {
         return Client::class;
+    }
+
+    public function configureCrud(Crud $crud): Crud
+    {
+        return $crud
+            ->setEntityLabelInSingular('Client')
+            ->setEntityLabelInPlural('Clients')
+            ->overrideTemplate('crud/index', 'admin/client/index.html.twig');
+    }
+
+    public function configureActions(Actions $actions): Actions
+    {
+        $importAction = Action::new('importClients', 'Import Excel')
+            ->createAsGlobalAction()
+            ->setCssClass('btn btn-success')
+            ->setHtmlAttributes(['data-bs-toggle' => 'modal', 'data-bs-target' => '#importModal'])
+            ->linkToUrl('#'); // just JS trigger
+
+        return $actions
+            ->add(Crud::PAGE_INDEX, $importAction);
     }
 
     public function configureFields(string $pageName): iterable
@@ -85,5 +117,76 @@ class ClientCrudController extends AbstractCrudController
 
         // Continue with the standard save process
         parent::persistEntity($entityManager, $entityInstance);
+    }
+
+    // File Upload
+    #[Route('/admin/client/import', name: 'app_client_import', methods: ['POST'])]
+    public function processImport(Request $request): Response
+    {
+        $file = $request->files->get('file');
+        
+        if ($file) {
+            $user = $this->getUser();
+            if ($user && $user->getAgency()) {
+                $count = $this->importService->importClients($file, $user->getAgency());
+                $this->addFlash('success', "$count Clients imported successfully!");
+            }
+        } else {
+            $this->addFlash('danger', "No file uploaded.");
+        }
+
+        return $this->redirect($request->get('returnUrl'));
+    }
+
+    // Download example
+    #[Route('/admin/export/client-template', name: 'app_client_download_example', methods: ['GET'])]
+    public function downloadExample(): Response
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Set Full Headers
+        $headers = [
+            'First Name',   // Col A
+            'Last Name',    // Col B
+            'DOB (Y-m-d)',  // Col C
+            'Mobile',       // Col D
+            'Email',        // Col E
+            'Address',      // Col F
+            'City',         // Col G
+            'Pincode'       // Col H
+        ];
+        $sheet->fromArray($headers, null, 'A1');
+
+        // Sample Data
+        $sample = [
+            'Rahul', 
+            'Sharma', 
+            '1990-01-01', 
+            '9876543210',
+            'rahul@example.com',
+            '123 MG Road',
+            'Mumbai',
+            '400001'
+        ];
+        $sheet->fromArray($sample, null, 'A2');
+
+        // Auto-size columns
+        foreach (range('A', 'H') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // Create Response
+        $writer = new Xlsx($spreadsheet);
+        
+        $response = new StreamedResponse(function () use ($writer) {
+            $writer->save('php://output');
+        });
+
+        $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $response->headers->set('Content-Disposition', 'attachment;filename="Client_Import_Template.xlsx"');
+        $response->headers->set('Cache-Control', 'max-age=0');
+
+        return $response;
     }
 }
