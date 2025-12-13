@@ -85,16 +85,19 @@ class PolicyCrudController extends AbstractCrudController
         // Group premiums visually
         yield MoneyField::new('basicPremium', 'Basic Premium')
             ->setCurrency('INR')
-            ->setColumns(4);
+            ->setColumns(4)
+            ->setHelp('Enter amount BEFORE tax');
         
         yield MoneyField::new('gst', 'GST')
             ->setCurrency('INR')
-            ->setColumns(4);
+            ->setColumns(4)
+            ->setDisabled(true);
         
         yield MoneyField::new('totalPremium', 'Total')
             ->setCurrency('INR')
             ->setColumns(4)
-            ->setHelp('Basic + GST');
+            ->setDisabled(true)
+            ->setHelp('Auto-calculated (Basic + GST)');
 
 
         yield FormField::addFieldset('Status & Tracking')

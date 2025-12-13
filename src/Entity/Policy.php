@@ -322,7 +322,7 @@ class Policy
         $gstRate = 0.0;
 
         if ($this->commencementDate && $this->commencementDate < $gstReformDate) {
-            // --- OLD REGIME (Before Sep 2025) ---
+            // --- OLD TAX REGIME (Before Sep 2025) ---
             if ($this->licPlan && str_contains(strtoupper($this->licPlan->getType() ?? ''), 'TERM')) {
                 $gstRate = 18.0; // Old Term Plan Rate
             } else {
@@ -330,21 +330,23 @@ class Policy
                 $gstRate = 4.5; 
             }
         } else {
-            // --- NEW REGIME (After Sep 2025) ---
+            // --- NEW TAX REGIME (After Sep 2025) ---
             // Individual Life Insurance is now 0% GST
             $gstRate = 0.0;
         }
 
-        // Auto-Calculate GST Amount (Only if user didn't type it manually)
-        if ($this->basicPremium && $this->gst === null) {
-            $gstAmount = ($this->basicPremium * $gstRate) / 100;
-            $this->setGst((string)$gstAmount);
-        }
-
-        // Calculate Total Premium (Basic + GST)
+        // Logic: If Basic is set, Calculate GST and Total
         if ($this->basicPremium) {
-            $gst = $this->gst ?? 0;
-            $this->setTotalPremium((string)($this->basicPremium + $gst));
+            
+            // Calculate GST amount
+            $calculatedGst = ($this->basicPremium * $gstRate) / 100;
+            
+            // Set GST (We cast to string for Decimal type compatibility)
+            $this->setGst((string)$calculatedGst);
+
+            // Set Total Premium
+            $total = $this->basicPremium + $calculatedGst;
+            $this->setTotalPremium((string)$total);
         }
     }
 
