@@ -32,6 +32,8 @@ class CommissionRuleCrudController extends AbstractCrudController
 
     public function configureActions(Actions $actions): Actions
     {
+        $actions->add(Crud::PAGE_INDEX, Action::DETAIL);
+
         if (!$this->isGranted('ROLE_SUPER_ADMIN')) {
             return $actions->disable(Action::INDEX, Action::NEW, Action::EDIT, Action::DELETE);
         }

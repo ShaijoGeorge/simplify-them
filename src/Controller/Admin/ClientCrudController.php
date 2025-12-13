@@ -52,7 +52,8 @@ class ClientCrudController extends AbstractCrudController
             ->linkToUrl('#'); // just JS trigger
 
         return $actions
-            ->add(Crud::PAGE_INDEX, $importAction);
+            ->add(Crud::PAGE_INDEX, $importAction)
+            ->add(Crud::PAGE_INDEX, Action::DETAIL);
     }
 
     public function configureFields(string $pageName): iterable
