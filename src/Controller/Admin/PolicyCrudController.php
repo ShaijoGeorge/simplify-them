@@ -56,17 +56,20 @@ class PolicyCrudController extends AbstractCrudController
             ->setRequired(true);
 
         yield DateField::new('commencementDate', 'Date of Commencement (DOC)')
-            ->setColumns(12);
+            ->setColumns(12)
+            ->hideOnIndex();
 
 
         yield FormField::addFieldset('Terms & Conditions')
             ->setIcon('fa fa-sliders-h');
 
         yield NumberField::new('policyTerm', 'Policy Term (Years)')
-            ->setColumns(6);
+            ->setColumns(6)
+            ->hideOnIndex();
 
         yield NumberField::new('premiumPayingTerm', 'PPT (Years)')
-            ->setColumns(6);
+            ->setColumns(6)
+            ->hideOnIndex();
 
         yield ChoiceField::new('premiumMode', 'Payment Mode')
             ->setChoices([
@@ -89,13 +92,15 @@ class PolicyCrudController extends AbstractCrudController
 
         yield MoneyField::new('sumAssured', 'Sum Assured')
             ->setCurrency('INR')
-            ->setColumns(12);
+            ->setColumns(12)
+            ->hideOnIndex();
 
         // Group premiums visually
         yield MoneyField::new('basicPremium', 'Basic Premium')
             ->setCurrency('INR')
             ->setColumns(4)
-            ->setHelp('Enter amount BEFORE tax');
+            ->setHelp('Enter amount BEFORE tax')
+            ->hideOnIndex();
         
         yield MoneyField::new('gst', 'GST')
             ->setCurrency('INR')
@@ -125,7 +130,8 @@ class PolicyCrudController extends AbstractCrudController
             ->setColumns(6);
 
         yield DateField::new('maturityDate', 'Maturity Date')
-            ->setColumns(6);
+            ->setColumns(6)
+            ->hideOnIndex();
 
             
         // META DATA
