@@ -27,6 +27,12 @@ class CommissionRule
     #[ORM\Column(type: Types::DECIMAL, precision: 5, scale: 2)]
     private ?string $commissionRate = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?int $minTerm = 0;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $maxTerm = 0;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -76,6 +82,30 @@ class CommissionRule
     public function setCommissionRate(string $commissionRate): static
     {
         $this->commissionRate = $commissionRate;
+
+        return $this;
+    }
+
+    public function getMinTerm(): ?int
+    {
+        return $this->minTerm;
+    }
+
+    public function setMinTerm(?int $minTerm): static
+    {
+        $this->minTerm = $minTerm;
+
+        return $this;
+    }
+
+    public function getMaxTerm(): ?int
+    {
+        return $this->maxTerm;
+    }
+
+    public function setMaxTerm(?int $maxTerm): static
+    {
+        $this->maxTerm = $maxTerm;
 
         return $this;
     }

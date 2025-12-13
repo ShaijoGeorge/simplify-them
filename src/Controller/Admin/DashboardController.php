@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Entity\Agency;
 use App\Entity\Client;
+use App\Entity\CommissionRule;
 use App\Entity\LicPlan;
 use App\Entity\Policy;
 use App\Entity\PremiumReceipt;
@@ -55,6 +56,7 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::section('PLATFORM ADMIN');
         yield MenuItem::linkToCrud('Agencies (Tenants)', 'fa fa-building', Agency::class);
         yield MenuItem::linkToCrud('LIC Plans', 'fa fa-book', LicPlan::class);
+        yield MenuItem::linkToCrud('Commission Rules', 'fa fa-percentage', CommissionRule::class);
     
         // AGENT TOOLS
         yield MenuItem::section('MY OFFICE');

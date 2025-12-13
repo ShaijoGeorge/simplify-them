@@ -2,6 +2,7 @@
 
 namespace App\Controller\Admin;
 
+use App\Entity\CommissionRule;
 use App\Entity\PremiumReceipt;
 use Doctrine\ORM\EntityManagerInterface;
 use Dompdf\Dompdf;
@@ -76,6 +77,9 @@ class PremiumReceiptCrudController extends AbstractCrudController
             ->setColumns(12);
 
         // HIDDEN FIELDS
+        yield MoneyField::new('commissionEarned', 'Commission Earned')
+            ->setCurrency('INR')
+            ->hideOnForm();
         yield AssociationField::new('agency')->hideOnForm()->hideOnIndex();
     }
 
@@ -91,6 +95,54 @@ class PremiumReceiptCrudController extends AbstractCrudController
             // Generate Receipt Number (Simple Random for now)
             if (!$entityInstance->getReceiptNumber()) {
                 $entityInstance->setReceiptNumber('REC-' . strtoupper(uniqid()));
+            }
+
+            $user = $this->getUser();
+            if ($user && $user->getAgency()) {
+                $entityInstance->setAgency($user->getAgency());
+            }
+            if (!$entityInstance->getReceiptNumber()) {
+                $entityInstance->setReceiptNumber('REC-' . strtoupper(uniqid()));
+            }
+
+            $policy = $entityInstance->getPolicy();
+            $plan = $policy->getLicPlan();
+
+            if ($policy && $plan) {
+                // Calculate Policy Year
+                // Formula: Difference in years between DOC and Payment Date + 1
+                $doc = $policy->getCommencementDate();
+                $payDate = $entityInstance->getPaymentDate();
+
+                // Simple year diff logic
+                $diff = $doc->diff($payDate);
+                $policyYear = $diff->y + 1;
+
+                // Get Policy Term
+                $term = $policy->getPolicyTerm();
+
+                // Find Matching Rule
+                $rule = $entityManager->getRepository(CommissionRule::class)->createQueryBuilder('c')
+                    ->where('c.licPlan = :plan')
+                    ->andWhere('c.policyYearFrom <= :year')
+                    ->andWhere('c.policyYearTo >= :year')
+                    ->andWhere('c.minTerm <= :term')
+                    ->andWhere('c.maxTerm >= :term')
+                    ->setParameter('plan', $plan)
+                    ->setParameter('year', $policyYear)
+                    ->setParameter('term', $term)
+                    ->setMaxResults(1)
+                    ->getQuery()
+                    ->getOneOrNullResult();
+
+                // Calculate & Set
+                if ($rule) {
+                    $commission = ($entityInstance->getAmount() * $rule->getCommissionRate()) / 100;
+                    $entityInstance->setCommissionEarned($commission);
+                } else {
+                    // Fallback if no rule found (e.g., 0%)
+                    $entityInstance->setCommissionEarned(0);
+                }
             }
 
             // Update Policy Next Due Date
