@@ -6,9 +6,12 @@ use App\Entity\Client;
 use App\Entity\User;
 use App\Service\ClientImportService;
 use Doctrine\ORM\EntityManagerInterface;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
+use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateField;
@@ -51,8 +54,14 @@ class ClientCrudController extends AbstractCrudController
             ->setHtmlAttributes(['data-bs-toggle' => 'modal', 'data-bs-target' => '#importModal'])
             ->linkToUrl('#'); // just JS trigger
 
+        // Family Portfolio
+        $portfolioAction = Action::new('familyPortfolio', 'Family Report', 'fa fa-users')
+            ->linkToCrudAction('generateFamilyPortfolio');
+
         return $actions
             ->add(Crud::PAGE_INDEX, $importAction)
+            ->add(Crud::PAGE_INDEX, $portfolioAction)
+            ->add(Crud::PAGE_DETAIL, $portfolioAction)
             ->add(Crud::PAGE_INDEX, Action::DETAIL);
     }
 
@@ -190,4 +199,74 @@ class ClientCrudController extends AbstractCrudController
 
         return $response;
     }
+
+    public function generateFamilyPortfolio(AdminContext $context, EntityManagerInterface $entityManager)
+    {
+        $clientId = $context->getRequest()->query->get('entityId');
+        $client = $entityManager->getRepository(Client::class)->find($clientId);
+
+        if (!$client) {
+            throw $this->createNotFoundException('Client not found');
+        }
+
+        $agency = $client->getAgency();
+
+        // LOGIC: Find the full family tree
+        // If this client has a Head of Family, fetch the Head first
+        $head = $client->getHeadOfFamily() ? $client->getHeadOfFamily() : $client;
+        
+        // Fetch all members (Head + Children/Spouse)
+        $familyMembers = [$head];
+        foreach ($head->getFamilyMembers() as $member) {
+            $familyMembers[] = $member;
+        }
+
+        // Calculate Totals
+        $totalSumAssured = 0;
+        $totalPremium = 0;
+        $totalPolicies = 0;
+
+        foreach ($familyMembers as $member) {
+            foreach ($member->getPolicies() as $policy) {
+                if ($policy->getStatus() == 'IN_FORCE') {
+                    // Only count active policies for the report
+                    $totalSumAssured += $policy->getSumAssured();
+                    $totalPremium += $policy->getTotalPremium();
+                    $totalPolicies++;
+                }
+            }
+        }
+
+        // HTML Template for PDF
+        $html = $this->renderView('admin/client/family_portfolio.html.twig', [
+            'head' => $head,
+            'members' => $familyMembers,
+            'agency' => $agency,
+            'stats' => [
+                'total_sa' => $totalSumAssured,
+                'total_prem' => $totalPremium,
+                'count' => $totalPolicies
+            ]
+        ]);
+
+        // Generate PDF
+        $options = new Options();
+        $options->set('defaultFont', 'DejaVu Sans');
+        $options->setIsRemoteEnabled(true); // Allow images
+        
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return new Response(
+            $dompdf->output(),
+            200,
+            [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="Family_Portfolio_'.$head->getFirstName().'.pdf"',
+            ]
+        );
+    }
+
 }

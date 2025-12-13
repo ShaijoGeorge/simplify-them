@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+        <style>
+            @page { margin: 20px; }
+            body { 
+                font-family: 'DejaVu Sans', sans-serif; 
+                color: #2c3e50; 
+                font-size: 12px; 
+                line-height: 1.4;
+            }
+
+            /* --- HEADER SECTION --- */
+            .header-bg {
+                background-color: #f4f6f9;
+                padding: 20px;
+                border-bottom: 3px solid #34495e;
+                margin-bottom: 30px;
+            }
+            .agency-name { 
+                font-size: 24px; 
+                font-weight: bold; 
+                color: #2c3e50; 
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+            .report-meta {
+                color: #7f8c8d;
+                font-size: 10px;
+                margin-top: 5px;
+            }
+
+            /* --- DASHBOARD SUMMARY --- */
+            .summary-table {
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 10px;
+                margin-bottom: 30px;
+            }
+            .summary-card {
+                background-color: #34495e; /* Dark Blue */
+                color: white;
+                padding: 15px;
+                border-radius: 8px;
+                text-align: center;
+            }
+            .summary-card.highlight {
+                background-color: #27ae60; /* Green for Active Policies */
+            }
+            .summary-label {
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                opacity: 0.8;
+                margin-bottom: 5px;
+            }
+            .summary-value {
+                font-size: 18px;
+                font-weight: bold;
+            }
+
+            /* --- MEMBER SECTION (Card Style) --- */
+            .member-card {
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                overflow: hidden; /* Clips the header corners */
+                margin-bottom: 25px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            }
+            .member-header {
+                background-color: #ecf0f1;
+                padding: 10px 15px;
+                border-bottom: 1px solid #e0e0e0;
+                font-size: 14px;
+                font-weight: bold;
+                color: #2c3e50;
+            }
+            .member-age {
+                font-weight: normal;
+                font-size: 11px;
+                color: #7f8c8d;
+                margin-left: 5px;
+            }
+
+            /* --- DATA TABLE --- */
+            table.data-table { 
+                width: 100%; 
+                border-collapse: collapse; 
+            }
+            table.data-table th { 
+                background-color: white; 
+                color: #7f8c8d; 
+                font-size: 9px;
+                text-transform: uppercase;
+                padding: 10px 15px;
+                text-align: left;
+                border-bottom: 2px solid #f0f0f0;
+            }
+            table.data-table td { 
+                padding: 10px 15px; 
+                border-bottom: 1px solid #f0f0f0;
+                color: #34495e;
+            }
+            /* Zebra Striping */
+            table.data-table tr:nth-child(even) {
+                background-color: #fcfcfc;
+            }
+
+            /* --- BADGES & HELPERS --- */
+            .badge {
+                display: inline-block;
+                padding: 3px 8px;
+                border-radius: 10px;
+                font-size: 9px;
+                font-weight: bold;
+            }
+            .badge-active { background-color: #e8f8f5; color: #27ae60; border: 1px solid #27ae60; }
+            .badge-lapsed { background-color: #fdedec; color: #c0392b; border: 1px solid #c0392b; }
+            .badge-matured { background-color: #fef9e7; color: #f1c40f; border: 1px solid #f1c40f; }
+
+            .text-muted { color: #95a5a6; font-size: 9px; }
+            .money { font-family: 'DejaVu Sans', sans-serif; } /* Ensures ₹ works */
+
+            /* --- FOOTER --- */
+            .footer {
+                position: fixed; 
+                bottom: -10px; 
+                width: 100%; 
+                text-align: center; 
+                font-size: 9px; 
+                color: #bdc3c7; 
+                border-top: 1px solid #eee; 
+                padding-top: 10px;
+            }
+        </style>
+    </head>
+    <body>
+
+        <div class="header-bg">
+            <table width="100%">
+                <tr>
+                    <td valign="top">
+                        <div class="agency-name">{{ agency.businessName }}</div>
+                        <div class="report-meta">Family Insurance Portfolio</div>
+                    </td>
+                    <td valign="top" align="right" style="text-align: right;">
+                        <div style="font-size: 14px; font-weight: bold;">{{ head.firstName }} {{ head.lastName }}</div>
+                        <div class="report-meta">Generated: {{ "now"|date("d M Y") }}</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <table class="summary-table">
+            <tr>
+                <td width="33%">
+                    <div class="summary-card">
+                        <div class="summary-label">Total Life Cover</div>
+                        <div class="summary-value money">{{ stats.total_sa|format_currency('INR', {fraction_digit: 0}, 'en_IN') }}</div>
+                    </div>
+                </td>
+                <td width="33%">
+                    <div class="summary-card">
+                        <div class="summary-label">Annual Premium</div>
+                        <div class="summary-value money">{{ stats.total_prem|format_currency('INR', {fraction_digit: 0}, 'en_IN') }}</div>
+                    </div>
+                </td>
+                <td width="33%">
+                    <div class="summary-card highlight">
+                        <div class="summary-label">Active Policies</div>
+                        <div class="summary-value">{{ stats.count }}</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        {% for member in members %}
+            {% if member.policies|length > 0 %}
+                
+                <div class="member-card">
+                    <div class="member-header">
+                        {{ member.firstName }} {{ member.lastName }}
+                        <span class="member-age">(DOB: {{ member.dob|date('d-M-Y') }})</span>
+                    </div>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th width="15%">Policy No</th>
+                                <th width="25%">Plan Details</th>
+                                <th width="12%">DOC</th>
+                                <th width="10%">Term</th>
+                                <th width="15%">Sum Assured</th>
+                                <th width="15%">Premium</th>
+                                <th width="8%" align="center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for policy in member.policies %}
+                                <tr>
+                                    <td style="font-weight: bold;">{{ policy.policyNumber }}</td>
+                                    
+                                    <td>
+                                        <div style="font-weight: bold;">{{ policy.licPlan.planName }}</div>
+                                        <div class="text-muted">Table {{ policy.licPlan.tableNumber }}</div>
+                                    </td>
+                                    
+                                    <td>{{ policy.commencementDate|date('d-M-Y') }}</td>
+                                    
+                                    <td>
+                                        {{ policy.policyTerm }} <span class="text-muted">/ {{ policy.premiumPayingTerm }}</span>
+                                    </td>
+                                    
+                                    <td class="money">{{ policy.sumAssured|format_currency('INR', {fraction_digit: 0}, 'en_IN') }}</td>
+                                    
+                                    <td>
+                                        <div class="money">{{ policy.totalPremium|format_currency('INR', {fraction_digit: 0}, 'en_IN') }}</div>
+                                        <div class="text-muted">{{ policy.premiumMode }}</div>
+                                    </td>
+                                    
+                                    <td align="center">
+                                        {% if policy.status == 'IN_FORCE' %}
+                                            <span class="badge badge-active">Active</span>
+                                        {% elseif policy.status == 'LAPSED' %}
+                                            <span class="badge badge-lapsed">Lapsed</span>
+                                        {% else %}
+                                            <span class="badge badge-matured">{{ policy.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            {% endif %}
+        {% endfor %}
+
+        <div class="footer">
+            Designed by SimplifyThem | {{ agency.businessName }} | +91 {{ agency.mobile }}
+        </div>
+
+    </body>
+</html>
