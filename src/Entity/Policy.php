@@ -261,6 +261,9 @@ class Policy
         return $this;
     }
 
+    /**
+     * LOGIC 1: Automatic Date Calculations (Maturity & Next Due)
+     */
     #[ORM\PrePersist]
     #[ORM\PreUpdate]
     public function calculateDates(): void
@@ -301,6 +304,47 @@ class Policy
             if ($shouldUpdate) {
                 $this->setNextDueDate($nextDue);
             }
+        }
+    }
+
+    /**
+     * LOGIC 2: Automatic Financials (GST & Total Premium)
+     * Handles the Sept 2025 Tax Reform Logic
+     */
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function calculateTotals(): void
+    {
+        // Define the GST Reform Date (22 Sept 2025)
+        $gstReformDate = new \DateTime('2025-09-22');
+
+        // Determine GST Rate based on DOC (Old Regime vs New Regime)
+        $gstRate = 0.0;
+
+        if ($this->commencementDate && $this->commencementDate < $gstReformDate) {
+            // --- OLD REGIME (Before Sep 2025) ---
+            if ($this->licPlan && str_contains(strtoupper($this->licPlan->getType() ?? ''), 'TERM')) {
+                $gstRate = 18.0; // Old Term Plan Rate
+            } else {
+                // Endowment/Traditional: 4.5% 1st Year is standard
+                $gstRate = 4.5; 
+            }
+        } else {
+            // --- NEW REGIME (After Sep 2025) ---
+            // Individual Life Insurance is now 0% GST
+            $gstRate = 0.0;
+        }
+
+        // Auto-Calculate GST Amount (Only if user didn't type it manually)
+        if ($this->basicPremium && $this->gst === null) {
+            $gstAmount = ($this->basicPremium * $gstRate) / 100;
+            $this->setGst((string)$gstAmount);
+        }
+
+        // Calculate Total Premium (Basic + GST)
+        if ($this->basicPremium) {
+            $gst = $this->gst ?? 0;
+            $this->setTotalPremium((string)($this->basicPremium + $gst));
         }
     }
 

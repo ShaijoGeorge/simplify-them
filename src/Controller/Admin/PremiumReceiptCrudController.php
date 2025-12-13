@@ -200,6 +200,12 @@ class PremiumReceiptCrudController extends AbstractCrudController
                 <div class="row" style="font-size: 18px; color: green;">
                     <span class="label">Amount Paid:</span> ₹'. number_format($receipt->getAmount(), 2) .'
                 </div>
+
+                '. ($receipt->getPolicy()->getGst() > 0 ? '
+                <div class="row">
+                    <span class="label">GST (Incl.):</span> ₹'. number_format($receipt->getPolicy()->getGst(), 2) .'
+                </div>' : '') .'
+
                 <div class="row"><span class="label">Mode:</span> '. $receipt->getPaymentMode() .'</div>
             </div>
             <div class="footer">
