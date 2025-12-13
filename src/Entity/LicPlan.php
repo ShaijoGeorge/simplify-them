@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\LicPlanRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -28,6 +30,17 @@ class LicPlan
 
     #[ORM\Column]
     private ?bool $isActive = null;
+
+    /**
+     * @var Collection<int, CommissionRule>
+     */
+    #[ORM\OneToMany(targetEntity: CommissionRule::class, mappedBy: 'licPlan')]
+    private Collection $commissionRules;
+
+    public function __construct()
+    {
+        $this->commissionRules = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -98,5 +111,35 @@ class LicPlan
     public function __toString(): string
     {
         return $this->tableNumber . ' - ' . $this->planName;
+    }
+
+    /**
+     * @return Collection<int, CommissionRule>
+     */
+    public function getCommissionRules(): Collection
+    {
+        return $this->commissionRules;
+    }
+
+    public function addCommissionRule(CommissionRule $commissionRule): static
+    {
+        if (!$this->commissionRules->contains($commissionRule)) {
+            $this->commissionRules->add($commissionRule);
+            $commissionRule->setLicPlan($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCommissionRule(CommissionRule $commissionRule): static
+    {
+        if ($this->commissionRules->removeElement($commissionRule)) {
+            // set the owning side to null (unless already changed)
+            if ($commissionRule->getLicPlan() === $this) {
+                $commissionRule->setLicPlan(null);
+            }
+        }
+
+        return $this;
     }
 }

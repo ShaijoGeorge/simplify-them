@@ -34,6 +34,9 @@ class PremiumReceipt
     #[ORM\JoinColumn(nullable: false)]
     private ?Agency $agency = null;
 
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
+    private ?string $commissionEarned = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -114,5 +117,17 @@ class PremiumReceipt
     public function __toString(): string
     {
         return $this->receiptNumber ?? 'New Receipt';
+    }
+
+    public function getCommissionEarned(): ?string
+    {
+        return $this->commissionEarned;
+    }
+
+    public function setCommissionEarned(?string $commissionEarned): static
+    {
+        $this->commissionEarned = $commissionEarned;
+
+        return $this;
     }
 }
