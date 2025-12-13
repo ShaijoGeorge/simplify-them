@@ -157,13 +157,13 @@
                 <td width="33%">
                     <div class="summary-card">
                         <div class="summary-label">Total Life Cover</div>
-                        <div class="summary-value money">{{ stats.total_sa|format_currency('INR', {fraction_digit: 0}, 'en_IN') }}</div>
+                        <div class="summary-value money">{{ (stats.total_sa / 100)|format_currency('INR', {fraction_digit: 0}, 'en_IN') }}</div>
                     </div>
                 </td>
                 <td width="33%">
                     <div class="summary-card">
                         <div class="summary-label">Annual Premium</div>
-                        <div class="summary-value money">{{ stats.total_prem|format_currency('INR', {fraction_digit: 0}, 'en_IN') }}</div>
+                        <div class="summary-value money">{{ (stats.total_prem / 100)|format_currency('INR', {fraction_digit: 0}, 'en_IN') }}</div>
                     </div>
                 </td>
                 <td width="33%">
@@ -212,10 +212,10 @@
                                         {{ policy.policyTerm }} <span class="text-muted">/ {{ policy.premiumPayingTerm }}</span>
                                     </td>
                                     
-                                    <td class="money">{{ policy.sumAssured|format_currency('INR', {fraction_digit: 0}, 'en_IN') }}</td>
+                                    <td class="money">{{ (policy.sumAssured / 100)|format_currency('INR', {fraction_digit: 0}, 'en_IN') }}</td>
                                     
                                     <td>
-                                        <div class="money">{{ policy.totalPremium|format_currency('INR', {fraction_digit: 0}, 'en_IN') }}</div>
+                                        <div class="money">{{ (policy.totalPremium / 100)|format_currency('INR', {fraction_digit: 0}, 'en_IN') }}</div>
                                         <div class="text-muted">{{ policy.premiumMode }}</div>
                                     </td>
                                     
