@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+
+    <style>
+        body {
+            font-family: "DejaVu Sans", sans-serif;
+            font-size: 12px;
+            color: #333;
+            padding: 20px;
+            border: 2px solid #444;
+        }
+
+        /* HEADER */
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .agency-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #222;
+        }
+
+        .doc-title {
+            font-size: 14px;
+            margin-top: 6px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .sub-title {
+            font-size: 11px;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        /* INFO */
+        .info {
+            margin-top: 20px;
+        }
+
+        .row {
+            display: table;
+            width: 100%;
+            padding: 6px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .label {
+            display: table-cell;
+            width: 45%;
+            font-weight: bold;
+            color: #444;
+        }
+
+        .value {
+            display: table-cell;
+            width: 55%;
+            text-align: right;
+        }
+
+        /* AMOUNT */
+        .amount-box {
+            margin: 25px 0;
+            padding: 12px;
+            text-align: center;
+            background-color: #f8f9fa;
+            border: 2px dashed #555;
+        }
+
+        .amount-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #555;
+        }
+
+        .amount-value {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        /* DISCLAIMER */
+        .disclaimer {
+            margin-top: 20px;
+            padding: 10px;
+            font-size: 10px;
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+        }
+
+        /* FOOTER */
+        .footer {
+            margin-top: 25px;
+            font-size: 10px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #ccc;
+            padding-top: 6px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="agency-name">{{ receipt.agency.businessName }}</div>
+        <div class="doc-title">Premium Collection Acknowledgement</div>
+        <div class="sub-title">(Issued by Insurance Agent)</div>
+    </div>
+
+    <!-- INFO -->
+    <div class="info">
+        <div class="row">
+            <div class="label">Acknowledgement No</div>
+            <div class="value">{{ receipt.receiptNumber }}</div>
+        </div>
+
+        <div class="row">
+            <div class="label">Date of Collection</div>
+            <div class="value">{{ receipt.paymentDate|date('d-M-Y') }}</div>
+        </div>
+
+        <div class="row">
+            <div class="label">Policy Number</div>
+            <div class="value">{{ receipt.policy.policyNumber }}</div>
+        </div>
+
+        <div class="row">
+            <div class="label">Policy Holder Name</div>
+            <div class="value">
+                {{ receipt.policy.client.firstName }} {{ receipt.policy.client.lastName }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="label">Plan</div>
+            <div class="value">
+                {{ receipt.policy.licPlan.tableNumber }} - {{ receipt.policy.licPlan.planName }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="label">Payment Mode</div>
+            <div class="value">{{ receipt.paymentMode }}</div>
+        </div>
+    </div>
+
+    <!-- AMOUNT -->
+    <div class="amount-box">
+        <div class="amount-label">Amount Collected</div>
+        <div class="amount-value">
+            {{ (receipt.amount / 100)|format_currency('INR', {fraction_digit: 2}, 'en_IN') }}
+        </div>
+    </div>
+
+    <!-- DISCLAIMER -->
+    <div class="disclaimer">
+        <strong>Important Notice:</strong><br>
+        This document is only an acknowledgement of premium amount collected by the insurance agent.
+        The official and legally valid premium receipt will be issued by LIC after the premium is paid
+        at LIC branch / authorised premium payment channel.
+        This acknowledgement should not be treated as an LIC premium receipt.
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        <p>Agent Contact: {{ receipt.agency.mobile }}</p>
+        <p>This is a computer-generated acknowledgement and does not require a signature.</p>
+    </div>
+
+</body>
+</html>

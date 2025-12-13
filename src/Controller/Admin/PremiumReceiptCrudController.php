@@ -175,50 +175,16 @@ class PremiumReceiptCrudController extends AbstractCrudController
             throw $this->createNotFoundException('Receipt not found');
         }
         
-        // HTML Template for the Receipt
-        $html = '
-        <html>
-        <head><style>
-            body { font-family: sans-serif; padding: 20px; border: 2px solid #333; }
-            .header { text-align: center; color: #0056b3; }
-            .details { margin-top: 20px; }
-            .row { padding: 5px 0; border-bottom: 1px solid #eee; }
-            .label { font-weight: bold; display: inline-block; width: 150px; }
-            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #777; }
-        </style></head>
-        <body>
-            <div class="header">
-                <h2>Premium Receipt</h2>
-                <p>'. $receipt->getAgency()->getBusinessName() .'</p>
-            </div>
-            <div class="details">
-                <div class="row"><span class="label">Receipt No:</span> '. $receipt->getReceiptNumber() .'</div>
-                <div class="row"><span class="label">Date:</span> '. $receipt->getPaymentDate()->format('d-M-Y') .'</div>
-                <div class="row"><span class="label">Policy No:</span> '. $receipt->getPolicy()->getPolicyNumber() .'</div>
-                <div class="row"><span class="label">Client Name:</span> '. $receipt->getPolicy()->getClient()->getFirstName() .'</div>
-                <div class="row"><span class="label">Plan:</span> '. $receipt->getPolicy()->getLicPlan()->getPlanName() .'</div>
-                <br>
-                <div class="row" style="font-size: 18px; color: green;">
-                    <span class="label">Amount Paid:</span> ₹'. number_format($receipt->getAmount(), 2) .'
-                </div>
-
-                '. ($receipt->getPolicy()->getGst() > 0 ? '
-                <div class="row">
-                    <span class="label">GST (Incl.):</span> ₹'. number_format($receipt->getPolicy()->getGst(), 2) .'
-                </div>' : '') .'
-
-                <div class="row"><span class="label">Mode:</span> '. $receipt->getPaymentMode() .'</div>
-            </div>
-            <div class="footer">
-                <p>This is a computer-generated receipt.</p>
-                <p>Contact: '. $receipt->getAgency()->getMobile() .'</p>
-            </div>
-        </body>
-        </html>';
+        $html = $this->renderView(
+            'admin/premium_receipt/receipt.html.twig',
+            ['receipt' => $receipt]
+        );
 
         // Convert HTML to PDF
         $options = new Options();
-        $options->set('defaultFont', 'Helvetica');
+        $options->set('defaultFont', 'DejaVu Sans');
+        $options->setIsRemoteEnabled(true);
+
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A5', 'portrait'); 
@@ -230,7 +196,7 @@ class PremiumReceiptCrudController extends AbstractCrudController
             200,
             [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="receipt.pdf"',
+                'Content-Disposition' => 'inline; filename="Receipt_'.$receipt->getReceiptNumber().'.pdf"',
             ]
         );
     }
