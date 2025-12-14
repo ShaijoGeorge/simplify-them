@@ -19,7 +19,7 @@
                     <div class="d-flex align-items-center">
                         <div>
                             <h6 class="text-uppercase text-muted mb-2">Premiums Due</h6>
-                            <h1 class="fw-bold mb-1">₹ {{ (due_amount)|number_format(2) }}</h1>
+                            <h1 class="fw-bold mb-1">₹ {{ (due_amount/100)|number_format(2) }}</h1>
                             <p class="text-muted mb-0">Expected collections for {{ current_month }}</p>
                         </div>
                         <div class="ms-auto">
