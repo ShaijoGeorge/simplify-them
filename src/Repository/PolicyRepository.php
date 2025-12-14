@@ -39,28 +39,35 @@ class PolicyRepository extends ServiceEntityRepository
         return (float) $result;
     }
 
-    //    /**
-    //     * @return Policy[] Returns an array of Policy objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('p.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function findRevivalOpportunities(int $agencyId): array
+    {
+        $sixMonthsAgo = new \DateTime('-6 months');
 
-    //    public function findOneBySomeField($value): ?Policy
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        return $this->createQueryBuilder('p')
+        ->andWhere('p.agency = :agencyId')
+        ->andWhere('p.status = :status')
+        ->andWhere('p.nextDueDate <= :date')
+        ->setParameter('agencyId', $agencyId)
+        ->setParameter('status', 'LAPSED')
+        ->setParameter('date', $sixMonthsAgo)
+        ->orderBy('p.nextDueDate', 'DESC')
+        ->getQuery()
+        ->getResult();
+    }
+
+    public function countRevivalOpportunities(int $agencyId): int
+    {
+        $sixMonthsAgo = new \DateTime('-6 months');
+
+        return (int) $this->createQueryBuilder('p')
+            ->select('count(p.id)')
+            ->andWhere('p.agency = :agencyId')
+            ->andWhere('p.status = :status')
+            ->andWhere('p.nextDueDate <= :date')
+            ->setParameter('agencyId', $agencyId)
+            ->setParameter('status', 'LAPSED')
+            ->setParameter('date', $sixMonthsAgo)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }

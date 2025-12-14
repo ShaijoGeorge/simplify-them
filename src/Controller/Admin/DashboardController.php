@@ -34,10 +34,12 @@ class DashboardController extends AbstractDashboardController
         // Fetch Data
         $dueAmount = $this->policyRepository->getPremiumDueAmountThisMonth($agencyId);
         $birthdays = $this->clientRepository->findBirthdaysThisMonth($agencyId);
+        $lapsedCount = $this->policyRepository->countRevivalOpportunities($agencyId);
 
         return $this->render('admin/dashboard.html.twig', [
             'due_amount' => $dueAmount,
             'birthdays' => $birthdays,
+            'lapsed_count' => $lapsedCount,
             'current_month' => date('F'),
         ]);
     }

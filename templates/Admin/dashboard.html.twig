@@ -1,136 +1,189 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
 
-{% block content_title %}Dashboard - {{ current_month }}{% endblock %}
+{% block content_title %}
+    <div class="d-flex align-items-center justify-content-between">
+        <div>
+            <h2 class="mb-0">Overview</h2>
+            <small class="text-muted">{{ current_month }} snapshot</small>
+        </div>
+    </div>
+{% endblock %}
 
 {% block main %}
-<div class="row">
-    <div class="col-md-6">
-        <div class="card mb-4 border-left-primary shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                            Premiums Due ({{ current_month }})</div>
-                        <div class="h3 mb-0 font-weight-bold text-gray-800">
-                            ₹ {{ due_amount|number_format(2) }}
+    <div class="container-fluid dashboard-wrap">
+
+    <div class="row g-4">
+        <div class="col-xl-7">
+            <div class="card hero-card shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div>
+                            <h6 class="text-uppercase text-muted mb-2">Premiums Due</h6>
+                            <h1 class="fw-bold mb-1">₹ {{ (due_amount)|number_format(2) }}</h1>
+                            <p class="text-muted mb-0">Expected collections for {{ current_month }}</p>
                         </div>
-                        <p class="text-muted mt-2"><small>Total expected collection from active policies.</small></p>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-rupee-sign fa-2x text-gray-300" style="color: #28a745;"></i>
+                        <div class="ms-auto">
+                            <div class="hero-icon">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="col-md-6">
-        <div class="card mb-4 shadow">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">🎂 Birthdays in {{ current_month }}</h6>
-            </div>
-            <div class="card-body">
-                {% if birthdays is empty %}
-                    <p class="text-muted text-center">No birthdays this month.</p>
-                {% else %}
-                    <ul class="list-group list-group-flush">
-                        {% for client in birthdays %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong>{{ client.first_name }} {{ client.last_name }}</strong>
-                                    <br>
-                                    <small class="text-muted">Turns {{ date('now').diff(date(client.dob)).y + 1 }} on {{ client.dob|date('d M') }}</small>
-                                </div>
-                                <a href="https://wa.me/91{{ client.mobile }}?text=Happy%20Birthday%20{{ client.first_name }}!" target="_blank" class="btn btn-sm btn-success">
-                                    <i class="fab fa-whatsapp"></i> Wish
-                                </a>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-            </div>
+        <div class="col-xl-5">
+            <a href="{{ ea_url()
+                .setController('App\\Controller\\Admin\\PolicyCrudController')
+                .setAction('index')
+                .set('filters[status][comparison]', '=')
+                .set('filters[status][value]', 'LAPSED') }}" 
+               class="text-decoration-none">
+                
+                <div class="card alert-card shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-uppercase text-muted mb-2">Revival Opportunities</h6>
+                                <h2 class="fw-bold mb-1">{{ lapsed_count }}</h2>
+                                <p class="text-muted mb-0">Policies inactive for over 6 months</p>
+                            </div>
+                            <div class="alert-icon">
+                                <i class="fas fa-bell"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
         </div>
     </div>
-</div>
 
-<div class="row mt-5">
-    <div class="col-12 mb-3">
-        <h5 class="text-gray-800 font-weight-bold pl-1 border-left-primary" style="border-left: 4px solid #4e73df; padding-left: 10px;">
-            ⚡ Quick Actions
-        </h5>
-    </div>
+    <div class="row mt-5">
+        <div class="col-12 mb-3">
+            <h5 class="fw-semibold">Quick Actions</h5>
+        </div>
 
-    <div class="col-xl-4 col-md-6 mb-4">
-        <a href="{{ ea_url() .setController('App\\Controller\\Admin\\ClientCrudController') .setAction('new') }}" class="text-decoration-none">
-            <div class="card border-left-primary shadow h-100 py-2 action-card">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">New Business</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">Add New Client</div>
-                            <small class="text-muted">Register a new person or family</small>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-user-plus fa-2x text-gray-300"></i>
+        <div class="col-lg-4 col-md-6 mb-4">
+            <a href="{{ ea_url().setController('App\\Controller\\Admin\\ClientCrudController').setAction('new') }}" class="text-decoration-none">
+                <div class="card quick-card shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center">
+                            <div class="qc-icon bg-info">
+                                <i class="fas fa-user-plus"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="mb-1">Add New Client</h6>
+                                <small class="text-muted">Register a new customer</small>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </a>
-    </div>
+            </a>
+        </div>
 
-    <div class="col-xl-4 col-md-6 mb-4">
-        <a href="{{ ea_url() .setController('App\\Controller\\Admin\\PolicyCrudController') .setAction('new') }}" class="text-decoration-none">
-            <div class="card border-left-info shadow h-100 py-2 action-card">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Insurance</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">Create Policy</div>
-                            <small class="text-muted">New Endowment, Money Back, etc.</small>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-file-contract fa-2x text-gray-300"></i>
+        <div class="col-lg-4 col-md-6 mb-4">
+            <a href="{{ ea_url().setController('App\\Controller\\Admin\\PolicyCrudController').setAction('new') }}" class="text-decoration-none">
+                <div class="card quick-card shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center">
+                            <div class="qc-icon bg-secondary">
+                                <i class="fas fa-file-signature"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="mb-1">Create Policy</h6>
+                                <small class="text-muted">Term, Endowment & more</small>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </a>
-    </div>
+            </a>
+        </div>
 
-    <div class="col-xl-4 col-md-6 mb-4">
-        <a href="{{ ea_url() .setController('App\\Controller\\Admin\\PremiumReceiptCrudController') .setAction('new') }}" class="text-decoration-none">
-            <div class="card border-left-success shadow h-100 py-2 action-card">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Finance</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">Collect Premium</div>
-                            <small class="text-muted">Record payment & download receipt</small>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-rupee-sign fa-2x text-gray-300"></i>
+        <div class="col-lg-4 col-md-6 mb-4">
+            <a href="{{ ea_url().setController('App\\Controller\\Admin\\PremiumReceiptCrudController').setAction('new') }}" class="text-decoration-none">
+                <div class="card quick-card shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center">
+                            <div class="qc-icon bg-success">
+                                <i class="fas fa-coins"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="mb-1">Collect Premium</h6>
+                                <small class="text-muted">Payment & receipt entry</small>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </a>
+            </a>
+        </div>
     </div>
 </div>
 
 <style>
-    .action-card {
-        transition: transform 0.2s ease-in-out, box-shadow 0.2s;
+    .dashboard-wrap h1 { font-size: 2.4rem; }
+
+    .hero-card {
+        background: linear-gradient(135deg, #4e73df, #224abe);
+        color: #fff;
+    }
+    .hero-card .text-muted { color: rgba(255,255,255,0.75) !important; }
+    .hero-icon {
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 36px;
+    }
+
+    /* Added Transition for Alert Card */
+    .alert-card {
+        background: linear-gradient(135deg, #fff5f5, #ffe3e3);
+        transition: all 0.25s ease;
         border: none;
     }
-    .action-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    /* Hover Effect for Alert Card */
+    .alert-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.08);
         cursor: pointer;
     }
-    .border-left-primary { border-left: 0.25rem solid #4e73df !important; }
-    .border-left-success { border-left: 0.25rem solid #1cc88a !important; }
-    .border-left-info    { border-left: 0.25rem solid #36b9cc !important; }
-    .text-gray-300 { color: #dddfeb !important; }
+
+    .alert-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: #e74a3b;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+
+    .quick-card {
+        transition: all 0.25s ease;
+        border: none;
+    }
+    .quick-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+    }
+
+    .qc-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 20px;
+    }
+    .bg-info { background: #36b9cc !important; }
+    .bg-success { background: #1cc88a !important; }
+    .bg-secondary { background: #858796 !important; }
 </style>
 {% endblock %}
