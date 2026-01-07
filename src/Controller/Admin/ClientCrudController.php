@@ -43,7 +43,7 @@ class ClientCrudController extends AbstractCrudController
         return $crud
             ->setEntityLabelInSingular('Client')
             ->setEntityLabelInPlural('Clients')
-            ->overrideTemplate('crud/index', 'admin/client/index.html.twig');
+            ->overrideTemplate('crud/index', 'Admin/client/index.html.twig');
     }
 
     public function configureActions(Actions $actions): Actions
@@ -238,7 +238,7 @@ class ClientCrudController extends AbstractCrudController
         }
 
         // HTML Template for PDF
-        $html = $this->renderView('admin/client/family_portfolio.html.twig', [
+        $html = $this->renderView('Admin/client/family_portfolio.html.twig', [
             'head' => $head,
             'members' => $familyMembers,
             'agency' => $agency,

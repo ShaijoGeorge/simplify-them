@@ -36,7 +36,7 @@ class DashboardController extends AbstractDashboardController
         $birthdays = $this->clientRepository->findBirthdaysThisMonth($agencyId);
         $lapsedCount = $this->policyRepository->countRevivalOpportunities($agencyId);
 
-        return $this->render('admin/dashboard.html.twig', [
+        return $this->render('Admin/dashboard.html.twig', [
             'due_amount' => $dueAmount,
             'birthdays' => $birthdays,
             'lapsed_count' => $lapsedCount,

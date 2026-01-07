@@ -176,7 +176,7 @@ class PremiumReceiptCrudController extends AbstractCrudController
         }
         
         $html = $this->renderView(
-            'admin/premium_receipt/receipt.html.twig',
+            'Admin/premium_receipt/receipt.html.twig',
             ['receipt' => $receipt]
         );
 
