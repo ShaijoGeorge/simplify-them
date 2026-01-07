@@ -29,6 +29,7 @@ class DashboardController extends AbstractDashboardController
     public function index(): Response
     {
         // Get the current User and Agency
+        /** @var User $user */
         $user = $this->getUser();
         $agencyId = $user->getAgency() ? $user->getAgency()->getId() : 0;
 
