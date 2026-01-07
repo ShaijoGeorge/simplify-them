@@ -37,6 +37,9 @@ class LicPlan
     #[ORM\OneToMany(targetEntity: CommissionRule::class, mappedBy: 'licPlan')]
     private Collection $commissionRules;
 
+    #[ORM\ManyToOne]
+    private ?LicPlanType $planType = null;
+
     public function __construct()
     {
         $this->commissionRules = new ArrayCollection();
@@ -139,6 +142,18 @@ class LicPlan
                 $commissionRule->setLicPlan(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getPlanType(): ?LicPlanType
+    {
+        return $this->planType;
+    }
+
+    public function setPlanType(?LicPlanType $planType): static
+    {
+        $this->planType = $planType;
 
         return $this;
     }
