@@ -6,6 +6,7 @@ use App\Entity\Agency;
 use App\Entity\Client;
 use App\Entity\CommissionRule;
 use App\Entity\LicPlan;
+use App\Entity\LicPlanType;
 use App\Entity\Policy;
 use App\Entity\PremiumReceipt;
 use App\Entity\User;
@@ -59,6 +60,7 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToCrud('Agencies (Tenants)', 'fa fa-building', Agency::class);
         yield MenuItem::linkToCrud('LIC Plans', 'fa fa-book', LicPlan::class);
         yield MenuItem::linkToCrud('Commission Rules', 'fa fa-percentage', CommissionRule::class);
+        yield MenuItem::linkToCrud('Plan Types', 'fa fa-tags', LicPlanType::class);
     
         // AGENT TOOLS
         yield MenuItem::section('MY OFFICE');
