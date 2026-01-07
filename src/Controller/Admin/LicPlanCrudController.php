@@ -12,6 +12,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\FormField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextEditorField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 
 class LicPlanCrudController extends AbstractCrudController
 {
@@ -49,9 +50,9 @@ class LicPlanCrudController extends AbstractCrudController
         yield FormField::addFieldset('Configuration')
             ->setIcon('fa fa-cogs');
 
-        yield TextField::new('type', 'Plan Type')
+        yield AssociationField::new('planType', 'Plan Type')
             ->setColumns(12)
-            ->setHelp('e.g. Endowment, Money Back, Term Assurance');
+            ->setHelp('Select the category (e.g. Endowment, Money Back)');
 
         yield BooleanField::new('isActive', 'Plan Status')
             ->setLabel('Active for New Policies')

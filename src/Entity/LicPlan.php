@@ -22,9 +22,6 @@ class LicPlan
     #[ORM\Column(length: 255)]
     private ?string $planName = null;
 
-    #[ORM\Column(length: 50)]
-    private ?string $type = null;
-
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
@@ -70,18 +67,6 @@ class LicPlan
     public function setPlanName(string $planName): static
     {
         $this->planName = $planName;
-
-        return $this;
-    }
-
-    public function getType(): ?string
-    {
-        return $this->type;
-    }
-
-    public function setType(string $type): static
-    {
-        $this->type = $type;
 
         return $this;
     }

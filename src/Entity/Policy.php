@@ -323,12 +323,18 @@ class Policy
 
         if ($this->commencementDate && $this->commencementDate < $gstReformDate) {
             // --- OLD TAX REGIME (Before Sep 2025) ---
-            if ($this->licPlan && str_contains(strtoupper($this->licPlan->getType() ?? ''), 'TERM')) {
+            $planTypeName = '';
+            if ($this->licPlan && $this->licPlan->getPlanType()) {
+                $planTypeName = $this->licPlan->getPlanType()->getName();
+            }
+
+            if (str_contains(strtoupper($planTypeName), 'TERM')) {
                 $gstRate = 18.0; // Old Term Plan Rate
             } else {
                 // Endowment/Traditional: 4.5% 1st Year is standard
                 $gstRate = 4.5; 
             }
+            
         } else {
             // --- NEW TAX REGIME (After Sep 2025) ---
             // Individual Life Insurance is now 0% GST
