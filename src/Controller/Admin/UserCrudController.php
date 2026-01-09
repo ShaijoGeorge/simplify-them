@@ -12,6 +12,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\FormField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 
 class UserCrudController extends AbstractCrudController
 {
@@ -36,6 +37,11 @@ class UserCrudController extends AbstractCrudController
 
         yield TextField::new('fullName', 'Full Name')->setColumns(12);
         yield TextField::new('email', 'Email Address')->setColumns(12);
+        yield TextField::new('password', 'Password')
+            ->setFormType(PasswordType::class)
+            ->setColumns(12)
+            ->setRequired($pageName === Crud::PAGE_NEW)
+            ->onlyOnForms();
 
         // RIGHT COLUMN: ACCESS
         yield FormField::addColumn(6);
