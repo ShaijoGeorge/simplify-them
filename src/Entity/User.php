@@ -37,6 +37,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $fullName = null;
 
+    #[ORM\ManyToOne]
+    private ?Role $userRole = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -132,6 +135,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setFullName(?string $fullName): static
     {
         $this->fullName = $fullName;
+
+        return $this;
+    }
+
+    public function getUserRole(): ?Role
+    {
+        return $this->userRole;
+    }
+
+    public function setUserRole(?Role $userRole): static
+    {
+        $this->userRole = $userRole;
 
         return $this;
     }
