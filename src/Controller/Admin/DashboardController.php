@@ -7,6 +7,7 @@ use App\Entity\Client;
 use App\Entity\CommissionRule;
 use App\Entity\LicPlan;
 use App\Entity\LicPlanType;
+use App\Entity\Module;
 use App\Entity\Policy;
 use App\Entity\PremiumReceipt;
 use App\Entity\User;
@@ -71,6 +72,7 @@ class DashboardController extends AbstractDashboardController
 
         // SETTINGS
         yield MenuItem::section('SETTINGS');
+        yield MenuItem::linkToCrud('Modules', 'fa fa-cubes', Module::class);
         yield MenuItem::linkToCrud('Users', 'fa fa-user', User::class);
     }
 }
