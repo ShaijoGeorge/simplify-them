@@ -18,12 +18,28 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\MoneyField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\ChoiceFilter;
+use EasyCorp\Bundle\EasyAdminBundle\Collection\FieldCollection;
+use EasyCorp\Bundle\EasyAdminBundle\Collection\FilterCollection;
+use EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto;
+use EasyCorp\Bundle\EasyAdminBundle\Dto\SearchDto;
+use Doctrine\ORM\QueryBuilder;
 
 class PolicyCrudController extends AbstractCrudController
 {
     public static function getEntityFqcn(): string
     {
         return Policy::class;
+    }
+
+    public function createIndexQueryBuilder(SearchDto $searchDto, EntityDto $entityDto, FieldCollection $fields, FilterCollection $filters): QueryBuilder
+    {
+        $qb = parent::createIndexQueryBuilder($searchDto, $entityDto, $fields, $filters);
+
+        // Eager load Client to filter out Policies with inaccessible Clients (prevents EntityNotFoundException)
+        $qb->innerJoin('entity.client', 'client');
+        $qb->addSelect('client');
+
+        return $qb;
     }
 
     public function configureActions(Actions $actions): Actions
