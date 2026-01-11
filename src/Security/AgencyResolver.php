@@ -7,7 +7,7 @@ use App\Entity\User;
 
 class AgencyResolver
 {
-    public static function resolveAgency(object $agency): ?int
+    public static function resolveAgency(object $entity): ?int
     {
         // If the entity IS the Agency, return its own ID
         if ($entity instanceof Agency) {
