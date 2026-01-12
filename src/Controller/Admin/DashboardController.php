@@ -8,8 +8,10 @@ use App\Entity\CommissionRule;
 use App\Entity\LicPlan;
 use App\Entity\LicPlanType;
 use App\Entity\Module;
+use App\Entity\Permission;
 use App\Entity\Policy;
 use App\Entity\PremiumReceipt;
+use App\Entity\Role;
 use App\Entity\User;
 use App\Repository\ClientRepository;
 use App\Repository\PolicyRepository;
@@ -73,6 +75,8 @@ class DashboardController extends AbstractDashboardController
         // SETTINGS
         yield MenuItem::section('SETTINGS');
         yield MenuItem::linkToCrud('Modules', 'fa fa-cubes', Module::class);
+        yield MenuItem::linkToCrud('Permissions', 'fa fa-lock', Permission::class);
+        yield MenuItem::linkToCrud('Roles', 'fa fa-user-tag', Role::class);
         yield MenuItem::linkToCrud('Users', 'fa fa-user', User::class);
     }
 }
