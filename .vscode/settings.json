@@ -1,0 +1,19 @@
+{
+    "files.exclude": {
+        "**/var": true,
+        "**/vendor": true
+    },
+    "files.watcherExclude": {
+        "**/var/**": true,
+        "**/vendor/**": true
+    },
+    "search.exclude": {
+        "**/var": true,
+        "**/vendor": true
+    },
+    "intelephense.files.exclude": [
+        "**/var/**",
+        "**/vendor/**"
+    ],
+    "intelephense.environment.phpVersion": "8.4.0"
+}
