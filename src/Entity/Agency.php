@@ -2,16 +2,16 @@
 
 namespace App\Entity;
 
-use App\Entity\Trait\EntityTrackingTrait;
 use App\Repository\AgencyRepository;
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\Collection as BaseCollection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Gedmo\Mapping\Annotation as Gedmo;
 
 #[ORM\Entity(repositoryClass: AgencyRepository::class)]
 class Agency
 {
-    use EntityTrackingTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -36,29 +36,45 @@ class Agency
     #[ORM\Column]
     private ?bool $isActive = null;
 
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    #[Gedmo\Timestampable(on: 'create')]
+    private ?\DateTimeInterface $createdAt = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Gedmo\Blameable(on: 'create')]
+    private ?string $createdBy = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    #[Gedmo\Timestampable(on: 'update')]
+    private ?\DateTimeInterface $updatedAt = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Gedmo\Blameable(on: 'update')]
+    private ?string $updatedBy = null;
+
     /**
-     * @var Collection<int, User>
+     * @var BaseCollection<int, User>
      */
     #[ORM\OneToMany(targetEntity: User::class, mappedBy: 'agency')]
-    private Collection $staff;
+    private BaseCollection $staff;
 
     /**
-     * @var Collection<int, Client>
+     * @var BaseCollection<int, Client>
      */
     #[ORM\OneToMany(targetEntity: Client::class, mappedBy: 'agency')]
-    private Collection $clients;
+    private BaseCollection $clients;
 
     /**
-     * @var Collection<int, Policy>
+     * @var BaseCollection<int, Policy>
      */
     #[ORM\OneToMany(targetEntity: Policy::class, mappedBy: 'agency')]
-    private Collection $policies;
+    private BaseCollection $policies;
 
     /**
-     * @var Collection<int, PremiumReceipt>
+     * @var BaseCollection<int, PremiumReceipt>
      */
     #[ORM\OneToMany(targetEntity: PremiumReceipt::class, mappedBy: 'agency')]
-    private Collection $premiumReceipts;
+    private BaseCollection $premiumReceipts;
 
     public function __construct()
     {
@@ -145,10 +161,54 @@ class Agency
         return $this;
     }
 
+    public function getCreatedAt(): ?\DateTimeInterface
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(?\DateTimeInterface $createdAt): static
+    {
+        $this->createdAt = $createdAt;
+        return $this;
+    }
+
+    public function getCreatedBy(): ?string
+    {
+        return $this->createdBy;
+    }
+
+    public function setCreatedBy(?string $createdBy): static
+    {
+        $this->createdBy = $createdBy;
+        return $this;
+    }
+
+    public function getUpdatedAt(): ?\DateTimeInterface
+    {
+        return $this->updatedAt;
+    }
+
+    public function setUpdatedAt(?\DateTimeInterface $updatedAt): static
+    {
+        $this->updatedAt = $updatedAt;
+        return $this;
+    }
+
+    public function getUpdatedBy(): ?string
+    {
+        return $this->updatedBy;
+    }
+
+    public function setUpdatedBy(?string $updatedBy): static
+    {
+        $this->updatedBy = $updatedBy;
+        return $this;
+    }
+
     /**
-     * @return Collection<int, User>
+     * @return BaseCollection<int, User>
      */
-    public function getStaff(): Collection
+    public function getStaff(): BaseCollection
     {
         return $this->staff;
     }
@@ -176,9 +236,9 @@ class Agency
     }
 
     /**
-     * @return Collection<int, Client>
+     * @return BaseCollection<int, Client>
      */
-    public function getClients(): Collection
+    public function getClients(): BaseCollection
     {
         return $this->clients;
     }
@@ -211,9 +271,9 @@ class Agency
     }
 
     /**
-     * @return Collection<int, Policy>
+     * @return BaseCollection<int, Policy>
      */
-    public function getPolicies(): Collection
+    public function getPolicies(): BaseCollection
     {
         return $this->policies;
     }
@@ -241,9 +301,9 @@ class Agency
     }
 
     /**
-     * @return Collection<int, PremiumReceipt>
+     * @return BaseCollection<int, PremiumReceipt>
      */
-    public function getPremiumReceipts(): Collection
+    public function getPremiumReceipts(): BaseCollection
     {
         return $this->premiumReceipts;
     }
