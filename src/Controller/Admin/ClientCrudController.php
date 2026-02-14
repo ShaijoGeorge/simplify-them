@@ -65,6 +65,18 @@ class ClientCrudController extends AbstractCrudController
             ->add(Crud::PAGE_INDEX, Action::DETAIL);
     }
 
+    public function createEntity(string $entityFqcn)
+    {
+        $client = new Client();
+        $currentUser = $this->getUser();
+
+        if ($currentUser && $currentUser->getAgency()) {
+            $client->setAgency($currentUser->getAgency());
+        }
+
+        return $client;
+    }
+
     public function configureFields(string $pageName): iterable
     {
         /** @var User $user */
@@ -104,12 +116,24 @@ class ClientCrudController extends AbstractCrudController
         yield TextField::new('city')->setColumns(6);
         yield TextField::new('pincode')->setColumns(6);
 
-        // --- SYSTEM FIELDS ---
-        if ($isSuperAdmin) {
-            yield FormField::addFieldset('System Metadata')->setIcon('fa fa-database');
-            yield AssociationField::new('agency')->setColumns(12)->setHelp('Super Admin Only: Reassign policy to a different agency');
+        // SYSTEM FIELDS
+        yield FormField::addFieldset('System Metadata')->setIcon('fa fa-database');
+        yield AssociationField::new('agency')
+            ->setColumns(12)
+            ->setHelp('Super Admin Only: Reassign policy to a different agency');
+        
+        $agencyField = AssociationField::new('agency', 'Agency')
+            ->setColumns(12);
+
+        $user = $this->getUser();
+        if ($user->isAdministrator()) {
+            yield $agencyField
+                ->setRequired(true)
+                ->setHelp('Super Admin Only: Assign user to a specific agency');
         } else {
-            yield AssociationField::new('agency')->hideOnForm()->hideOnIndex();
+            yield $agencyField
+                ->hideOnIndex()
+                ->setDisabled(true);
         }
     }
 
@@ -127,6 +151,18 @@ class ClientCrudController extends AbstractCrudController
 
         // Continue with the standard save process
         parent::persistEntity($entityManager, $entityInstance);
+    }
+
+    public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void
+    {
+        if ($entityInstance instanceof Client) {
+            $user = $this->getUser();
+            if ($user && $user->getAgency() && !$entityInstance->getAgency()) {
+                $entityInstance->setAgency($user->getAgency());
+            }
+        }
+
+        parent::updateEntity($entityManager, $entityInstance);
     }
 
     // File Upload
