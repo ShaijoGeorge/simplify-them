@@ -212,4 +212,24 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->updatedBy = $updatedBy;
         return $this;
     }
+
+    // Checks if the user is a Super Admin (Platform Owner).
+    // Used to grant full system access.
+    public function isAdministrator(): bool
+    {
+        // ensure user object is valid/persisted
+        if ($this->getId() === null) {
+            return false;
+        }
+
+        // Check for the Super Admin role
+        return in_array('ROLE_SUPER_ADMIN', $this->getRoles(), true);
+    }
+
+    // To check if user is an Agency Owner/Admin
+    public function isAgencyAdmin(): bool
+    {
+         if ($this->getId() === null) return false;
+         return in_array('ROLE_ADMIN', $this->getRoles(), true);
+    }
 }
