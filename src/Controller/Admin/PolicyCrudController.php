@@ -48,6 +48,18 @@ class PolicyCrudController extends AbstractCrudController
             ->add(Crud::PAGE_INDEX, Action::DETAIL);
     }
 
+    public function createEntity(string $entityFqcn)
+    {
+        $policy = new Policy();
+        $user = $this->getUser();
+
+        if ($user && $user->getAgency()) {
+            $policy->setAgency($user->getAgency());
+        }
+
+        return $policy;
+    }
+
     public function configureFields(string $pageName): iterable
     {
         // Get current User to check permissions/roles
@@ -153,18 +165,23 @@ class PolicyCrudController extends AbstractCrudController
 
             
         // META DATA
+        yield FormField::addFieldset('System Metadata')->setIcon('fa fa-database');
+        yield AssociationField::new('agency')
+            ->setColumns(12)
+            ->setHelp('Super Admin Only: Reassign policy to a different agency');
         
-        // If Super Admin, allow them to see/edit Agency. 
-        // If Agent, hide it (it's set automatically).
-        if ($isSuperAdmin) {
-            yield FormField::addFieldset('System Metadata')->setIcon('fa fa-database');
-            yield AssociationField::new('agency')
-                ->setColumns(12)
-                ->setHelp('Super Admin Only: Reassign policy to a different agency');
+        $agencyField = AssociationField::new('agency', 'Agency')
+            ->setColumns(12);
+
+        $user = $this->getUser();
+        if ($user->isAdministrator()) {
+            yield $agencyField
+                ->setRequired(true)
+                ->setHelp('Super Admin Only: Assign user to a specific agency');
         } else {
-            yield AssociationField::new('agency')
-                ->hideOnForm() // Hidden for normal agents
-                ->hideOnIndex();
+            yield $agencyField
+                ->hideOnIndex()
+                ->setDisabled(true);
         }
     }
 
@@ -180,6 +197,19 @@ class PolicyCrudController extends AbstractCrudController
             }
         }
         parent::persistEntity($entityManager, $entityInstance);
+    }
+
+    public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void
+    {
+        if ($entityInstance instanceof Policy) {
+            $user = $this->getUser();
+
+            if ($user && $user->getAgency() && $entityInstance->getAgency() === null) {
+                $entityInstance->setAgency($user->getAgency());
+            }
+        }
+
+        parent::updateEntity($entityManager, $entityInstance);
     }
 
     public function configureFilters(Filters $filters): Filters
