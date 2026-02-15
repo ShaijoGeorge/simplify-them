@@ -38,6 +38,18 @@ class PremiumReceiptCrudController extends AbstractCrudController
             ->add(Crud::PAGE_INDEX, Action::DETAIL);
     }
 
+    public function createEntity(string $entityFqcn)
+    {
+        $premiumReceipt = new PremiumReceipt();
+        $user = $this->getUser();
+
+        if ($user && $user->getAgency()) {
+            $premiumReceipt->setAgency($user->getAgency());
+        }
+
+        return $premiumReceipt;
+    }
+
     public function configureFields(string $pageName): iterable
     {
         // LEFT COLUMN: TRANSACTION INFO
@@ -81,88 +93,134 @@ class PremiumReceiptCrudController extends AbstractCrudController
         yield MoneyField::new('commissionEarned', 'Commission Earned')
             ->setCurrency('INR')
             ->hideOnForm();
-        yield AssociationField::new('agency')->hideOnForm()->hideOnIndex();
+        
+        // META DATA
+        yield FormField::addFieldset('System Metadata')->setIcon('fa fa-database');
+        
+        $agencyField = AssociationField::new('agency', 'Agency')
+            ->setColumns(12);
+
+        $user = $this->getUser();
+        if ($user->isAdministrator()) {
+            yield $agencyField
+                ->setRequired(true)
+                ->setHelp('Super Admin Only: Assign user to a specific agency');
+        } else {
+            yield $agencyField
+                ->hideOnIndex()
+                ->setDisabled(true);
+        }
     }
 
     public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
     {
-        if ($entityInstance instanceof PremiumReceipt) {
-            // Set Agency
-            $user = $this->getUser();
-            if ($user && $user->getAgency()) {
-                $entityInstance->setAgency($user->getAgency());
-            }
 
-            // Generate Receipt Number (Simple Random for now)
-            if (!$entityInstance->getReceiptNumber()) {
-                $entityInstance->setReceiptNumber('REC-' . strtoupper(uniqid()));
-            }
-
-            $user = $this->getUser();
-            if ($user && $user->getAgency()) {
-                $entityInstance->setAgency($user->getAgency());
-            }
-            if (!$entityInstance->getReceiptNumber()) {
-                $entityInstance->setReceiptNumber('REC-' . strtoupper(uniqid()));
-            }
-
-            $policy = $entityInstance->getPolicy();
-            $plan = $policy->getLicPlan();
-
-            if ($policy && $plan) {
-                // Calculate Policy Year
-                // Formula: Difference in years between DOC and Payment Date + 1
-                $doc = $policy->getCommencementDate();
-                $payDate = $entityInstance->getPaymentDate();
-
-                // Simple year diff logic
-                $diff = $doc->diff($payDate);
-                $policyYear = $diff->y + 1;
-
-                // Get Policy Term
-                $term = $policy->getPolicyTerm();
-
-                // Find Matching Rule
-                $rule = $entityManager->getRepository(CommissionRule::class)->createQueryBuilder('c')
-                    ->where('c.licPlan = :plan')
-                    ->andWhere('c.policyYearFrom <= :year')
-                    ->andWhere('c.policyYearTo >= :year')
-                    ->andWhere('c.minTerm <= :term')
-                    ->andWhere('c.maxTerm >= :term')
-                    ->setParameter('plan', $plan)
-                    ->setParameter('year', $policyYear)
-                    ->setParameter('term', $term)
-                    ->setMaxResults(1)
-                    ->getQuery()
-                    ->getOneOrNullResult();
-
-                // Calculate & Set
-                if ($rule) {
-                    $commission = ($entityInstance->getAmount() * $rule->getCommissionRate()) / 100;
-                    $entityInstance->setCommissionEarned($commission);
-                } else {
-                    // Fallback if no rule found (e.g., 0%)
-                    $entityInstance->setCommissionEarned(0);
-                }
-            }
-
-            // Update Policy Next Due Date
-            $policy = $entityInstance->getPolicy();
-            if ($policy && $policy->getNextDueDate()) {
-                $newDueDate = clone $policy->getNextDueDate();
-
-                $mode = strtoupper($policy->getPremiumMode());
-                if (in_array($mode, ['YLY', 'YEARLY'])) $newDueDate->modify('+1 year');
-                elseif (in_array($mode, ['HLY', 'HALF-YEARLY'])) $newDueDate->modify('+6 months');
-                elseif (in_array($mode, ['QLY', 'QUARTERLY'])) $newDueDate->modify('+3 months');
-                elseif (in_array($mode, ['MLY', 'MONTHLY', 'NACH'])) $newDueDate->modify('+1 month');
-
-                $policy->setNextDueDate($newDueDate);
-                $entityManager->persist($policy);
-            }
+        if (!$entityInstance instanceof PremiumReceipt) {
+            parent::persistEntity($entityManager, $entityInstance);
+            return;
         }
 
+        $user = $this->getUser();
+
+        // Agency Fallbak
+        if ($user && $user->getAgency() && !$entityInstance->getAgency()) {
+            $entityInstance->setAgency($user->getAgency());
+        }
+
+        // Generate Receipt Number (Simple Random for now)
+        if (!$entityInstance->getReceiptNumber()) {
+            $entityInstance->setReceiptNumber(
+                'REC-' . date('Y') . '-' . strtoupper(substr(uniqid(), -6))
+            );
+        }
+
+        // Calculate Commission (Shared Logic)
+        $this->calculateCommission($entityManager, $entityInstance);
+
+        // Update Policy Due Date (ONLY ON CREATE)
+        $this->advancePolicyDueDate($entityManager, $entityInstance);
+
         parent::persistEntity($entityManager, $entityInstance);
+    }
+
+    public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void
+    {
+        if (!$entityInstance instanceof PremiumReceipt) {
+            parent::updateEntity($entityManager, $entityInstance);
+            return;
+        }
+
+        $user = $this->getUser();
+
+        // Agency Fallback
+        if ($user && $user->getAgency() && !$entityInstance->getAgency()) {
+            $entityInstance->setAgency($user->getAgency());
+        }
+
+        // Recalculate Commission (In case Amount changed)
+        $this->calculateCommission($entityManager, $entityInstance);
+
+        parent::updateEntity($entityManager, $entityInstance);
+    }
+
+    // To calculate commission based on rules.
+    private function calculateCommission(EntityManagerInterface $em, PremiumReceipt $receipt): void
+    {
+        $policy = $receipt->getPolicy();
+        if (!$policy) return;
+
+        $plan = $policy->getLicPlan();
+        if (!$plan) return;
+
+        // Calculate Policy Year
+        $doc = $policy->getCommencementDate();
+        $payDate = $receipt->getPaymentDate() ?? new \DateTime();
+        
+        $diff = $doc->diff($payDate);
+        $policyYear = $diff->y + 1;
+        $term = $policy->getPolicyTerm();
+
+        // Find Rule
+        $rule = $em->getRepository(CommissionRule::class)->createQueryBuilder('c')
+            ->where('c.licPlan = :plan')
+            ->andWhere('c.policyYearFrom <= :year')
+            ->andWhere('c.policyYearTo >= :year')
+            ->andWhere('c.minTerm <= :term')
+            ->andWhere('c.maxTerm >= :term')
+            ->setParameter('plan', $plan)
+            ->setParameter('year', $policyYear)
+            ->setParameter('term', $term)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        if ($rule) {
+            $commission = ($receipt->getAmount() * $rule->getCommissionRate()) / 100;
+            $receipt->setCommissionEarned($commission);
+        } else {
+            $receipt->setCommissionEarned(0);
+        }
+    }
+
+    // To advance the policy due date.
+    private function advancePolicyDueDate(EntityManagerInterface $em, PremiumReceipt $receipt): void
+    {
+        $policy = $receipt->getPolicy();
+        if ($policy && $policy->getNextDueDate()) {
+            $newDueDate = clone $policy->getNextDueDate();
+            $mode = strtoupper($policy->getPremiumMode());
+
+            match ($mode) {
+                'YLY', 'YEARLY' => $newDueDate->modify('+1 year'),
+                'HLY', 'HALF-YEARLY' => $newDueDate->modify('+6 months'),
+                'QLY', 'QUARTERLY' => $newDueDate->modify('+3 months'),
+                'MLY', 'MONTHLY', 'NACH' => $newDueDate->modify('+1 month'),
+                default => null,
+            };
+
+            $policy->setNextDueDate($newDueDate);
+            $em->persist($policy);
+        }
     }
 
     // PDF Generator
