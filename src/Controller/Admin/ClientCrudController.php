@@ -118,9 +118,6 @@ class ClientCrudController extends AbstractCrudController
 
         // SYSTEM FIELDS
         yield FormField::addFieldset('System Metadata')->setIcon('fa fa-database');
-        yield AssociationField::new('agency')
-            ->setColumns(12)
-            ->setHelp('Super Admin Only: Reassign policy to a different agency');
         
         $agencyField = AssociationField::new('agency', 'Agency')
             ->setColumns(12);
