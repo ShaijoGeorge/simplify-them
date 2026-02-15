@@ -132,7 +132,9 @@ class PremiumReceiptCrudController extends AbstractCrudController
 
         // Generate Receipt Number (Simple Random for now)
         if (!$entityInstance->getReceiptNumber()) {
-            $entityInstance->setReceiptNumber('REC-' . strtoupper(uniqid()));
+            $entityInstance->setReceiptNumber(
+                'REC-' . date('Y') . '-' . strtoupper(substr(uniqid(), -6))
+            );
         }
 
         // Calculate Commission (Shared Logic)
