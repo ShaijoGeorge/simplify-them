@@ -148,7 +148,10 @@ class PremiumReceiptCrudController extends AbstractCrudController
 
     public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void
     {
-        if (!$entityInstance instanceof PremiumReceipt) return;
+        if (!$entityInstance instanceof PremiumReceipt) {
+            parent::updateEntity($entityManager, $entityInstance);
+            return;
+        }
 
         $user = $this->getUser();
 
