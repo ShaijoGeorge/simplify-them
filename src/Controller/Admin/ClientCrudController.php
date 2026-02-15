@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\Entity\Client;
 use App\Entity\User;
 use App\Service\ClientImportService;
+use App\Service\PermissionCheckerService;
 use Doctrine\ORM\EntityManagerInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -29,9 +30,20 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
-class ClientCrudController extends AbstractCrudController
+class ClientCrudController extends BaseCrudController
 {
-    public function __construct(private ClientImportService $importService) {}
+    public function __construct(
+        private ClientImportService $importService,
+        private EntityManagerInterface $entityManager,
+        PermissionCheckerService $permissionChecker
+    ) {
+        parent::__construct($permissionChecker);
+    }
+
+    protected function getModuleKey(): string
+    {
+        return 'clients';
+    }
 
     public static function getEntityFqcn(): string
     {
@@ -48,6 +60,8 @@ class ClientCrudController extends AbstractCrudController
 
     public function configureActions(Actions $actions): Actions
     {
+        $actions = parent::configureActions($actions);
+
         $importAction = Action::new('importClients', 'Import Excel')
             ->createAsGlobalAction()
             ->setCssClass('btn btn-success')
@@ -58,11 +72,18 @@ class ClientCrudController extends AbstractCrudController
         $portfolioAction = Action::new('familyPortfolio', 'Family Report', 'fa fa-users')
             ->linkToCrudAction('generateFamilyPortfolio');
 
-        return $actions
-            ->add(Crud::PAGE_INDEX, $importAction)
-            ->add(Crud::PAGE_INDEX, $portfolioAction)
-            ->add(Crud::PAGE_DETAIL, $portfolioAction)
-            ->add(Crud::PAGE_INDEX, Action::DETAIL);
+        if ($this->permissionChecker->hasPermission($this->getModuleKey(), 'create')) {
+            $actions->add(Crud::PAGE_INDEX, $importAction);
+        }
+        
+        if ($this->permissionChecker->hasPermission($this->getModuleKey(), 'view')) {
+            $actions
+                ->add(Crud::PAGE_INDEX, $portfolioAction)
+                ->add(Crud::PAGE_DETAIL, $portfolioAction)
+                ->add(Crud::PAGE_INDEX, Action::DETAIL);
+        }
+
+        return $actions;
     }
 
     public function createEntity(string $entityFqcn)
