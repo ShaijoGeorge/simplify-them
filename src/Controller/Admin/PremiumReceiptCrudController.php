@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Entity\CommissionRule;
 use App\Entity\PremiumReceipt;
+use App\Service\PermissionCheckerService;
 use Doctrine\ORM\EntityManagerInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -11,7 +12,6 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
-use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateField;
@@ -20,22 +20,45 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\MoneyField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use Symfony\Component\HttpFoundation\Response;
 
-class PremiumReceiptCrudController extends AbstractCrudController
+class PremiumReceiptCrudController extends BaseCrudController
 {
+    public function __construct(PermissionCheckerService $permissionChecker)
+    {
+        parent::__construct($permissionChecker);
+    }
+
+    protected function getModuleKey(): string
+    {
+        return 'premium_collection';
+    }
+
     public static function getEntityFqcn(): string
     {
         return PremiumReceipt::class;
     }
 
+    public function configureCrud(Crud $crud): Crud
+    {
+        return $crud
+            ->setEntityLabelInSingular('Premium Collection')
+            ->setEntityLabelInPlural('Premium Collections');
+    }
+
     public function configureActions(Actions $actions): Actions
     {
+        $actions = parent::configureActions($actions);
+
         $downloadPdf = Action::new('downloadPDF', 'Download Receipt', 'fa fa-file-pdf')
             ->linkToCrudAction('generatePdf');
 
-        return $actions
-            ->add(Crud::PAGE_INDEX, $downloadPdf)
-            ->add(Crud::PAGE_DETAIL, $downloadPdf)
-            ->add(Crud::PAGE_INDEX, Action::DETAIL);
+        if ($this->permissionChecker->hasPermission($this->getModuleKey(), 'view')) {
+            $actions
+                ->add(Crud::PAGE_INDEX, $downloadPdf)
+                ->add(Crud::PAGE_DETAIL, $downloadPdf)
+                ->add(Crud::PAGE_INDEX, Action::DETAIL);
+        }
+
+        return $actions;
     }
 
     public function createEntity(string $entityFqcn)

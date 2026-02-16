@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Entity\Policy;
 use App\Entity\User;
+use App\Service\PermissionCheckerService;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
@@ -24,28 +25,41 @@ use EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto;
 use EasyCorp\Bundle\EasyAdminBundle\Dto\SearchDto;
 use Doctrine\ORM\QueryBuilder;
 
-class PolicyCrudController extends AbstractCrudController
+class PolicyCrudController extends BaseCrudController
 {
+    public function __construct(
+        private EntityManagerInterface $entityManager,
+        PermissionCheckerService $permissionChecker
+    ) {
+        parent::__construct($permissionChecker);
+    }
+
+    protected function getModuleKey(): string
+    {
+        return 'policies';
+    }
+
     public static function getEntityFqcn(): string
     {
         return Policy::class;
     }
 
-    public function createIndexQueryBuilder(SearchDto $searchDto, EntityDto $entityDto, FieldCollection $fields, FilterCollection $filters): QueryBuilder
+    public function configureCrud(Crud $crud): Crud
     {
-        $qb = parent::createIndexQueryBuilder($searchDto, $entityDto, $fields, $filters);
-
-        // Eager load Client to filter out Policies with inaccessible Clients (prevents EntityNotFoundException)
-        $qb->innerJoin('entity.client', 'client');
-        $qb->addSelect('client');
-
-        return $qb;
+        return $crud
+            ->setEntityLabelInSingular('Policy')
+            ->setEntityLabelInPlural('Policies');
     }
 
     public function configureActions(Actions $actions): Actions
     {
-        return $actions
-            ->add(Crud::PAGE_INDEX, Action::DETAIL);
+        $actions = parent::configureActions($actions);
+
+        if ($this->permissionChecker->hasPermission($this->getModuleKey(), 'view')) {
+            $actions->add(Crud::PAGE_INDEX, Action::DETAIL);
+        }
+
+        return $actions;
     }
 
     public function createEntity(string $entityFqcn)
@@ -170,7 +184,6 @@ class PolicyCrudController extends AbstractCrudController
         $agencyField = AssociationField::new('agency', 'Agency')
             ->setColumns(12);
 
-        $user = $this->getUser();
         if ($user->isAdministrator()) {
             yield $agencyField
                 ->setRequired(true)
