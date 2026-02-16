@@ -2,8 +2,10 @@
 
 namespace App\Controller\Admin;
 
+use App\Entity\Module;
 use App\Entity\Permission;
 use App\Service\PermissionCheckerService;
+use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
@@ -59,9 +61,20 @@ class PermissionCrudController extends BaseCrudController
             ->setColumns(12)
             ->setRequired(true);
 
-        yield AssociationField::new('module', 'Module')
-            ->setColumns(12)
-            ->setRequired(true);
+        // Allow multiple modules ONLY when creating
+        if ($pageName === Crud::PAGE_NEW) {
+            yield AssociationField::new('module', 'Modules')
+                ->setFormTypeOption('multiple', true)
+                ->setFormTypeOption('mapped', false)
+                ->setRequired(true)
+                ->setColumns(12)
+                ->setHelp('Select one or more modules to apply these permissions to.');
+        } else {
+            // Normal Single Select for Edit
+            yield AssociationField::new('module', 'Module')
+                ->setColumns(12)
+                ->setRequired(true);
+        }
 
         // RIGHT COLUMN
         yield FormField::addColumn(6);
@@ -85,5 +98,65 @@ class PermissionCrudController extends BaseCrudController
         yield BooleanField::new('canDelete', 'Delete Access')
             ->setColumns(6)
             ->setHelp('Can remove records');
+    }
+
+    public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
+    {
+        if (!$entityInstance instanceof Permission) {
+            parent::persistEntity($entityManager, $entityInstance);
+            return;
+        }
+
+        // If 'module' is NULL, it means we are in the "Multi-Select" Create Mode
+        // (because we set 'mapped' => false in configureFields)
+        if ($entityInstance->getModule() === null) {
+            
+            // Get the raw form data from the request
+            $request = $this->getContext()->getRequest();
+            $formData = $request->request->all('Permission');
+            
+            // Get array of Module IDs selected by user
+            $moduleIds = $formData['module'] ?? [];
+
+            if (!empty($moduleIds) && is_array($moduleIds)) {
+                $role = $entityInstance->getRole();
+
+                // Loop through every selected module and create a permission
+                foreach ($moduleIds as $moduleId) {
+                    $module = $entityManager->getRepository(Module::class)->find($moduleId);
+                    
+                    if (!$module) continue;
+
+                    // Check if permission already exists to prevent duplicate errors
+                    $exists = $entityManager->getRepository(Permission::class)->findOneBy([
+                        'role' => $role,
+                        'module' => $module
+                    ]);
+
+                    if ($exists) {
+                        continue; // Skip existing
+                    }
+
+                    // Create new Permission Entry
+                    $newPerm = new Permission();
+                    $newPerm->setRole($role);
+                    $newPerm->setModule($module);
+                    
+                    // Copy booleans from the form input
+                    $newPerm->setCanView($entityInstance->isCanView());
+                    $newPerm->setCanCreate($entityInstance->isCanCreate());
+                    $newPerm->setCanEdit($entityInstance->isCanEdit());
+                    $newPerm->setCanDelete($entityInstance->isCanDelete());
+
+                    parent::persistEntity($entityManager, $newPerm);
+                }
+                
+                // Stop here (don't save the original 'entityInstance' because it's empty/invalid)
+                return;
+            }
+        }
+
+        // Fallback for Edit page or single save
+        parent::persistEntity($entityManager, $entityInstance);
     }
 }
