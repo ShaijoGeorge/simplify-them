@@ -3,26 +3,47 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Permission;
+use App\Service\PermissionCheckerService;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
-use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\FormField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 
-class PermissionCrudController extends AbstractCrudController
+class PermissionCrudController extends BaseCrudController
 {
+    public function __construct(PermissionCheckerService $permissionChecker)
+    {
+        parent::__construct($permissionChecker);
+    }
+
+    protected function getModuleKey(): string
+    {
+        return 'permissions';
+    }
+
     public static function getEntityFqcn(): string
     {
         return Permission::class;
     }
 
+    public function configureCrud(Crud $crud): Crud
+    {
+        return $crud
+            ->setEntityLabelInSingular('Permission')
+            ->setEntityLabelInPlural('Permissions');
+    }
+
     public function configureActions(Actions $actions): Actions
     {
-        return $actions
-            ->add(Crud::PAGE_INDEX, Action::DETAIL);
+        $actions = parent::configureActions($actions);
+
+        if ($this->permissionChecker->hasPermission($this->getModuleKey(), 'view')) {
+            $actions->add(Crud::PAGE_INDEX, Action::DETAIL);
+        }
+
+        return $actions;
     }
 
     public function configureFields(string $pageName): iterable

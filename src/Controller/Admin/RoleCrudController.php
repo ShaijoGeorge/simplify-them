@@ -3,27 +3,49 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Role;
+use App\Service\PermissionCheckerService;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
-use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\FormField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 
-class RoleCrudController extends AbstractCrudController
+class RoleCrudController extends BaseCrudController
 {
+    public function __construct(PermissionCheckerService $permissionChecker)
+    {
+        parent::__construct($permissionChecker);
+    }
+
+    protected function getModuleKey(): string
+    {
+        return 'roles';
+    }
+
     public static function getEntityFqcn(): string
     {
         return Role::class;
     }
 
+    public function configureCrud(Crud $crud): Crud
+    {
+        return $crud
+            ->setEntityLabelInSingular('Role')
+            ->setEntityLabelInPlural('Roles');
+    }
+
     public function configureActions(Actions $actions): Actions
     {
-        return $actions
-            ->add(Crud::PAGE_INDEX, Action::DETAIL);
+        $actions = parent::configureActions($actions);
+
+        if ($this->permissionChecker->hasPermission($this->getModuleKey(), 'view')) {
+            $actions->add(Crud::PAGE_INDEX, Action::DETAIL);
+        }
+
+        return $actions;
     }
 
     public function configureFields(string $pageName): iterable

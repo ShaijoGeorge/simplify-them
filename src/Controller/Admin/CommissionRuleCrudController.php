@@ -3,20 +3,28 @@
 namespace App\Controller\Admin;
 
 use App\Entity\CommissionRule;
+use App\Service\PermissionCheckerService;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
-use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\FormField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\PercentField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\TextEditorField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 
-class CommissionRuleCrudController extends AbstractCrudController
+class CommissionRuleCrudController extends BaseCrudController
 {
+    public function __construct(PermissionCheckerService $permissionChecker)
+    {
+        parent::__construct($permissionChecker);
+    }
+
+    protected function getModuleKey(): string
+    {
+        return 'commission_rules';
+    }
+
     public static function getEntityFqcn(): string
     {
         return CommissionRule::class;
@@ -32,7 +40,11 @@ class CommissionRuleCrudController extends AbstractCrudController
 
     public function configureActions(Actions $actions): Actions
     {
-        $actions->add(Crud::PAGE_INDEX, Action::DETAIL);
+        $actions = parent::configureActions($actions);
+
+        if ($this->permissionChecker->hasPermission($this->getModuleKey(), 'view')) {
+            $actions->add(Crud::PAGE_INDEX, Action::DETAIL);
+        }
 
         if (!$this->isGranted('ROLE_SUPER_ADMIN')) {
             return $actions->disable(Action::INDEX, Action::NEW, Action::EDIT, Action::DELETE);
