@@ -6,8 +6,14 @@ use App\Repository\PermissionRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Entity(repositoryClass: PermissionRepository::class)]
+#[UniqueEntity(
+    fields: ['role', 'module'], 
+    errorPath: 'module', 
+    message: 'Permissions for this module already exist for this role.'
+)]
 class Permission
 {
     #[ORM\Id]
