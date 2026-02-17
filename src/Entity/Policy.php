@@ -337,32 +337,30 @@ class Policy
         }
 
         // Calculate Next Due Date (Only if not manually set)
-        // This is useful for NEW policies. For old policies, the agent usually types the date manually.
         if ($this->commencementDate && $this->premiumMode && $this->nextDueDate === null) {
             $nextDue = clone $this->commencementDate;
-            $shouldUpdate = true;
+            $today = new \DateTime();
+            $today->setTime(0, 0, 0); // Ignoring time for accurate comparison
             
-            switch ($this->premiumMode) {
-                case 'YLY':
-                    $nextDue->modify('+1 year');
-                    break;
-                case 'HLY':
-                    $nextDue->modify('+6 months');
-                    break;
-                case 'QLY':
-                    $nextDue->modify('+3 months');
-                    break;
-                case 'NACH':
-                case 'MLY':
-                    $nextDue->modify('+1 month');
-                    break;
-                case 'SINGLE':
-                    $shouldUpdate = false; // No next due date for Single Premium
-                    break;
-                default:
-                    $shouldUpdate = false;
-            }
-            if ($shouldUpdate) {
+            // Determine interval based on mode
+            $interval = match ($this->premiumMode) {
+                'YLY', 'YEARLY' => '+1 year',
+                'HLY', 'HALF-YEARLY' => '+6 months',
+                'QLY', 'QUARTERLY' => '+3 months',
+                'NACH', 'MLY', 'MONTHLY' => '+1 month',
+                default => null,
+            };
+
+            if ($interval) {
+                // Advance at least once (First premium is paid at DOC, so next is DOC + Interval)
+                $nextDue->modify($interval);
+
+                // If the policy is old, loop until we reach a date >= Today
+                // This ensures "Next Due Date" reflects the upcoming premium for the current year
+                while ($nextDue < $today) {
+                    $nextDue->modify($interval);
+                }
+
                 $this->setNextDueDate($nextDue);
             }
         }
