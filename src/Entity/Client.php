@@ -23,7 +23,7 @@ class Client
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $lastName = null;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTime $dob = null;
 
     #[ORM\Column(length: 20)]
@@ -116,7 +116,7 @@ class Client
         return $this->dob;
     }
 
-    public function setDob(\DateTime $dob): static
+    public function setDob(?\DateTime $dob): static
     {
         $this->dob = $dob;
 
