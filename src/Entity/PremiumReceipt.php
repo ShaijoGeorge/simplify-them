@@ -6,8 +6,10 @@ use App\Repository\PremiumReceiptRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Entity(repositoryClass: PremiumReceiptRepository::class)]
+#[UniqueEntity(fields: ['receiptNumber'], message: 'This Receipt Number already exists.')]
 class PremiumReceipt
 {
     #[ORM\Id]
