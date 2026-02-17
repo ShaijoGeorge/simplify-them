@@ -121,6 +121,9 @@ class PermissionCrudController extends BaseCrudController
             if (!empty($moduleIds) && is_array($moduleIds)) {
                 $role = $entityInstance->getRole();
 
+                $savedCount = 0;
+                $skippedModules = [];
+
                 // Loop through every selected module and create a permission
                 foreach ($moduleIds as $moduleId) {
                     $module = $entityManager->getRepository(Module::class)->find($moduleId);
@@ -134,6 +137,7 @@ class PermissionCrudController extends BaseCrudController
                     ]);
 
                     if ($exists) {
+                        $skippedModules[] = $module->getName();
                         continue; // Skip existing
                     }
 
@@ -149,6 +153,18 @@ class PermissionCrudController extends BaseCrudController
                     $newPerm->setCanDelete($entityInstance->isCanDelete());
 
                     parent::persistEntity($entityManager, $newPerm);
+                    $savedCount++;
+                }
+
+                if ($savedCount > 0) {
+                    $this->addFlash('success', sprintf('%d permission(s) saved successfully.', $savedCount));
+                }
+            
+                if (!empty($skippedModules)) {
+                    $this->addFlash('warning', sprintf(
+                        'Already exists for: %s - skipped.',
+                        implode(', ', $skippedModules)
+                    ));
                 }
                 
                 // Stop here (don't save the original 'entityInstance' because it's empty/invalid)
