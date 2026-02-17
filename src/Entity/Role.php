@@ -8,8 +8,14 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Entity(repositoryClass: RoleRepository::class)]
+#[UniqueEntity(
+    fields: ['name', 'agency'], 
+    errorPath: 'name', 
+    message: 'This role name already exists in your agency.'
+)]
 class Role
 {
     #[ORM\Id]
