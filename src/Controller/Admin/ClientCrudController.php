@@ -110,8 +110,17 @@ class ClientCrudController extends BaseCrudController
         yield FormField::addFieldset('Personal Information')
             ->setIcon('fa fa-user');
 
-        yield TextField::new('firstName', 'First Name')->setColumns(6);
-        yield TextField::new('lastName', 'Last Name')->setColumns(6);
+        yield TextField::new('fullName', 'Client Name')
+            ->onlyOnIndex();
+
+        yield TextField::new('firstName', 'First Name')
+            ->setColumns(6)
+            ->hideOnIndex();
+
+        yield TextField::new('lastName', 'Last Name')
+            ->setColumns(6)
+            ->hideOnIndex();
+            
         yield DateField::new('dob', 'Date of Birth')->setColumns(12);
 
         yield FormField::addFieldset('Family Grouping')
