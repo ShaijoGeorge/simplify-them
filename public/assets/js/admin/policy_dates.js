@@ -1,18 +1,28 @@
 document.addEventListener('DOMContentLoaded', function () {
     // --- Configuration & Selectors ---
-    // EasyAdmin field IDs often follow the pattern: Policy_fieldName
+    // EasyAdmin field IDs follow the pattern: Policy_fieldName
     const selectors = {
         commencementDate: '#Policy_commencementDate',
         policyTerm: '#Policy_policyTerm',
         premiumMode: '#Policy_premiumMode',
         maturityDate: '#Policy_maturityDate',
-        nextDueDate: '#Policy_nextDueDate'
+        nextDueDate: '#Policy_nextDueDate',
+        basicPremium: '#Policy_basicPremium',
+        gst: '#Policy_gst',
+        totalPremium: '#Policy_totalPremium'
     };
+
+    // GST Reform Date: 22 Sept 2025 — after this date, GST is 0%
+    const GST_REFORM_DATE = new Date('2025-09-22');
+    // Default GST rate for old regime (Endowment/Traditional plans)
+    // Term plans are 18%, but we default to 4.5% since most policies are traditional.
+    // Backend will finalize the correct rate on save based on plan type.
+    const OLD_REGIME_DEFAULT_GST_RATE = 4.5;
 
     // Helper: Get element by selector
     const getEl = (selector) => document.querySelector(selector);
 
-    // --- Core Logic ---
+    // --- Date Calculations ---
 
     function calculateMaturityDate() {
         const docInput = getEl(selectors.commencementDate);
@@ -26,31 +36,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (docValue && !isNaN(termValue)) {
             const date = new Date(docValue);
-            // Add years
             date.setFullYear(date.getFullYear() + termValue);
-
-            // Format to YYYY-MM-DD for input[type="date"]
             maturityInput.value = date.toISOString().split('T')[0];
         }
     }
 
     function calculateNextDueDate() {
         const docInput = getEl(selectors.commencementDate);
-        const modeInput = getEl(selectors.premiumMode); // Ensure this is the SELECT element
+        const modeInput = getEl(selectors.premiumMode);
         const nextDueInput = getEl(selectors.nextDueDate);
 
         if (!docInput || !modeInput || !nextDueInput) return;
 
         const docValue = docInput.value;
-        const modeValue = modeInput.value; // YYYY-MM-DD
+        const modeValue = modeInput.value;
 
         if (docValue && modeValue) {
             let nextDueDate = new Date(docValue);
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
-            // Determine interval in months based on mode
-            // Mode values based on Policy Entity constraints/choices
             let monthsToAdd = 0;
             switch (modeValue) {
                 case 'YLY':
@@ -71,42 +76,67 @@ document.addEventListener('DOMContentLoaded', function () {
                     monthsToAdd = 1;
                     break;
                 case 'SINGLE':
-                    nextDueDate = null; // No next due date for single premium
+                    nextDueDate = null;
                     break;
                 default:
                     monthsToAdd = 0;
             }
 
             if (monthsToAdd > 0) {
-                // Loop to find the next due date >= Today
-                // Logic mirrors PHP: 
-                // 1. Start at DOC
-                // 2. Add interval until >= Today
-
-                // Initial increment from DOC (Review: usually first premium is at DOC, so next is DOC + Interval)
                 addMonths(nextDueDate, monthsToAdd);
 
-                // If the calculated date is already in the past, keep adding
-                // Safety break to prevent infinite loops (e.g. if logic fails)
                 let safetyCounter = 0;
                 while (nextDueDate < today && safetyCounter < 1000) {
                     addMonths(nextDueDate, monthsToAdd);
-
-                    // Optimization: If year is far behind, jump years? 
-                    // JS Date handling is fast enough for typical policy durations (e.g. 50 years = 600 loops for monthly)
                     safetyCounter++;
                 }
 
                 nextDueInput.value = nextDueDate.toISOString().split('T')[0];
-
             } else if (modeValue === 'SINGLE') {
-                nextDueInput.value = ''; // Clear if single
+                nextDueInput.value = '';
             }
         }
     }
 
-    // Helper: Add months to a date object correctly handling end-of-month changes
-    // e.g. Jan 31 + 1 month -> Feb 28
+    // --- Financial Calculations (GST & Total Premium) ---
+
+    function calculateFinancials() {
+        const docInput = getEl(selectors.commencementDate);
+        const basicInput = getEl(selectors.basicPremium);
+        const gstInput = getEl(selectors.gst);
+        const totalInput = getEl(selectors.totalPremium);
+
+        if (!basicInput || !gstInput || !totalInput) return;
+
+        const basicValue = parseFloat(basicInput.value);
+        if (isNaN(basicValue) || basicValue === 0) return;
+
+        // Determine GST rate based on Commencement Date
+        let gstRate = 0.0;
+        if (docInput && docInput.value) {
+            const docDate = new Date(docInput.value);
+            if (docDate < GST_REFORM_DATE) {
+                // Old Tax Regime (before Sept 2025) — default 4.5%
+                // Backend will adjust for Term plans (18%) on save
+                gstRate = OLD_REGIME_DEFAULT_GST_RATE;
+            } else {
+                // New Tax Regime (after Sept 2025) — 0% GST
+                gstRate = 0.0;
+            }
+        }
+
+        // Calculate GST amount and Total
+        const calculatedGst = (basicValue * gstRate) / 100;
+        const total = basicValue + calculatedGst;
+
+        // Update the disabled fields
+        gstInput.value = Math.round(calculatedGst);
+        totalInput.value = Math.round(total);
+    }
+
+    // --- Helpers ---
+
+    // Add months handling end-of-month edge cases (e.g. Jan 31 + 1 month -> Feb 28)
     function addMonths(date, months) {
         const d = date.getDate();
         date.setMonth(date.getMonth() + months);
@@ -116,37 +146,39 @@ document.addEventListener('DOMContentLoaded', function () {
         return date;
     }
 
+    function recalculateAll() {
+        calculateMaturityDate();
+        calculateNextDueDate();
+        calculateFinancials();
+    }
 
     // --- Event Listeners ---
 
-    // Attach listeners to inputs
-    const inputsToWatch = [
+    // Date & term fields trigger date recalculations
+    const dateInputs = [
         selectors.commencementDate,
         selectors.policyTerm,
         selectors.premiumMode
     ];
 
-    inputsToWatch.forEach(selector => {
+    dateInputs.forEach(selector => {
         const el = getEl(selector);
         if (el) {
-            el.addEventListener('change', () => {
-                calculateMaturityDate();
-                calculateNextDueDate();
-            });
-
-            // Also listen for keyup/input for immediate feedback on text inputs
+            el.addEventListener('change', recalculateAll);
             if (el.tagName === 'INPUT') {
-                el.addEventListener('input', () => {
-                    // Debounce could be added here if needed, but simple calculations are fast
-                    calculateMaturityDate();
-                    calculateNextDueDate();
-                });
+                el.addEventListener('input', recalculateAll);
             }
         }
     });
 
+    // Basic Premium field triggers financial recalculation
+    const basicEl = getEl(selectors.basicPremium);
+    if (basicEl) {
+        basicEl.addEventListener('change', calculateFinancials);
+        basicEl.addEventListener('input', calculateFinancials);
+    }
+
     // Run once on load to populate if data exists (e.g. edit mode)
-    calculateMaturityDate();
-    calculateNextDueDate();
+    recalculateAll();
 
 });
