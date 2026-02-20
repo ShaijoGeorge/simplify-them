@@ -70,6 +70,7 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::section('MY OFFICE');
         yield MenuItem::linkToCrud('Clients', 'fa fa-users', Client::class);
         yield MenuItem::linkToCrud('Policies', 'fa fa-file-contract', Policy::class);
+        yield MenuItem::linkToRoute('Quick Policy Entry', 'fa fa-bolt', 'app_quick_policy');
         yield MenuItem::linkToCrud('Premium Collection', 'fa fa-rupee-sign', PremiumReceipt::class);
 
         // SETTINGS
