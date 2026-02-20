@@ -55,6 +55,15 @@ class LicPlanTypeCrudController extends BaseCrudController
             ->setHelp('Classification of LIC policies');
             
         yield TextField::new('name', 'Plan Type Name');
-        yield TextEditorField::new('description');
+
+        // WYSIWYG for forms
+        yield TextEditorField::new('description')
+             ->onlyOnForms();
+             
+        // Rendered HTML for detail view
+        yield TextField::new('description')
+             ->renderAsHtml()
+             ->renderAsHtml()
+             ->hideOnForm();
     }
 }
