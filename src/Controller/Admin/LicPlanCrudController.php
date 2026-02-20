@@ -85,8 +85,15 @@ class LicPlanCrudController extends BaseCrudController
         yield FormField::addFieldset('Plan Description')
             ->setIcon('fa fa-align-left');
 
+        // Show the WYSIWYG editor ONLY on the Create/Edit forms
         yield TextEditorField::new('description')
             ->setColumns(12)
-            ->setNumOfRows(6);
+            ->setNumOfRows(6)
+            ->onlyOnForms();
+            
+        // Render the actual HTML ONLY on the Detail page
+        yield TextField::new('description')
+            ->renderAsHtml()
+            ->onlyOnDetail();
     }
 }
