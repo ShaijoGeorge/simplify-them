@@ -255,23 +255,23 @@
                     <div class="qw-calc-grid">
                         <div class="qw-calc-cell">
                             <div class="qw-calc-label"><i class="fas fa-percent"></i> GST Rate</div>
-                            <div class="qw-calc-val" id="calc-gst-rate">—</div>
+                            <div class="qw-calc-val" id="calc-gst-rate">-</div>
                         </div>
                         <div class="qw-calc-cell">
                             <div class="qw-calc-label"><i class="fas fa-indian-rupee-sign"></i> GST Amount</div>
-                            <div class="qw-calc-val" id="calc-gst-amt">—</div>
+                            <div class="qw-calc-val" id="calc-gst-amt">-</div>
                         </div>
                         <div class="qw-calc-cell qw-calc-highlight">
                             <div class="qw-calc-label"><i class="fas fa-wallet"></i> Total Premium</div>
-                            <div class="qw-calc-val qw-calc-big" id="calc-total">—</div>
+                            <div class="qw-calc-val qw-calc-big" id="calc-total">-</div>
                         </div>
                         <div class="qw-calc-cell">
                             <div class="qw-calc-label"><i class="fas fa-calendar-check"></i> Maturity Date</div>
-                            <div class="qw-calc-val" id="calc-maturity">—</div>
+                            <div class="qw-calc-val" id="calc-maturity">-</div>
                         </div>
                         <div class="qw-calc-cell">
                             <div class="qw-calc-label"><i class="fas fa-bell"></i> Next Due Date</div>
-                            <div class="qw-calc-val" id="calc-nextdue">—</div>
+                            <div class="qw-calc-val" id="calc-nextdue">-</div>
                         </div>
                     </div>
                     <div class="qw-calc-regime" id="calc-regime-note"></div>
@@ -473,7 +473,7 @@ function updateStepper(){
 function row(key, val, highlight){
     var cls = 'qw-rval' + (highlight ? ' is-premium' : '');
     return '<div class="qw-rrow"><span class="qw-rkey">'+key+'</span><span class="'+cls+'">'+
-        (val||'<span style="color:#d1d5db">—</span>')+'</span></div>';
+        (val||'<span style="color:#d1d5db">-</span>')+'</span></div>';
 }
 
 /* ─── AUTO-CALC ENGINE (mirrors Policy.php lifecycle hooks) ─── */
@@ -488,7 +488,7 @@ function calcAutoFields(){
        Reform date: 22 Sept 2025  (new regime = 0%)
        Before reform: TERM = 18%, others = 4.5%
        (Plan type cannot be known in JS without an API call;
-        we default "before-reform" to 4.5% — same as endowment.)
+        we default "before-reform" to 4.5% - same as endowment.)
     */
     var GST_REFORM = new Date('2025-09-22');
     var doc = docStr ? new Date(docStr) : null;
@@ -535,9 +535,9 @@ function calcAutoFields(){
 
 function setCalc(id, text, big){
     var el = $id(id); if(!el) return;
-    var isNa = (!text || text === '—');
+    var isNa = (!text || text === '-');
     el.className = 'qw-calc-val' + (big ? ' qw-calc-big' : '') + (isNa ? ' na' : '');
-    el.textContent = text || '—';
+    el.textContent = text || '-';
     if (!isNa) { el.classList.add('updated'); setTimeout(function(){ el.classList.remove('updated'); }, 700); }
     // -webkit-text-fill-color must be reset for non-gradient elements
     el.style.webkitTextFillColor = (big && !isNa) ? 'transparent' : '';
@@ -547,36 +547,36 @@ function buildReview(){
     var fn=getVal('quick_policy_firstName'), ln=getVal('quick_policy_lastName');
     var rc = $id('review-client');
     if(rc) rc.innerHTML =
-        row('Full Name', [fn,ln].filter(Boolean).join(' ') || '—') +
-        row('Mobile', getVal('quick_policy_mobile')||'—') +
-        row('Date of Birth', fmtDate(getVal('quick_policy_dob'))||'—');
+        row('Full Name', [fn,ln].filter(Boolean).join(' ') || '-') +
+        row('Mobile', getVal('quick_policy_mobile')||'-') +
+        row('Date of Birth', fmtDate(getVal('quick_policy_dob'))||'-');
 
     var rp = $id('review-policy');
     if(rp) rp.innerHTML =
-        row('LIC Plan', getSelText('quick_policy_licPlan')||'—') +
-        row('Policy Number', getVal('quick_policy_policyNumber')||'—') +
-        row('DOC', fmtDate(getVal('quick_policy_commencementDate'))||'—') +
-        row('Sum Assured', fmtINR(getVal('quick_policy_sumAssured'))||'—');
+        row('LIC Plan', getSelText('quick_policy_licPlan')||'-') +
+        row('Policy Number', getVal('quick_policy_policyNumber')||'-') +
+        row('DOC', fmtDate(getVal('quick_policy_commencementDate'))||'-') +
+        row('Sum Assured', fmtINR(getVal('quick_policy_sumAssured'))||'-');
 
     var modeEl = $id('quick_policy_premiumMode');
     var modeVal = modeEl ? modeEl.value : '';
-    var modeLbl = modeMap[modeVal] || modeVal || '—';
+    var modeLbl = modeMap[modeVal] || modeVal || '-';
 
     var pt=getVal('quick_policy_policyTerm'), ppt=getVal('quick_policy_premiumPayingTerm');
     var rpm = $id('review-premium');
     if(rpm) rpm.innerHTML =
-        row('Policy Term',     (pt  ? pt  +' yrs' : '—')) +
-        row('Premium Paying',  (ppt ? ppt +' yrs' : '—')) +
+        row('Policy Term',     (pt  ? pt  +' yrs' : '-')) +
+        row('Premium Paying',  (ppt ? ppt +' yrs' : '-')) +
         row('Payment Mode', modeLbl) +
-        row('Basic Premium', fmtINR(getVal('quick_policy_basicPremium'))||'—', true);
+        row('Basic Premium', fmtINR(getVal('quick_policy_basicPremium'))||'-', true);
 
     /* ── Populate live calc card ── */
     var c = calcAutoFields();
-    setCalc('calc-gst-rate', isNaN(c.gstRate) ? '—' : c.gstRate + '%');
-    setCalc('calc-gst-amt',  isNaN(c.gstAmt)  ? '—' : fmtINR(c.gstAmt.toFixed(2)));
-    setCalc('calc-total',    isNaN(c.total)    ? '—' : fmtINR(c.total.toFixed(2)), true);
-    setCalc('calc-maturity', c.maturity ? fmtDate(c.maturity.toISOString().split('T')[0]) : '—');
-    setCalc('calc-nextdue',  c.nextDue  ? fmtDate(c.nextDue.toISOString().split('T')[0])  : '—');
+    setCalc('calc-gst-rate', isNaN(c.gstRate) ? '-' : c.gstRate + '%');
+    setCalc('calc-gst-amt',  isNaN(c.gstAmt)  ? '-' : fmtINR(c.gstAmt.toFixed(2)));
+    setCalc('calc-total',    isNaN(c.total)    ? '-' : fmtINR(c.total.toFixed(2)), true);
+    setCalc('calc-maturity', c.maturity ? fmtDate(c.maturity.toISOString().split('T')[0]) : '-');
+    setCalc('calc-nextdue',  c.nextDue  ? fmtDate(c.nextDue.toISOString().split('T')[0])  : '-');
     var rn = $id('calc-regime-note');
     if(rn) rn.textContent = c.regime;
 }

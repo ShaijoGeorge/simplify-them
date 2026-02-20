@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function () {
         totalPremium: '#Policy_totalPremium'
     };
 
-    // GST Reform Date: 22 Sept 2025 — after this date, GST is 0%
+    // GST Reform Date: 22 Sept 2025 - after this date, GST is 0%
     const GST_REFORM_DATE = new Date('2025-09-22');
     // Default GST rate for old regime (Endowment/Traditional plans)
     // Term plans are 18%, but we default to 4.5% since most policies are traditional.
@@ -116,11 +116,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (docInput && docInput.value) {
             const docDate = new Date(docInput.value);
             if (docDate < GST_REFORM_DATE) {
-                // Old Tax Regime (before Sept 2025) — default 4.5%
+                // Old Tax Regime (before Sept 2025) - default 4.5%
                 // Backend will adjust for Term plans (18%) on save
                 gstRate = OLD_REGIME_DEFAULT_GST_RATE;
             } else {
-                // New Tax Regime (after Sept 2025) — 0% GST
+                // New Tax Regime (after Sept 2025) - 0% GST
                 gstRate = 0.0;
             }
         }
