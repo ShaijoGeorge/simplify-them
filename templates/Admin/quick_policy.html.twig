@@ -1,0 +1,636 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title %}
+    <div style="display:flex;align-items:center;gap:14px;">
+        <div class="qw-logo-icon"><i class="fas fa-bolt"></i></div>
+        <div>
+            <h2 class="qw-page-title mb-0">Quick Policy Entry</h2>
+        </div>
+    </div>
+{% endblock %}
+
+{% block main %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
+
+<div class="qw-root">
+
+    {# ── TOP STEPPER ── #}
+    <div class="qw-stepper-bar">
+        <div class="qw-stepper-track">
+            <div class="qw-stepper-fill" id="stepper-fill"></div>
+        </div>
+        <div class="qw-steps">
+            <button type="button" class="qw-step active" data-goto="1" id="step-btn-1">
+                <div class="qw-step-circle"><i class="fas fa-user"></i></div>
+                <div class="qw-step-label">Client</div>
+            </button>
+            <button type="button" class="qw-step" data-goto="2" id="step-btn-2">
+                <div class="qw-step-circle"><i class="fas fa-file-shield"></i></div>
+                <div class="qw-step-label">Policy</div>
+            </button>
+            <button type="button" class="qw-step" data-goto="3" id="step-btn-3">
+                <div class="qw-step-circle"><i class="fas fa-coins"></i></div>
+                <div class="qw-step-label">Premium</div>
+            </button>
+            <button type="button" class="qw-step" data-goto="4" id="step-btn-4">
+                <div class="qw-step-circle"><i class="fas fa-rocket"></i></div>
+                <div class="qw-step-label">Submit</div>
+            </button>
+        </div>
+    </div>
+
+    <div class="qw-body">
+
+        {{ form_start(form, {attr: {id: 'qw-form', novalidate: 'novalidate', autocomplete: 'off'}}) }}
+
+        {# ── WIZARD PANELS ── #}
+        <div class="qw-panels-wrap">
+
+            {# PANEL 1: Client Details #}
+            <div class="qw-panel active" id="panel-1">
+                <div class="qw-panel-head">
+                    <div class="qw-panel-icon bg-client"><i class="fas fa-user-circle"></i></div>
+                    <div>
+                        <p class="qw-panel-step-lbl">Step 1 of 4</p>
+                        <h3 class="qw-panel-title">Client Details</h3>
+                        <p class="qw-panel-desc">Enter the client's personal information to create their profile.</p>
+                    </div>
+                </div>
+                <div class="qw-fields-grid">
+                    <div class="qw-field qw-field--icon">
+                        <i class="qw-ico fas fa-user"></i>
+                        {{ form_row(form.firstName, {
+                            label: 'First Name *',
+                            row_attr: {class: 'qw-fg'},
+                            attr: {class: 'qw-in', placeholder: 'e.g. Shaijo', id: 'qf_firstName', 'data-preview': 'pv_firstName'}
+                        }) }}
+                    </div>
+                    <div class="qw-field qw-field--icon">
+                        <i class="qw-ico fas fa-user"></i>
+                        {{ form_row(form.lastName, {
+                            label: 'Last Name',
+                            row_attr: {class: 'qw-fg'},
+                            attr: {class: 'qw-in', placeholder: 'e.g. George', id: 'qf_lastName', 'data-preview': 'pv_lastName'}
+                        }) }}
+                    </div>
+                    <div class="qw-field qw-field--icon">
+                        <i class="qw-ico fas fa-phone"></i>
+                        {{ form_row(form.mobile, {
+                            label: 'Mobile Number *',
+                            row_attr: {class: 'qw-fg'},
+                            attr: {class: 'qw-in', placeholder: '+91 98765 43210', id: 'qf_mobile', 'data-preview': 'pv_mobile'}
+                        }) }}
+                    </div>
+                    <div class="qw-field qw-field--icon">
+                        <i class="qw-ico fas fa-calendar-days"></i>
+                        {{ form_row(form.dob, {
+                            label: 'Date of Birth *',
+                            row_attr: {class: 'qw-fg'},
+                            attr: {class: 'qw-in', id: 'qf_dob', 'data-preview': 'pv_dob'}
+                        }) }}
+                    </div>
+                </div>
+                <div class="qw-panel-foot">
+                    <span></span>
+                    <button type="button" class="qw-btn-next" onclick="qwGoto(2)">
+                        Continue <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            {# PANEL 2: Policy Details #}
+            <div class="qw-panel" id="panel-2">
+                <div class="qw-panel-head">
+                    <div class="qw-panel-icon bg-policy"><i class="fas fa-file-shield"></i></div>
+                    <div>
+                        <p class="qw-panel-step-lbl">Step 2 of 4</p>
+                        <h3 class="qw-panel-title">Policy Details</h3>
+                        <p class="qw-panel-desc">Select the LIC plan and set the core policy parameters.</p>
+                    </div>
+                </div>
+                <div class="qw-fields-grid">
+                    <div class="qw-field qw-field--icon">
+                        <i class="qw-ico fas fa-layer-group"></i>
+                        {{ form_row(form.licPlan, {
+                            label: 'LIC Plan *',
+                            row_attr: {class: 'qw-fg'},
+                            attr: {class: 'qw-sel', id: 'qf_licPlan', 'data-preview': 'pv_plan'}
+                        }) }}
+                    </div>
+                    <div class="qw-field qw-field--icon">
+                        <i class="qw-ico fas fa-hashtag"></i>
+                        {{ form_row(form.policyNumber, {
+                            label: 'Policy Number *',
+                            row_attr: {class: 'qw-fg'},
+                            attr: {class: 'qw-in', placeholder: 'e.g. 801234567', id: 'qf_policyNumber', 'data-preview': 'pv_policyno'}
+                        }) }}
+                    </div>
+                    <div class="qw-field qw-field--icon">
+                        <i class="qw-ico fas fa-calendar-check"></i>
+                        {{ form_row(form.commencementDate, {
+                            label: 'Commencement Date (DOC) *',
+                            row_attr: {class: 'qw-fg'},
+                            attr: {class: 'qw-in', id: 'qf_commencementDate', 'data-preview': 'pv_doc'}
+                        }) }}
+                    </div>
+                    <div class="qw-field qw-field--icon">
+                        <i class="qw-ico fas fa-indian-rupee-sign"></i>
+                        {{ form_row(form.sumAssured, {
+                            label: 'Sum Assured (₹) *',
+                            row_attr: {class: 'qw-fg'},
+                            attr: {class: 'qw-in', placeholder: 'e.g. 500000', id: 'qf_sumAssured', 'data-preview': 'pv_sa'}
+                        }) }}
+                    </div>
+                </div>
+                <div class="qw-panel-foot">
+                    <button type="button" class="qw-btn-back" onclick="qwGoto(1)">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <button type="button" class="qw-btn-next" onclick="qwGoto(3)">
+                        Continue <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            {# PANEL 3: Premium Settings #}
+            <div class="qw-panel" id="panel-3">
+                <div class="qw-panel-head">
+                    <div class="qw-panel-icon bg-premium"><i class="fas fa-coins"></i></div>
+                    <div>
+                        <p class="qw-panel-step-lbl">Step 3 of 4</p>
+                        <h3 class="qw-panel-title">Premium Settings</h3>
+                        <p class="qw-panel-desc">Define the policy term, payment schedule and premium amount.</p>
+                    </div>
+                </div>
+                <div class="qw-fields-grid">
+                    <div class="qw-field qw-field--icon">
+                        <i class="qw-ico fas fa-clock-rotate-left"></i>
+                        {{ form_row(form.policyTerm, {
+                            label: 'Policy Term (Years) *',
+                            row_attr: {class: 'qw-fg'},
+                            attr: {class: 'qw-in', placeholder: 'e.g. 20', id: 'qf_policyTerm', 'data-preview': 'pv_term'}
+                        }) }}
+                    </div>
+                    <div class="qw-field qw-field--icon">
+                        <i class="qw-ico fas fa-hourglass-half"></i>
+                        {{ form_row(form.premiumPayingTerm, {
+                            label: 'Premium Paying Term (Yrs) *',
+                            row_attr: {class: 'qw-fg'},
+                            attr: {class: 'qw-in', placeholder: 'e.g. 15', id: 'qf_premiumPayingTerm', 'data-preview': 'pv_ppt'}
+                        }) }}
+                    </div>
+                    <div class="qw-field qw-field--icon">
+                        <i class="qw-ico fas fa-repeat"></i>
+                        {{ form_row(form.premiumMode, {
+                            label: 'Payment Mode *',
+                            row_attr: {class: 'qw-fg'},
+                            attr: {class: 'qw-sel', id: 'qf_premiumMode', 'data-preview': 'pv_mode'}
+                        }) }}
+                    </div>
+                    <div class="qw-field qw-field--icon">
+                        <i class="qw-ico fas fa-wallet"></i>
+                        {{ form_row(form.basicPremium, {
+                            label: 'Basic Premium (₹) *',
+                            row_attr: {class: 'qw-fg'},
+                            attr: {class: 'qw-in', placeholder: 'e.g. 25000', id: 'qf_basicPremium', 'data-preview': 'pv_premium'}
+                        }) }}
+                    </div>
+                </div>
+
+                <div class="qw-panel-foot">
+                    <button type="button" class="qw-btn-back" onclick="qwGoto(2)">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <button type="button" class="qw-btn-next" onclick="qwGoto(4)">
+                        Review &amp; Submit <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            {# PANEL 4: Review & Submit #}
+            <div class="qw-panel" id="panel-4">
+                <div class="qw-panel-head">
+                    <div class="qw-panel-icon bg-review"><i class="fas fa-rocket"></i></div>
+                    <div>
+                        <p class="qw-panel-step-lbl">Step 4 of 4</p>
+                        <h3 class="qw-panel-title">Review &amp; Submit</h3>
+                        <p class="qw-panel-desc">Verify all details before creating the client and policy record.</p>
+                    </div>
+                </div>
+
+                {# Review Summary Grid #}
+                <div class="qw-review-grid">
+                    <div class="qw-review-section">
+                        <div class="qw-review-sec-hdr">
+                            <i class="fas fa-user-circle"></i> Client Details
+                            <button type="button" class="qw-edit-link" onclick="qwGoto(1)">Edit</button>
+                        </div>
+                        <div class="qw-review-rows" id="review-client"></div>
+                    </div>
+                    <div class="qw-review-section">
+                        <div class="qw-review-sec-hdr">
+                            <i class="fas fa-file-shield"></i> Policy Details
+                            <button type="button" class="qw-edit-link" onclick="qwGoto(2)">Edit</button>
+                        </div>
+                        <div class="qw-review-rows" id="review-policy"></div>
+                    </div>
+                    <div class="qw-review-section qw-review-highlight">
+                        <div class="qw-review-sec-hdr">
+                            <i class="fas fa-coins"></i> Premium Settings
+                            <button type="button" class="qw-edit-link" onclick="qwGoto(3)">Edit</button>
+                        </div>
+                        <div class="qw-review-rows" id="review-premium"></div>
+                    </div>
+                </div>
+
+                {# Live Calculated Figures #}
+                <div class="qw-calc-card">
+                    <div class="qw-calc-hdr">
+                        <span class="qw-calc-live-dot"></span>
+                        <i class="fas fa-calculator"></i>
+                        <span>Auto-Calculated Figures</span>
+                        <span class="qw-calc-hint">Computed live from your inputs</span>
+                    </div>
+                    <div class="qw-calc-grid">
+                        <div class="qw-calc-cell">
+                            <div class="qw-calc-label"><i class="fas fa-percent"></i> GST Rate</div>
+                            <div class="qw-calc-val" id="calc-gst-rate">—</div>
+                        </div>
+                        <div class="qw-calc-cell">
+                            <div class="qw-calc-label"><i class="fas fa-indian-rupee-sign"></i> GST Amount</div>
+                            <div class="qw-calc-val" id="calc-gst-amt">—</div>
+                        </div>
+                        <div class="qw-calc-cell qw-calc-highlight">
+                            <div class="qw-calc-label"><i class="fas fa-wallet"></i> Total Premium</div>
+                            <div class="qw-calc-val qw-calc-big" id="calc-total">—</div>
+                        </div>
+                        <div class="qw-calc-cell">
+                            <div class="qw-calc-label"><i class="fas fa-calendar-check"></i> Maturity Date</div>
+                            <div class="qw-calc-val" id="calc-maturity">—</div>
+                        </div>
+                        <div class="qw-calc-cell">
+                            <div class="qw-calc-label"><i class="fas fa-bell"></i> Next Due Date</div>
+                            <div class="qw-calc-val" id="calc-nextdue">—</div>
+                        </div>
+                    </div>
+                    <div class="qw-calc-regime" id="calc-regime-note"></div>
+                </div>
+
+                <div class="qw-panel-foot">
+                    <button type="button" class="qw-btn-back" onclick="qwGoto(3)">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <button type="submit" class="qw-btn-submit" id="qw-submit-btn">
+                        <i class="fas fa-rocket"></i>
+                        <span>Create Client &amp; Policy</span>
+                        <div class="qw-btn-shine"></div>
+                    </button>
+                </div>
+            </div>
+
+        </div>{# /panels-wrap #}
+
+        {{ form_end(form) }}
+
+    </div>{# /body #}
+
+</div>{# /root #}
+
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+.qw-root { font-family: 'Inter', sans-serif; --accent: #6366f1; --accent2: #8b5cf6; --accent3: #a855f7; --surface: #ffffff; --surface2: #f8f7ff; --border: #e8e7f6; --text: #1e1b4b; --muted: #6b7280; --radius: 18px; }
+
+/* Page header pieces */
+.qw-logo-icon { width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:19px;box-shadow:0 6px 20px rgba(99,102,241,.38);flex-shrink:0; }
+.qw-badge-pill { display:inline-block;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;background:linear-gradient(90deg,#f59e0b,#fbbf24);color:#fff;border-radius:20px;padding:2px 10px;margin-bottom:3px; }
+.qw-page-title { font-size:1.45rem;font-weight:800;color:#1e1b4b;line-height:1.2; }
+
+/* ── Root layout ── */
+.qw-root { width:100%;padding-bottom:40px; }
+
+/* ── Stepper Bar ── */
+.qw-stepper-bar { background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);padding:20px 28px;margin-bottom:20px;position:relative;overflow:hidden; }
+.qw-stepper-track { position:absolute;top:50%;left:80px;right:80px;height:3px;background:#ede9fe;border-radius:2px;transform:translateY(-10px);z-index:0; }
+.qw-stepper-fill { height:100%;width:0%;background:linear-gradient(90deg,#6366f1,#a855f7);border-radius:2px;transition:width .45s cubic-bezier(.4,0,.2,1); }
+.qw-steps { display:flex;justify-content:space-between;position:relative;z-index:1; }
+.qw-step { display:flex;flex-direction:column;align-items:center;gap:7px;background:none;border:none;cursor:pointer;padding:0;min-width:70px;transition:opacity .2s; }
+.qw-step:hover { opacity:.8; }
+.qw-step-circle { width:42px;height:42px;border-radius:50%;background:#ede9fe;display:flex;align-items:center;justify-content:center;font-size:16px;color:#c4b5fd;border:2.5px solid #ede9fe;transition:all .3s cubic-bezier(.4,0,.2,1); }
+.qw-step-label { font-size:11px;font-weight:600;color:#9ca3af;letter-spacing:.3px;transition:color .3s; }
+.qw-step.active .qw-step-circle { background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-color:#6366f1;box-shadow:0 4px 14px rgba(99,102,241,.42);transform:scale(1.1); }
+.qw-step.active .qw-step-label { color:#6366f1;font-weight:700; }
+.qw-step.done .qw-step-circle { background:linear-gradient(135deg,#10b981,#059669);color:#fff;border-color:#10b981;box-shadow:0 4px 12px rgba(16,185,129,.3); }
+.qw-step.done .qw-step-label { color:#10b981; }
+
+/* ── Body ── */
+.qw-body { display:grid;grid-template-columns:1fr;gap:20px; }
+
+/* ── Panels ── */
+.qw-panels-wrap { position:relative; }
+.qw-panel { display:none;animation:qwFadeIn .35s cubic-bezier(.4,0,.2,1); }
+.qw-panel.active { display:block; }
+@keyframes qwFadeIn { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
+@keyframes qwFadeOut { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(-30px)} }
+
+/* Card wrapper */
+.qw-panel { background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:0 4px 24px rgba(99,102,241,.07); }
+
+/* Panel head */
+.qw-panel-head { display:flex;align-items:flex-start;gap:18px;padding:28px 28px 20px;border-bottom:1.5px solid #f3f2ff;background:linear-gradient(135deg,#fafafe 0%,#f3f2ff 100%); }
+.qw-panel-icon { width:54px;height:54px;min-width:54px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.14); }
+.bg-client  { background:linear-gradient(135deg,#6366f1,#8b5cf6); }
+.bg-policy  { background:linear-gradient(135deg,#0ea5e9,#6366f1); }
+.bg-premium { background:linear-gradient(135deg,#f59e0b,#f97316); }
+.bg-review  { background:linear-gradient(135deg,#10b981,#6366f1); }
+.qw-panel-step-lbl { font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#a5b4fc;margin:0 0 3px; }
+.qw-panel-title { font-size:1.15rem;font-weight:800;color:#1e1b4b;margin:0 0 4px; }
+.qw-panel-desc { font-size:13px;color:#6b7280;margin:0; }
+
+/* Fields grid */
+.qw-fields-grid { display:grid;grid-template-columns:1fr 1fr;gap:18px 22px;padding:26px 28px 20px; }
+.qw-col-2 { grid-column:span 2; }
+@media(max-width:650px) { .qw-fields-grid{grid-template-columns:1fr;} .qw-col-2{grid-column:span 1;} }
+
+/* Field */
+.qw-field { position:relative; }
+.qw-ico { position:absolute;left:13px;top:39px;color:#c4b5fd;font-size:14px;pointer-events:none;z-index:2;transition:color .2s; }
+.qw-field:focus-within .qw-ico { color:#6366f1; }
+.qw-fg { margin:0; }
+.qw-fg label { display:block;font-size:11px!important;font-weight:700!important;text-transform:uppercase!important;letter-spacing:.5px!important;color:#6366f1!important;margin-bottom:7px!important; }
+.qw-fg input, .qw-fg select {
+    display:block!important;width:100%!important;
+    background:#f8f7ff!important;border:1.5px solid #e0dfff!important;
+    border-radius:12px!important;padding:11px 14px 11px 40px!important;
+    font-size:14px!important;font-weight:500!important;color:#312e81!important;
+    outline:none!important;appearance:auto!important;
+    transition:all .22s ease!important;box-shadow:none!important;
+}
+.qw-fg input::placeholder { color:#c4b5fd!important;font-weight:400!important; }
+.qw-fg input:focus, .qw-fg select:focus { border-color:#6366f1!important;background:#fff!important;box-shadow:0 0 0 4px rgba(99,102,241,.13)!important; }
+.qw-fg .invalid-feedback, .qw-fg .help-block { font-size:11px;color:#ef4444;margin-top:4px; }
+
+/* Panel footer */
+.qw-panel-foot { display:flex;align-items:center;justify-content:space-between;padding:18px 28px;border-top:1.5px solid #f3f2ff;background:#fafafe;gap:12px; }
+.qw-btn-back { display:inline-flex;align-items:center;gap:7px;background:none;border:1.5px solid #e0dfff;color:#6b7280;border-radius:11px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s; }
+.qw-btn-back:hover { background:#f3f2ff;color:#6366f1;border-color:#c4b5fd; }
+.qw-btn-next { position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:9px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;padding:11px 26px;font-size:14px;font-weight:700;cursor:pointer;transition:all .25s;box-shadow:0 6px 20px rgba(99,102,241,.35); }
+.qw-btn-next:hover { transform:translateY(-2px);box-shadow:0 10px 28px rgba(99,102,241,.45); }
+
+/* Submit button */
+.qw-btn-submit { position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:11px;background:linear-gradient(135deg,#10b981 0%,#6366f1 60%,#8b5cf6 100%);color:#fff;border:none;border-radius:13px;padding:13px 32px;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.2px;transition:all .25s;box-shadow:0 8px 28px rgba(99,102,241,.4); }
+.qw-btn-submit:hover { transform:translateY(-2px);box-shadow:0 14px 36px rgba(99,102,241,.5); }
+.qw-btn-submit:active { transform:none; }
+.qw-btn-shine { position:absolute;top:-50%;left:-75%;width:50%;height:200%;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.28) 50%,transparent 60%);transform:skewX(-15deg);animation:qwShine 3.2s infinite; }
+@keyframes qwShine { 0%{left:-75%} 20%,100%{left:125%} }
+
+/* ── Review summary ── */
+.qw-review-grid { display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:24px 28px 0; }
+@media(max-width:700px){ .qw-review-grid{grid-template-columns:1fr;} }
+.qw-review-section { background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;overflow:hidden; }
+.qw-review-highlight { background:linear-gradient(135deg,#fdf4ff,#f5f3ff);border-color:#d8b4fe; }
+.qw-review-section:last-child { grid-column:span 2; }
+@media(max-width:700px){ .qw-review-section:last-child{grid-column:span 1;} }
+.qw-review-sec-hdr { display:flex;align-items:center;gap:8px;padding:12px 16px;background:rgba(99,102,241,.06);border-bottom:1.5px solid var(--border);font-size:12px;font-weight:700;color:#4338ca;text-transform:uppercase;letter-spacing:.5px; }
+.qw-review-sec-hdr i { color:#6366f1; }
+.qw-edit-link { margin-left:auto;background:none;border:none;color:#6366f1;font-size:11px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0; }
+.qw-edit-link:hover { color:#4338ca; }
+.qw-review-rows { padding:10px 16px 14px; }
+.qw-rrow { display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px dashed #ede9fe; }
+.qw-rrow:last-child { border-bottom:none; }
+.qw-rkey { font-size:12px;color:#9ca3af;font-weight:500; }
+.qw-rval { font-size:13px;font-weight:700;color:#312e81;text-align:right;max-width:55%;word-break:break-word; }
+.qw-rval.is-premium { font-size:15px;font-weight:800;background:linear-gradient(90deg,#6366f1,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+
+/* ── Live Calc Card ── */
+.qw-calc-card { margin:18px 28px 0;border:1.5px solid #c7d2fe;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#eef2ff 0%,#f5f3ff 100%); }
+.qw-calc-hdr { display:flex;align-items:center;gap:8px;padding:13px 18px;background:rgba(99,102,241,.08);border-bottom:1.5px solid #c7d2fe;font-size:12px;font-weight:700;color:#3730a3;text-transform:uppercase;letter-spacing:.5px; }
+.qw-calc-hdr i { color:#6366f1; }
+.qw-calc-hint { margin-left:auto;font-size:10.5px;font-weight:500;color:#818cf8;text-transform:none;letter-spacing:0; }
+.qw-calc-live-dot { width:7px;height:7px;border-radius:50%;background:#10b981;flex-shrink:0;animation:qwCalcPulse 1.8s infinite;box-shadow:0 0 0 0 rgba(16,185,129,.4); }
+@keyframes qwCalcPulse { 0%{box-shadow:0 0 0 0 rgba(16,185,129,.4)} 70%{box-shadow:0 0 0 6px rgba(16,185,129,0)} 100%{box-shadow:0 0 0 0 rgba(16,185,129,0)} }
+.qw-calc-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:0; }
+@media(max-width:600px){ .qw-calc-grid{grid-template-columns:1fr 1fr;} }
+.qw-calc-cell { padding:14px 18px;border-right:1px solid #c7d2fe;border-bottom:1px solid #c7d2fe;transition:background .2s; }
+.qw-calc-cell:last-child { border-right:none; }
+.qw-calc-cell:nth-child(3n) { border-right:none; }
+.qw-calc-highlight { background:rgba(99,102,241,.07); }
+.qw-calc-label { font-size:10.5px;font-weight:600;color:#818cf8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px; }
+.qw-calc-label i { margin-right:4px; }
+.qw-calc-val { font-size:14px;font-weight:700;color:#312e81;transition:all .3s; }
+.qw-calc-val.updated { color:#6366f1; }
+.qw-calc-val.na { color:#cbd5e1;font-weight:500;font-size:13px; }
+.qw-calc-big { font-size:17px;font-weight:800;background:linear-gradient(90deg,#4f46e5,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+.qw-calc-regime { padding:10px 18px;font-size:11.5px;color:#4338ca;font-weight:500; }
+</style>
+
+<script>
+(function(){
+'use strict';
+
+var TOTAL = 4;
+var current = 1;
+
+var modeMap = {YLY:'Yearly',HLY:'Half-Yearly',QLY:'Quarterly',NACH:'Monthly (NACH)',SINGLE:'Single'};
+
+/* ─── helpers ─── */
+function $id(id){ return document.getElementById(id); }
+function getVal(id){ var el=$id(id); return el ? el.value.trim() : ''; }
+function getSelText(id){ var el=$id(id); return (el && el.selectedIndex > 0) ? el.options[el.selectedIndex].text : ''; }
+function fmtINR(s){ var n=parseFloat(String(s).replace(/,/g,'')); return isNaN(n) ? '' : '₹\u202f'+n.toLocaleString('en-IN'); }
+function fmtDate(s){ if(!s) return ''; var d=new Date(s); return isNaN(d) ? s : d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); }
+
+/* ─── navigation ─── */
+window.qwGoto = function(n){
+    // animate out
+    var cur = $id('panel-'+current);
+    if(cur){ cur.style.animation=''; cur.classList.remove('active'); }
+    current = n;
+    var next = $id('panel-'+n);
+    if(next){
+        next.classList.add('active');
+        next.style.animation = n > 0 ? 'qwFadeIn .35s cubic-bezier(.4,0,.2,1)' : 'none';
+    }
+    updateStepper();
+    if(n === TOTAL) buildReview();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+function updateStepper(){
+    for(var i=1; i<=TOTAL; i++){
+        var btn = $id('step-btn-'+i);
+        if(!btn) continue;
+        btn.classList.remove('active','done');
+        if(i < current) btn.classList.add('done');
+        if(i === current) btn.classList.add('active');
+    }
+    // fill track
+    var fill = $id('stepper-fill');
+    if(fill){ fill.style.width = ((current-1)/(TOTAL-1)*100)+'%'; }
+}
+
+/* ─── review builder ─── */
+function row(key, val, highlight){
+    var cls = 'qw-rval' + (highlight ? ' is-premium' : '');
+    return '<div class="qw-rrow"><span class="qw-rkey">'+key+'</span><span class="'+cls+'">'+
+        (val||'<span style="color:#d1d5db">—</span>')+'</span></div>';
+}
+
+/* ─── AUTO-CALC ENGINE (mirrors Policy.php lifecycle hooks) ─── */
+function calcAutoFields(){
+    var basic   = parseFloat(getVal('quick_policy_basicPremium').replace(/,/g,''));
+    var docStr  = getVal('quick_policy_commencementDate');   // yyyy-mm-dd
+    var term    = parseInt(getVal('quick_policy_policyTerm'), 10);
+    var modeEl  = $id('quick_policy_premiumMode');
+    var mode    = modeEl ? modeEl.value : '';
+
+    /* ── GST logic: mirrors calculateTotals() in Policy.php ──
+       Reform date: 22 Sept 2025  (new regime = 0%)
+       Before reform: TERM = 18%, others = 4.5%
+       (Plan type cannot be known in JS without an API call;
+        we default "before-reform" to 4.5% — same as endowment.)
+    */
+    var GST_REFORM = new Date('2025-09-22');
+    var doc = docStr ? new Date(docStr) : null;
+
+    var gstRate  = 0;
+    var regime   = '';
+    if (doc && !isNaN(doc)) {
+        if (doc < GST_REFORM) {
+            gstRate = 4.5;
+            regime  = '⚠\uFE0F Old regime (pre Sep-2025): 4.5% GST applied. Rate may vary for Term plans (18%).';
+        } else {
+            gstRate = 0;
+            regime  = '✅ New regime (post Sep-2025): 0% GST on individual life insurance.';
+        }
+    }
+
+    var gstAmt   = (!isNaN(basic) && basic > 0) ? (basic * gstRate / 100) : NaN;
+    var total    = (!isNaN(basic) && basic > 0) ? (basic + gstAmt)         : NaN;
+
+    /* ── Maturity date: DOC + policyTerm years ── */
+    var maturity = null;
+    if (doc && !isNaN(doc) && !isNaN(term) && term > 0) {
+        maturity = new Date(doc);
+        maturity.setFullYear(maturity.getFullYear() + term);
+    }
+
+    /* ── Next Due Date: mirrors calculateDates() ── */
+    var nextDue = null;
+    if (doc && !isNaN(doc) && mode && mode !== 'SINGLE') {
+        var intervals = { YLY:{m:12}, HLY:{m:6}, QLY:{m:3}, NACH:{m:1} };
+        var iv = intervals[mode];
+        if (iv) {
+            var nd = new Date(doc);
+            // advance once (first premium at DOC, next is DOC + interval)
+            nd.setMonth(nd.getMonth() + iv.m);
+            var today = new Date(); today.setHours(0,0,0,0);
+            while (nd < today) { nd.setMonth(nd.getMonth() + iv.m); }
+            nextDue = nd;
+        }
+    }
+
+    return { gstRate:gstRate, gstAmt:gstAmt, total:total, maturity:maturity, nextDue:nextDue, regime:regime };
+}
+
+function setCalc(id, text, big){
+    var el = $id(id); if(!el) return;
+    var isNa = (!text || text === '—');
+    el.className = 'qw-calc-val' + (big ? ' qw-calc-big' : '') + (isNa ? ' na' : '');
+    el.textContent = text || '—';
+    if (!isNa) { el.classList.add('updated'); setTimeout(function(){ el.classList.remove('updated'); }, 700); }
+    // -webkit-text-fill-color must be reset for non-gradient elements
+    el.style.webkitTextFillColor = (big && !isNa) ? 'transparent' : '';
+}
+
+function buildReview(){
+    var fn=getVal('quick_policy_firstName'), ln=getVal('quick_policy_lastName');
+    var rc = $id('review-client');
+    if(rc) rc.innerHTML =
+        row('Full Name', [fn,ln].filter(Boolean).join(' ') || '—') +
+        row('Mobile', getVal('quick_policy_mobile')||'—') +
+        row('Date of Birth', fmtDate(getVal('quick_policy_dob'))||'—');
+
+    var rp = $id('review-policy');
+    if(rp) rp.innerHTML =
+        row('LIC Plan', getSelText('quick_policy_licPlan')||'—') +
+        row('Policy Number', getVal('quick_policy_policyNumber')||'—') +
+        row('DOC', fmtDate(getVal('quick_policy_commencementDate'))||'—') +
+        row('Sum Assured', fmtINR(getVal('quick_policy_sumAssured'))||'—');
+
+    var modeEl = $id('quick_policy_premiumMode');
+    var modeVal = modeEl ? modeEl.value : '';
+    var modeLbl = modeMap[modeVal] || modeVal || '—';
+
+    var pt=getVal('quick_policy_policyTerm'), ppt=getVal('quick_policy_premiumPayingTerm');
+    var rpm = $id('review-premium');
+    if(rpm) rpm.innerHTML =
+        row('Policy Term',     (pt  ? pt  +' yrs' : '—')) +
+        row('Premium Paying',  (ppt ? ppt +' yrs' : '—')) +
+        row('Payment Mode', modeLbl) +
+        row('Basic Premium', fmtINR(getVal('quick_policy_basicPremium'))||'—', true);
+
+    /* ── Populate live calc card ── */
+    var c = calcAutoFields();
+    setCalc('calc-gst-rate', isNaN(c.gstRate) ? '—' : c.gstRate + '%');
+    setCalc('calc-gst-amt',  isNaN(c.gstAmt)  ? '—' : fmtINR(c.gstAmt.toFixed(2)));
+    setCalc('calc-total',    isNaN(c.total)    ? '—' : fmtINR(c.total.toFixed(2)), true);
+    setCalc('calc-maturity', c.maturity ? fmtDate(c.maturity.toISOString().split('T')[0]) : '—');
+    setCalc('calc-nextdue',  c.nextDue  ? fmtDate(c.nextDue.toISOString().split('T')[0])  : '—');
+    var rn = $id('calc-regime-note');
+    if(rn) rn.textContent = c.regime;
+}
+
+/* ─── mode badges ─── */
+function initModeBadges(){
+    var badges = document.querySelectorAll('.qw-mode-badge');
+    var sel = $id('quick_policy_premiumMode');
+    badges.forEach(function(b){
+        b.addEventListener('click', function(){
+            var m = b.getAttribute('data-mode');
+            if(sel){ sel.value = m; }
+            badges.forEach(function(x){ x.classList.remove('active'); });
+            b.classList.add('active');
+        });
+    });
+    // init active state
+    if(sel){
+        sel.addEventListener('change', function(){
+            badges.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-mode')===sel.value); });
+        });
+    }
+}
+
+/* ─── step btn clicks ─── */
+function initStepBtns(){
+    for(var i=1;i<=TOTAL;i++){
+        (function(n){
+            var btn=$id('step-btn-'+n);
+            if(btn) btn.addEventListener('click', function(){ if(n<=current) qwGoto(n); });
+        })(i);
+    }
+}
+
+/* ─── submit state ─── */
+function initSubmit(){
+    var form = $id('qw-form');
+    if(form) form.addEventListener('submit', function(){
+        var btn = $id('qw-submit-btn');
+        if(btn){
+            btn.disabled=true;
+            btn.querySelector('span').textContent='Saving…';
+            btn.querySelector('i').className='fas fa-spinner fa-spin';
+        }
+    });
+}
+
+/* ─── boot ─── */
+document.addEventListener('DOMContentLoaded', function(){
+    updateStepper();
+    initModeBadges();
+    initStepBtns();
+    initSubmit();
+});
+})();
+</script>
+{% endblock %}
