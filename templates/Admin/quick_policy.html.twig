@@ -322,6 +322,9 @@
 .qw-step.active .qw-step-label { color:#6366f1;font-weight:700; }
 .qw-step.done .qw-step-circle { background:linear-gradient(135deg,#10b981,#059669);color:#fff;border-color:#10b981;box-shadow:0 4px 12px rgba(16,185,129,.3); }
 .qw-step.done .qw-step-label { color:#10b981; }
+.qw-step.has-error .qw-step-circle { background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;border-color:#ef4444;box-shadow:0 4px 12px rgba(239,68,68,.3);animation:qwPulseError 1.5s ease-in-out 2; }
+.qw-step.has-error .qw-step-label { color:#ef4444; }
+@keyframes qwPulseError { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
 
 /* ── Body ── */
 .qw-body { display:grid;grid-template-columns:1fr;gap:20px; }
@@ -332,6 +335,14 @@
 .qw-panel.active { display:block; }
 @keyframes qwFadeIn { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
 @keyframes qwFadeOut { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(-30px)} }
+@keyframes qwShakePanel { 0%,100%{transform:translateX(0)} 15%{transform:translateX(-8px)} 30%{transform:translateX(8px)} 45%{transform:translateX(-5px)} 60%{transform:translateX(5px)} 75%{transform:translateX(-2px)} 90%{transform:translateX(2px)} }
+.qw-panel.shake { animation:qwShakePanel .5s ease-in-out; }
+
+/* Validation error toast */
+.qw-validation-toast { position:fixed;top:24px;right:24px;z-index:9999;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;padding:14px 22px;border-radius:14px;font-size:13px;font-weight:600;box-shadow:0 8px 30px rgba(239,68,68,.35);display:flex;align-items:center;gap:10px;animation:qwToastIn .4s cubic-bezier(.4,0,.2,1);max-width:380px; }
+.qw-validation-toast i { font-size:16px;flex-shrink:0; }
+@keyframes qwToastIn { from{opacity:0;transform:translateY(-20px) scale(.95)} to{opacity:1;transform:translateY(0) scale(1)} }
+@keyframes qwToastOut { from{opacity:1;transform:translateY(0)} to{opacity:0;transform:translateY(-20px)} }
 
 /* Card wrapper */
 .qw-panel { background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:0 4px 24px rgba(99,102,241,.07); }
@@ -368,7 +379,10 @@
 }
 .qw-fg input::placeholder { color:#c4b5fd!important;font-weight:400!important; }
 .qw-fg input:focus, .qw-fg select:focus { border-color:#6366f1!important;background:#fff!important;box-shadow:0 0 0 4px rgba(99,102,241,.13)!important; }
-.qw-fg .invalid-feedback, .qw-fg .help-block { font-size:11px;color:#ef4444;margin-top:4px; }
+.qw-fg input.qw-input-error, .qw-fg select.qw-input-error { border-color:#ef4444!important;background:#fff5f5!important; }
+.qw-fg input.qw-input-error:focus, .qw-fg select.qw-input-error:focus { box-shadow:0 0 0 4px rgba(239,68,68,.13)!important;border-color:#ef4444!important; }
+.qw-fg .invalid-feedback, .qw-fg .help-block { font-size:11px;color:#ef4444;margin-top:4px;display:flex;align-items:center;gap:5px; }
+.qw-fg .invalid-feedback::before { content:'\f06a';font-family:'Font Awesome 6 Free';font-weight:900;font-size:10px; }
 
 /* Panel footer */
 .qw-panel-foot { display:flex;align-items:center;justify-content:space-between;padding:18px 28px;border-top:1.5px solid #f3f2ff;background:#fafafe;gap:12px; }
@@ -454,22 +468,182 @@ function getVal(id){ var el=$id(id); return el ? el.value.trim() : ''; }
 function getSelText(id){ var el=$id(id); return (el && el.selectedIndex > 0) ? el.options[el.selectedIndex].text : ''; }
 function fmtINR(s){ var n=parseFloat(String(s).replace(/,/g,'')); return isNaN(n) ? '' : '₹\u202f'+n.toLocaleString('en-IN'); }
 function fmtDate(s){ if(!s) return ''; var d=new Date(s); return isNaN(d) ? s : d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); }
-
-/* ─── navigation ─── */
-window.qwGoto = function(n){
-    // animate out
-    var cur = $id('panel-'+current);
-    if(cur){ cur.style.animation=''; cur.classList.remove('active'); }
-    current = n;
-    var next = $id('panel-'+n);
-    if(next){
-        next.classList.add('active');
-        next.style.animation = n > 0 ? 'qwFadeIn .35s cubic-bezier(.4,0,.2,1)' : 'none';
+    /* Validation */
+    function clearFieldError(input) {
+        var fg = input.closest('.qw-fg') || input.parentNode;
+        var oldErrs = fg.querySelectorAll('.invalid-feedback');
+        for (var i=0; i<oldErrs.length; i++) oldErrs[i].remove();
+        input.classList.remove('qw-input-error');
     }
-    updateStepper();
-    if(n === TOTAL) buildReview();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-};
+
+    function setFieldError(input, msg) {
+        var fg = input.closest('.qw-fg') || input.parentNode;
+        input.classList.add('qw-input-error');
+        var err = document.createElement('div');
+        err.className = 'invalid-feedback';
+        err.innerText = msg;
+        fg.appendChild(err);
+    }
+
+    function getFieldLabel(input) {
+        var fg = input.closest('.qw-fg') || input.parentNode;
+        var label = fg.querySelector('label');
+        if (label) {
+            var txt = label.textContent.replace(/\s*\*\s*$/, '').trim();
+            return txt || 'This field';
+        }
+        return 'This field';
+    }
+
+    function validateStep(step) {
+        var panel = $id('panel-' + step);
+        if (!panel) return true;
+
+        var inputs = panel.querySelectorAll('input, select');
+        var isValid = true;
+        var firstErrorField = null;
+
+        inputs.forEach(function(input) {
+            // Skip hidden inputs
+            if (input.type === 'hidden') return;
+
+            // Clear previous errors
+            clearFieldError(input);
+
+            var val = input.value.trim();
+            var errorMsg = null;
+            var name = input.name || '';
+            var fieldLabel = getFieldLabel(input);
+
+            // Required check
+            if (input.hasAttribute('required') && (val === '' || (input.tagName === 'SELECT' && (val === '' || val === 'placeholder')))) {
+                errorMsg = fieldLabel + ' is required.';
+            }
+            // Select with placeholder (empty first option selected)
+            else if (input.tagName === 'SELECT' && input.hasAttribute('required') && input.selectedIndex === 0 && input.options[0] && input.options[0].value === '') {
+                errorMsg = 'Please select ' + fieldLabel.toLowerCase().replace(/^the /, '') + '.';
+            }
+            // Field-specific validations when value is non-empty
+            else if (val !== '') {
+                if (name.indexOf('[mobile]') > -1 && !/^\d{10,15}$/.test(val)) {
+                    errorMsg = 'Enter a valid mobile number (10–15 digits).';
+                } else if (name.indexOf('[policyNumber]') > -1) {
+                    if (val.length < 5) errorMsg = 'Policy Number must be at least 5 characters.';
+                    else if (typeof policyIsDuplicate !== 'undefined' && policyIsDuplicate) errorMsg = 'This policy number already exists in the system.';
+                } else if (name.indexOf('[sumAssured]') > -1) {
+                    var num = parseFloat(val.replace(/,/g, ''));
+                    if (isNaN(num) || num <= 0) errorMsg = 'Sum Assured must be a positive number.';
+                } else if (name.indexOf('[policyTerm]') > -1) {
+                    var num = parseFloat(val.replace(/,/g, ''));
+                    if (isNaN(num) || num <= 0) errorMsg = 'Policy Term must be a positive number.';
+                } else if (name.indexOf('[premiumPayingTerm]') > -1) {
+                    var num = parseFloat(val.replace(/,/g, ''));
+                    if (isNaN(num) || num <= 0) errorMsg = 'Premium Paying Term must be a positive number.';
+                } else if (name.indexOf('[basicPremium]') > -1) {
+                    var num = parseFloat(val.replace(/,/g, ''));
+                    if (isNaN(num) || num <= 0) errorMsg = 'Basic Premium must be a positive number.';
+                } else if (name.indexOf('[dob]') > -1) {
+                    var dobDate = new Date(val);
+                    var today = new Date();
+                    today.setHours(0,0,0,0);
+                    if (dobDate >= today) {
+                        errorMsg = 'Date of Birth must be in the past.';
+                    }
+                } else if (name.indexOf('[commencementDate]') > -1) {
+                    var docDate = new Date(val);
+                    if (isNaN(docDate.getTime())) {
+                        errorMsg = 'Please enter a valid date.';
+                    }
+                }
+            }
+
+            // Apply error state if invalid
+            if (errorMsg) {
+                setFieldError(input, errorMsg);
+                isValid = false;
+                if (!firstErrorField) firstErrorField = input;
+            }
+        });
+
+        // If validation failed, provide visual feedback
+        if (!isValid) {
+            // Shake the panel
+            panel.classList.remove('shake');
+            void panel.offsetWidth; // trigger reflow
+            panel.classList.add('shake');
+            setTimeout(function(){ panel.classList.remove('shake'); }, 600);
+
+            // Mark stepper step as having errors
+            var stepBtn = $id('step-btn-' + step);
+            if (stepBtn) {
+                stepBtn.classList.add('has-error');
+                setTimeout(function(){ stepBtn.classList.remove('has-error'); }, 3000);
+            }
+
+            // Scroll to first error
+            if (firstErrorField) {
+                firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstErrorField.focus();
+            }
+
+            // Show toast
+            showValidationToast(step);
+        }
+
+        return isValid;
+    }
+
+    /* Validation toast notification */
+    function showValidationToast(step) {
+        // Remove any existing toast
+        var old = document.querySelector('.qw-validation-toast');
+        if (old) old.remove();
+
+        var stepNames = {1:'Client Details',2:'Policy Details',3:'Premium Settings'};
+        var toast = document.createElement('div');
+        toast.className = 'qw-validation-toast';
+        toast.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please complete all required fields in ' + (stepNames[step]||'this section') + ' before proceeding.';
+        document.body.appendChild(toast);
+
+        setTimeout(function(){
+            toast.style.animation = 'qwToastOut .3s ease forwards';
+            setTimeout(function(){ toast.remove(); }, 350);
+        }, 3500);
+    }
+
+    /* Navigation */
+    window.qwGoto = function(n){
+
+        // Validate all steps between current and target when moving forward
+        if (n > current) {
+            for (var s = current; s < n; s++) {
+                if (!validateStep(s)) {
+                    // If an intermediate step fails, navigate to that step instead
+                    if (s !== current) {
+                        doNavigate(s);
+                    }
+                    return;
+                }
+            }
+        }
+
+        doNavigate(n);
+    };
+
+    function doNavigate(n) {
+        // animate out
+        var cur = $id('panel-'+current);
+        if(cur){ cur.style.animation=''; cur.classList.remove('active'); }
+        current = n;
+        var next = $id('panel-'+n);
+        if(next){
+            next.classList.add('active');
+            next.style.animation = n > 0 ? 'qwFadeIn .35s cubic-bezier(.4,0,.2,1)' : 'none';
+        }
+        updateStepper();
+        if(n === TOTAL) buildReview();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
 function updateStepper(){
     for(var i=1; i<=TOTAL; i++){
@@ -616,15 +790,18 @@ function initModeBadges(){
     }
 }
 
-/* ─── step btn clicks ─── */
-function initStepBtns(){
-    for(var i=1;i<=TOTAL;i++){
-        (function(n){
-            var btn=$id('step-btn-'+n);
-            if(btn) btn.addEventListener('click', function(){ if(n<=current) qwGoto(n); });
-        })(i);
+    /* ─── step btn clicks ─── */
+    function initStepBtns(){
+        for(var i=1;i<=TOTAL;i++){
+            (function(n){
+                var btn=$id('step-btn-'+n);
+                if(btn) btn.addEventListener('click', function(){
+                    // Allow backward navigation freely, forward navigation triggers validation
+                    qwGoto(n);
+                });
+            })(i);
+        }
     }
-}
 
 /* ─── submit state ─── */
 function initSubmit(){
@@ -726,6 +903,15 @@ document.addEventListener('DOMContentLoaded', function(){
     initStepBtns();
     initSubmit();
     initPolicyNumberCheck();
+
+    // Automatically remove validation error borders and messages when user starts typing/changing
+    ['input', 'change'].forEach(function(evt) {
+        document.addEventListener(evt, function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+                clearFieldError(e.target);
+            }
+        });
+    });
 });
 })();
 </script>
