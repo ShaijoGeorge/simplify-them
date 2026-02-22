@@ -67,6 +67,10 @@ class AgencyCrudController extends BaseCrudController
 
         yield TextField::new('mobile', 'Contact No')
             ->setColumns(12)
+            ->setFormTypeOption('attr', [
+                'data-intl-phone' => 'true',
+                'data-default-country' => 'in',
+            ])
             ->setHelp('Primary contact number');
 
         yield TextField::new('licBranchCode', 'Branch Code')
