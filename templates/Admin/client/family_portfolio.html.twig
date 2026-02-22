@@ -238,7 +238,7 @@
         {% endfor %}
 
         <div class="footer">
-            Designed by SimplifyThem | {{ agency.businessName }} | +91 {{ agency.mobile }}
+            Designed by SimplifyThem | {{ agency.businessName }} | {{ agency.mobile starts with('+') ? agency.mobile : '+91 ' ~ agency.mobile }}
         </div>
 
     </body>
