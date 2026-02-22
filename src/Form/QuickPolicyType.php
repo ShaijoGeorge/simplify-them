@@ -95,6 +95,10 @@ class QuickPolicyType extends AbstractType
                 'widget' => 'single_text',
                 'constraints' => [
                     new Assert\NotBlank(message: 'Commencement Date is required.'),
+                    new Assert\GreaterThanOrEqual(
+                        value: '1900-01-01',
+                        message: 'Commencement Date must not be before 1900.',
+                    ),
                 ],
             ])
             ->add('sumAssured', TextType::class, [

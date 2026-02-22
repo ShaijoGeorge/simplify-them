@@ -583,6 +583,11 @@ function fmtDate(s){ if(!s) return ''; var d=new Date(s); return isNaN(d) ? s : 
                     var docDate = new Date(val);
                     if (isNaN(docDate.getTime())) {
                         errorMsg = 'Please enter a valid date.';
+                    } else {
+                        var docYear = docDate.getFullYear();
+                        if (docYear < 1900 || String(docYear).length > 4) {
+                            errorMsg = 'Year must be 4 digits and not before 1900.';
+                        }
                     }
                 }
             }
