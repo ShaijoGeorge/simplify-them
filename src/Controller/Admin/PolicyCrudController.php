@@ -171,7 +171,11 @@ class PolicyCrudController extends BaseCrudController
             ->setChoices([
                 'In Force' => 'IN_FORCE',
                 'Lapsed' => 'LAPSED',
-                'Matured' => 'MATURED'
+                'Matured' => 'MATURED',
+                'Paid Up' => 'PAID_UP',
+                'Surrendered' => 'SURRENDERED',
+                'Death Claim' => 'DEATH_CLAIM',
+                'Revival Pending' => 'REVIVAL_PENDING'
             ])
             ->renderAsBadges() // Nice color coding
             ->setColumns(12);
