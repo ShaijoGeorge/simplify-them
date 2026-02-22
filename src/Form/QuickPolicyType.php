@@ -41,11 +41,15 @@ class QuickPolicyType extends AbstractType
             ])
             ->add('mobile', TextType::class, [
                 'label' => 'Mobile Number',
+                'attr' => [
+                    'data-intl-phone' => 'true',
+                    'data-default-country' => 'in',
+                ],
                 'constraints' => [
                     new Assert\NotBlank(message: 'Mobile Number is required.'),
                     new Assert\Regex(
-                        pattern: '/^\d{10,15}$/',
-                        message: 'Enter a valid mobile number (10–15 digits).',
+                        pattern: '/^\+?[1-9]\d{7,14}$/',
+                        message: 'Enter a valid international mobile number.',
                     ),
                 ],
             ])
