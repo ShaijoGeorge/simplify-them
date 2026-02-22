@@ -136,7 +136,12 @@ class ClientCrudController extends BaseCrudController
         yield FormField::addFieldset('Contact Details')
             ->setIcon('fa fa-address-book');
 
-        yield TelephoneField::new('mobile', 'Mobile No')->setColumns(6);
+        yield TelephoneField::new('mobile', 'Mobile No')
+            ->setColumns(6)
+            ->setFormTypeOption('attr', [
+                'data-intl-phone' => 'true',
+                'data-default-country' => 'in',
+            ]);
         yield EmailField::new('email', 'Email')->setColumns(6);
 
         yield FormField::addFieldset('Address & Location')

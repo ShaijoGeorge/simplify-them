@@ -64,7 +64,7 @@ class PolicyCrudController extends BaseCrudController
 
     public function configureAssets(\EasyCorp\Bundle\EasyAdminBundle\Config\Assets $assets): \EasyCorp\Bundle\EasyAdminBundle\Config\Assets
     {
-        return $assets
+        return parent::configureAssets($assets)
             ->addJsFile('assets/js/admin/policy_dates.js');
     }
 

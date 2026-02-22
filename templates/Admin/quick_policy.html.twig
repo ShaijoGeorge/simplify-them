@@ -12,6 +12,10 @@
 {% block main %}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/css/intlTelInput.css">
+<link rel="stylesheet" href="/assets/css/admin/intl_mobile_input.css">
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/js/intlTelInput.min.js"></script>
+<script src="/assets/js/admin/intl_mobile_input.js"></script>
 
 <div class="qw-root">
 
@@ -75,11 +79,10 @@
                         }) }}
                     </div>
                     <div class="qw-field qw-field--icon">
-                        <i class="qw-ico fas fa-phone"></i>
                         {{ form_row(form.mobile, {
                             label: 'Mobile Number *',
                             row_attr: {class: 'qw-fg'},
-                            attr: {class: 'qw-in', placeholder: '+91 98765 43210', id: 'qf_mobile', 'data-preview': 'pv_mobile'}
+                            attr: {class: 'qw-in', placeholder: '+91 98765 43210', id: 'qf_mobile', 'data-preview': 'pv_mobile', 'data-intl-phone': 'true', 'data-default-country': 'in'}
                         }) }}
                     </div>
                     <div class="qw-field qw-field--icon">
@@ -529,8 +532,8 @@ function fmtDate(s){ if(!s) return ''; var d=new Date(s); return isNaN(d) ? s : 
                     errorMsg = 'First Name must contain only letters and spaces.';
                 } else if (name.indexOf('[lastName]') > -1 && !/^[a-zA-Z\s]+$/.test(val)) {
                     errorMsg = 'Last Name must contain only letters and spaces.';
-                } else if (name.indexOf('[mobile]') > -1 && !/^\d{10,15}$/.test(val)) {
-                    errorMsg = 'Enter a valid mobile number (10–15 digits).';
+                } else if (name.indexOf('[mobile]') > -1 && !/^\+?[1-9]\d{7,14}$/.test(val)) {
+                    errorMsg = 'Enter a valid international mobile number.';
                 } else if (name.indexOf('[policyNumber]') > -1) {
                     if (!/^\d+$/.test(val)) {
                         errorMsg = 'Policy Number must contain only numbers.';
