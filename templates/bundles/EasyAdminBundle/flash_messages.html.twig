@@ -1,0 +1,31 @@
+{# Override: Replace default EasyAdmin flash banners with SweetAlert2 toasts #}
+
+{# ── Load SweetAlert2 CSS + JS via CDN ── #}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.20/dist/sweetalert2.min.css">
+<link rel="stylesheet" href="/assets/css/admin/sweetalert.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.20/dist/sweetalert2.all.min.js"></script>
+<script src="/assets/js/admin/sweetalert.js"></script>
+<script src="/assets/js/admin/delete_confirm.js"></script>
+
+{# ── Fire toasts for each Symfony flash message ── #}
+{% set flash_messages = app.flashes %}
+{% if flash_messages|length > 0 %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% for label, messages in flash_messages %}
+        {% for message in messages %}
+            {% set translated_message = message|trans %}
+            {% if label == 'success' %}
+                SimplifySwal.success('{{ translated_message|e('js') }}');
+            {% elseif label == 'danger' or label == 'error' %}
+                SimplifySwal.error('{{ translated_message|e('js') }}');
+            {% elseif label == 'warning' %}
+                SimplifySwal.warning('{{ translated_message|e('js') }}');
+            {% else %}
+                SimplifySwal.info('{{ translated_message|e('js') }}');
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+});
+</script>
+{% endif %}

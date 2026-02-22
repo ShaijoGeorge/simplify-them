@@ -14,8 +14,12 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/css/intlTelInput.css">
 <link rel="stylesheet" href="/assets/css/admin/intl_mobile_input.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.20/dist/sweetalert2.min.css">
+<link rel="stylesheet" href="/assets/css/admin/sweetalert.css">
 <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/js/intlTelInput.min.js"></script>
 <script src="/assets/js/admin/intl_mobile_input.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.20/dist/sweetalert2.all.min.js"></script>
+<script src="/assets/js/admin/sweetalert.js"></script>
 
 <div class="qw-root">
 
@@ -631,22 +635,17 @@ function fmtDate(s){ if(!s) return ''; var d=new Date(s); return isNaN(d) ? s : 
         return isValid;
     }
 
-    /* Validation toast notification */
+    /* Validation toast notification — powered by SweetAlert2 */
     function showValidationToast(step) {
-        // Remove any existing toast
-        var old = document.querySelector('.qw-validation-toast');
-        if (old) old.remove();
-
         var stepNames = {1:'Client Details',2:'Policy Details',3:'Premium Settings'};
-        var toast = document.createElement('div');
-        toast.className = 'qw-validation-toast';
-        toast.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please complete all required fields in ' + (stepNames[step]||'this section') + ' before proceeding.';
-        document.body.appendChild(toast);
+        var msg = 'Please complete all required fields in ' + (stepNames[step]||'this section') + ' before proceeding.';
 
-        setTimeout(function(){
-            toast.style.animation = 'qwToastOut .3s ease forwards';
-            setTimeout(function(){ toast.remove(); }, 350);
-        }, 3500);
+        if (typeof SimplifySwal !== 'undefined') {
+            SimplifySwal.warning(msg);
+        } else {
+            // Fallback to native alert if SweetAlert2 hasn't loaded
+            alert(msg);
+        }
     }
 
     /* Navigation */
