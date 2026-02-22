@@ -87,7 +87,7 @@
                         {{ form_row(form.dob, {
                             label: 'Date of Birth',
                             row_attr: {class: 'qw-fg'},
-                            attr: {class: 'qw-in', id: 'qf_dob', 'data-preview': 'pv_dob'}
+                            attr: {class: 'qw-in', id: 'qf_dob', 'data-preview': 'pv_dob', max: 'now'|date('Y-m-d')}
                         }) }}
                     </div>
                 </div>
@@ -438,7 +438,7 @@
 .qw-calc-regime { padding:10px 18px;font-size:11.5px;color:#4338ca;font-weight:500; }
 
 /* ─── Policy Number Status Indicator ─── */
-.qw-policy-status { display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;font-weight:600;min-height:20px;transition:all .25s ease; }
+.qw-policy-status { display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;font-weight:600;transition:all .25s ease; }
 .qw-policy-status.checking { color:#818cf8; }
 .qw-policy-status.duplicate { color:#ef4444; }
 .qw-policy-status.available { color:#10b981; }
@@ -525,28 +525,58 @@ function fmtDate(s){ if(!s) return ''; var d=new Date(s); return isNaN(d) ? s : 
             }
             // Field-specific validations when value is non-empty
             else if (val !== '') {
-                if (name.indexOf('[mobile]') > -1 && !/^\d{10,15}$/.test(val)) {
+                if (name.indexOf('[firstName]') > -1 && !/^[a-zA-Z\s]+$/.test(val)) {
+                    errorMsg = 'First Name must contain only letters and spaces.';
+                } else if (name.indexOf('[lastName]') > -1 && !/^[a-zA-Z\s]+$/.test(val)) {
+                    errorMsg = 'Last Name must contain only letters and spaces.';
+                } else if (name.indexOf('[mobile]') > -1 && !/^\d{10,15}$/.test(val)) {
                     errorMsg = 'Enter a valid mobile number (10–15 digits).';
                 } else if (name.indexOf('[policyNumber]') > -1) {
-                    if (val.length < 5) errorMsg = 'Policy Number must be at least 5 characters.';
-                    else if (typeof policyIsDuplicate !== 'undefined' && policyIsDuplicate) errorMsg = 'This policy number already exists in the system.';
+                    if (!/^\d+$/.test(val)) {
+                        errorMsg = 'Policy Number must contain only numbers.';
+                    } else if (val.length < 5) {
+                        errorMsg = 'Policy Number must be at least 5 characters.';
+                    } else if (typeof policyIsDuplicate !== 'undefined' && policyIsDuplicate) {
+                        errorMsg = 'This policy number already exists in the system.';
+                    }
                 } else if (name.indexOf('[sumAssured]') > -1) {
-                    var num = parseFloat(val.replace(/,/g, ''));
-                    if (isNaN(num) || num <= 0) errorMsg = 'Sum Assured must be a positive number.';
+                    if (!/^\d+(\.\d+)?$/.test(val.replace(/,/g, ''))) {
+                        errorMsg = 'Sum Assured must be a valid number.';
+                    } else {
+                        var num = parseFloat(val.replace(/,/g, ''));
+                        if (num <= 0) errorMsg = 'Sum Assured must be a positive number.';
+                    }
                 } else if (name.indexOf('[policyTerm]') > -1) {
-                    var num = parseFloat(val.replace(/,/g, ''));
-                    if (isNaN(num) || num <= 0) errorMsg = 'Policy Term must be a positive number.';
+                    if (!/^\d+(\.\d+)?$/.test(val.replace(/,/g, ''))) {
+                        errorMsg = 'Policy Term must be a valid number.';
+                    } else {
+                        var num = parseFloat(val.replace(/,/g, ''));
+                        if (num <= 0) errorMsg = 'Policy Term must be a positive number.';
+                    }
                 } else if (name.indexOf('[premiumPayingTerm]') > -1) {
-                    var num = parseFloat(val.replace(/,/g, ''));
-                    if (isNaN(num) || num <= 0) errorMsg = 'Premium Paying Term must be a positive number.';
+                    if (!/^\d+(\.\d+)?$/.test(val.replace(/,/g, ''))) {
+                        errorMsg = 'Premium Paying Term must be a valid number.';
+                    } else {
+                        var num = parseFloat(val.replace(/,/g, ''));
+                        if (num <= 0) errorMsg = 'Premium Paying Term must be a positive number.';
+                    }
                 } else if (name.indexOf('[basicPremium]') > -1) {
-                    var num = parseFloat(val.replace(/,/g, ''));
-                    if (isNaN(num) || num <= 0) errorMsg = 'Basic Premium must be a positive number.';
+                    if (!/^\d+(\.\d+)?$/.test(val.replace(/,/g, ''))) {
+                        errorMsg = 'Basic Premium must be a valid number.';
+                    } else {
+                        var num = parseFloat(val.replace(/,/g, ''));
+                        if (num <= 0) errorMsg = 'Basic Premium must be a positive number.';
+                    }
                 } else if (name.indexOf('[dob]') > -1) {
                     var dobDate = new Date(val);
                     var today = new Date();
                     today.setHours(0,0,0,0);
-                    if (dobDate >= today) {
+                    var dobYear = dobDate.getFullYear();
+                    if (isNaN(dobDate.getTime())) {
+                        errorMsg = 'Please enter a valid date.';
+                    } else if (dobYear < 1900 || dobYear > today.getFullYear() || String(dobYear).length > 4) {
+                        errorMsg = 'Year must be between 1900 and ' + today.getFullYear() + '.';
+                    } else if (dobDate >= today) {
                         errorMsg = 'Date of Birth must be in the past.';
                     }
                 } else if (name.indexOf('[commencementDate]') > -1) {
@@ -835,7 +865,7 @@ function initPolicyNumberCheck(){
         statusEl.innerHTML = '';
         input.classList.remove('field-duplicate','field-available');
 
-        if(val.length < 5){
+        if(!/^\d+$/.test(val) || val.length < 5){
             policyIsDuplicate = false;
             toggleSubmitBtn();
             return;
