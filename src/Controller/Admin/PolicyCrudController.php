@@ -179,6 +179,9 @@ class PolicyCrudController extends BaseCrudController
         yield DateField::new('nextDueDate', 'Next Premium Due')
             ->setColumns(6);
 
+        yield DateField::new('fup', 'FUP Date')
+            ->setColumns(6);
+
         yield DateField::new('maturityDate', 'Maturity Date')
             ->setColumns(6)
             ->hideOnIndex();

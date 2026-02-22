@@ -51,6 +51,9 @@ class Policy
     private ?\DateTime $nextDueDate = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
+    private ?\DateTime $fup = null;
+
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTime $maturityDate = null;
 
     #[ORM\Column(length: 20)]
@@ -192,6 +195,18 @@ class Policy
     public function setGst(string $gst): static
     {
         $this->gst = $gst;
+
+        return $this;
+    }
+
+    public function getFup(): ?\DateTime
+    {
+        return $this->fup;
+    }
+
+    public function setFup(?\DateTime $fup): static
+    {
+        $this->fup = $fup;
 
         return $this;
     }
