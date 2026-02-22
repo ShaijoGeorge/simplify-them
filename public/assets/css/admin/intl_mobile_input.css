@@ -1,0 +1,22 @@
+.iti {
+    width: 100%;
+}
+
+.iti input,
+.iti input[type="tel"],
+.iti input[type="text"] {
+    width: 100%;
+}
+
+.ea-dark-scheme .iti__country-list,
+.iti__country-list {
+    z-index: 1055;
+}
+
+.qw-fg .iti {
+    width: 100%;
+}
+
+.qw-field--icon .qw-fg .iti input {
+    padding-left: 92px !important;
+}
