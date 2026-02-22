@@ -23,11 +23,21 @@ class QuickPolicyType extends AbstractType
                 'label' => 'First Name',
                 'constraints' => [
                     new Assert\NotBlank(message: 'First Name is required.'),
+                    new Assert\Regex(
+                        pattern: '/^[a-zA-Z\s]+$/',
+                        message: 'First Name must contain only letters and spaces.',
+                    ),
                 ],
             ])
             ->add('lastName', TextType::class, [
                 'label' => 'Last Name',
                 'required' => false,
+                'constraints' => [
+                    new Assert\Regex(
+                        pattern: '/^[a-zA-Z\s]*$/',
+                        message: 'Last Name must contain only letters and spaces.',
+                    ),
+                ],
             ])
             ->add('mobile', TextType::class, [
                 'label' => 'Mobile Number',
@@ -42,10 +52,15 @@ class QuickPolicyType extends AbstractType
             ->add('dob', DateType::class, [
                 'label' => 'Date of Birth',
                 'widget' => 'single_text',
+                'attr' => ['max' => date('Y-m-d')],
                 'constraints' => [
                     new Assert\LessThan(
                         value: 'today',
                         message: 'Date of Birth must be in the past.',
+                    ),
+                    new Assert\GreaterThanOrEqual(
+                        value: '1900-01-01',
+                        message: 'Date of Birth must not be before 1900.',
                     ),
                 ],
             ])
@@ -63,6 +78,10 @@ class QuickPolicyType extends AbstractType
                 'label' => 'Policy Number',
                 'constraints' => [
                     new Assert\NotBlank(message: 'Policy Number is required.'),
+                    new Assert\Regex(
+                        pattern: '/^\d+$/',
+                        message: 'Policy Number must contain only numbers.',
+                    ),
                     new Assert\Length(
                         min: 5,
                         max: 50,
@@ -76,12 +95,20 @@ class QuickPolicyType extends AbstractType
                 'widget' => 'single_text',
                 'constraints' => [
                     new Assert\NotBlank(message: 'Commencement Date is required.'),
+                    new Assert\GreaterThanOrEqual(
+                        value: '1900-01-01',
+                        message: 'Commencement Date must not be before 1900.',
+                    ),
                 ],
             ])
             ->add('sumAssured', TextType::class, [
                 'label' => 'Sum Assured',
                 'constraints' => [
                     new Assert\NotBlank(message: 'Sum Assured is required.'),
+                    new Assert\Regex(
+                        pattern: '/^\d+(\.\d+)?$/',
+                        message: 'Sum Assured must be a valid number.',
+                    ),
                     new Assert\Positive(message: 'Sum Assured must be a positive number.'),
                 ],
             ])
@@ -116,6 +143,10 @@ class QuickPolicyType extends AbstractType
                 'label' => 'Basic Premium Amount',
                 'constraints' => [
                     new Assert\NotBlank(message: 'Basic Premium is required.'),
+                    new Assert\Regex(
+                        pattern: '/^\d+(\.\d+)?$/',
+                        message: 'Basic Premium must be a valid number.',
+                    ),
                     new Assert\Positive(message: 'Basic Premium must be a positive number.'),
                 ],
             ]);
