@@ -33,6 +33,7 @@ class InsertModulesCommand extends Command
             ['name' => 'Dashboard', 'key' => 'dashboard'], 
             ['name' => 'LIC Plans', 'key' => 'lic_plans'],
             ['name' => 'Modules', 'key' => 'modules'],
+            ['name' => 'Nominees', 'key' => 'nominees'],
             ['name' => 'Permissions', 'key' => 'permissions'],
             ['name' => 'Plan Types', 'key' => 'plan_types'],
             ['name' => 'Policies', 'key' => 'policies'],
