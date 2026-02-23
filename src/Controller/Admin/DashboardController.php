@@ -8,6 +8,7 @@ use App\Entity\CommissionRule;
 use App\Entity\LicPlan;
 use App\Entity\LicPlanType;
 use App\Entity\Module;
+use App\Entity\Nominee;
 use App\Entity\Permission;
 use App\Entity\Policy;
 use App\Entity\PremiumReceipt;
@@ -72,6 +73,7 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToCrud('Policies', 'fa fa-file-contract', Policy::class);
         yield MenuItem::linkToRoute('Quick Policy Entry', 'fa fa-bolt', 'app_quick_policy');
         yield MenuItem::linkToCrud('Premium Collection', 'fa fa-rupee-sign', PremiumReceipt::class);
+        yield MenuItem::linkToCrud('Nominees', 'fa fa-user-shield', Nominee::class);
 
         // SETTINGS
         yield MenuItem::section('SETTINGS');

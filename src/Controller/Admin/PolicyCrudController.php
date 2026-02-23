@@ -10,7 +10,6 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
-use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
@@ -20,12 +19,6 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\MoneyField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
-use EasyCorp\Bundle\EasyAdminBundle\Filter\ChoiceFilter;
-use EasyCorp\Bundle\EasyAdminBundle\Collection\FieldCollection;
-use EasyCorp\Bundle\EasyAdminBundle\Collection\FilterCollection;
-use EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto;
-use EasyCorp\Bundle\EasyAdminBundle\Dto\SearchDto;
-use Doctrine\ORM\QueryBuilder;
 
 class PolicyCrudController extends BaseCrudController
 {
@@ -50,7 +43,8 @@ class PolicyCrudController extends BaseCrudController
     {
         return $crud
             ->setEntityLabelInSingular('Policy')
-            ->setEntityLabelInPlural('Policies');
+            ->setEntityLabelInPlural('Policies')
+            ->overrideTemplate('crud/detail', 'Admin/policy/detail.html.twig');
     }
 
     public function configureActions(Actions $actions): Actions
@@ -92,7 +86,7 @@ class PolicyCrudController extends BaseCrudController
 
         //LEFT COLUMN (6/12): CONTRACT DETAILS
         yield FormField::addColumn(6);
-        
+
         yield FormField::addFieldset('Contract Information')
             ->setIcon('fa fa-file-signature')
             ->setHelp('Basic identification and ownership details');
@@ -150,12 +144,12 @@ class PolicyCrudController extends BaseCrudController
             ->setColumns(4)
             ->setHelp('Enter amount BEFORE tax')
             ->hideOnIndex();
-        
+
         yield MoneyField::new('gst', 'GST')
             ->setCurrency('INR')
             ->setColumns(4)
             ->setDisabled(true);
-        
+
         yield MoneyField::new('totalPremium', 'Total')
             ->setCurrency('INR')
             ->setColumns(4)
@@ -196,7 +190,7 @@ class PolicyCrudController extends BaseCrudController
         yield FormField::addFieldset('Life Assured Details')
             ->setIcon('fa fa-user-shield')
             ->setHelp('Fill ONLY if policy is for minor or different life assured.');
-                
+
         // This is just a UI toggle, it doesn't save to the database (mapped: false)
         yield BooleanField::new('isDifferentLifeAssured', 'Life Assured is different from Client')
             ->setFormTypeOption('mapped', false)
@@ -205,7 +199,7 @@ class PolicyCrudController extends BaseCrudController
         yield TextField::new('lifeAssuredName', 'Life Assured Name')
             ->setColumns(12)
             ->setFormTypeOption('row_attr', ['class' => 'conditional-la-field']);
-                
+
         yield DateField::new('lifeAssuredDob', 'Life Assured DOB')
             ->setColumns(6)
             ->setFormTypeOption('row_attr', ['class' => 'conditional-la-field']);
@@ -222,19 +216,19 @@ class PolicyCrudController extends BaseCrudController
         yield FormField::addFieldset('Additional Policy Details')
             ->setIcon('fa fa-folder-open')
             ->setHelp('LIC internal tracking and supplementary information.');
-            
+
         yield TextField::new('licBondNumber', 'LIC Bond Number')
             ->hideOnIndex();
-                
+
         yield TextField::new('licBranch', 'LIC Branch')
             ->hideOnIndex();
-                
+
         yield TextareaField::new('notes', 'Notes')
             ->hideOnIndex();
-            
+
         // META DATA
         yield FormField::addFieldset('System Metadata')->setIcon('fa fa-database');
-        
+
         $agencyField = AssociationField::new('agency', 'Agency')
             ->setColumns(12);
 
@@ -254,7 +248,7 @@ class PolicyCrudController extends BaseCrudController
         if ($entityInstance instanceof Policy) {
             /** @var User $user */
             $user = $this->getUser();
-            
+
             // Only auto-set agency if the user HAS an agency and didn't manually set one (admin case)
             if ($user && $user->getAgency() && $entityInstance->getAgency() === null) {
                 $entityInstance->setAgency($user->getAgency());
