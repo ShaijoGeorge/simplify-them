@@ -93,6 +93,27 @@ class Policy
     #[Gedmo\Blameable(on: 'update')]
     private ?string $updatedBy = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?int $entryAge = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $lifeAssuredName = null;
+
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
+    private ?\DateTime $lifeAssuredDob = null;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $lifeAssuredGender = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $licBondNumber = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $licBranch = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $notes = null;
+
     public function __construct()
     {
         $this->premiumReceipts = new ArrayCollection();
@@ -337,6 +358,93 @@ class Policy
     {
         $this->updatedBy = $updatedBy;
         return $this;
+    }
+
+    public function getEntryAge(): ?int
+    {
+        return $this->entryAge;
+    }
+
+    public function setEntryAge(?int $entryAge): static
+    {
+        $this->entryAge = $entryAge;
+        return $this;
+    }
+
+    public function getLifeAssuredName(): ?string
+    {
+        return $this->lifeAssuredName;
+    }
+
+    public function setLifeAssuredName(?string $lifeAssuredName): static
+    {
+        $this->lifeAssuredName = $lifeAssuredName;
+        return $this;
+    }
+
+    public function getLifeAssuredDob(): ?\DateTime
+    {
+        return $this->lifeAssuredDob;
+    }
+
+    public function setLifeAssuredDob(?\DateTime $lifeAssuredDob): static
+    {
+        $this->lifeAssuredDob = $lifeAssuredDob;
+        return $this;
+    }
+
+    public function getLifeAssuredGender(): ?string
+    {
+        return $this->lifeAssuredGender;
+    }
+
+    public function setLifeAssuredGender(?string $lifeAssuredGender): static
+    {
+        $this->lifeAssuredGender = $lifeAssuredGender;
+        return $this;
+    }
+
+    public function getLicBondNumber(): ?string
+    {
+        return $this->licBondNumber;
+    }
+
+    public function setLicBondNumber(?string $licBondNumber): static
+    {
+        $this->licBondNumber = $licBondNumber;
+        return $this;
+    }
+
+    public function getLicBranch(): ?string
+    {
+        return $this->licBranch;
+    }
+
+    public function setLicBranch(?string $licBranch): static
+    {
+        $this->licBranch = $licBranch;
+        return $this;
+    }
+
+    public function getNotes(): ?string
+    {
+        return $this->notes;
+    }
+
+    public function setNotes(?string $notes): static
+    {
+        $this->notes = $notes;
+        return $this;
+    }
+
+    // Calculate entry age
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function calculateEntryAge(): void
+    {
+        if ($this->lifeAssuredDob && $this->commencementDate) {
+            $this->entryAge = $this->lifeAssuredDob->diff($this->commencementDate)->y;
+        }
     }
 
     /**

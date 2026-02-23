@@ -12,11 +12,13 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\FormField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\MoneyField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\ChoiceFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Collection\FieldCollection;
@@ -65,7 +67,8 @@ class PolicyCrudController extends BaseCrudController
     public function configureAssets(\EasyCorp\Bundle\EasyAdminBundle\Config\Assets $assets): \EasyCorp\Bundle\EasyAdminBundle\Config\Assets
     {
         return parent::configureAssets($assets)
-            ->addJsFile('assets/js/admin/policy_dates.js');
+            ->addJsFile('assets/js/admin/policy_dates.js')
+            ->addJsFile('assets/js/admin/conditional_la_fields.js');
     }
 
     public function createEntity(string $entityFqcn)
@@ -114,11 +117,11 @@ class PolicyCrudController extends BaseCrudController
             ->setIcon('fa fa-sliders-h');
 
         yield NumberField::new('policyTerm', 'Policy Term (Years)')
-            ->setColumns(6)
+            ->setColumns(4)
             ->hideOnIndex();
 
         yield NumberField::new('premiumPayingTerm', 'PPT (Years)')
-            ->setColumns(6)
+            ->setColumns(4)
             ->hideOnIndex();
 
         yield ChoiceField::new('premiumMode', 'Payment Mode')
@@ -130,11 +133,7 @@ class PolicyCrudController extends BaseCrudController
                 'Single' => 'SINGLE'
             ])
             ->renderAsBadges()
-            ->setColumns(12);
-
-
-        // RIGHT COLUMN: FINANCIALS & STATUS
-        yield FormField::addColumn(6);
+            ->setColumns(4);
 
         yield FormField::addFieldset('Valuation & Premiums')
             ->setIcon('fa fa-rupee-sign')
@@ -164,6 +163,9 @@ class PolicyCrudController extends BaseCrudController
             ->setHelp('Auto-calculated (Basic + GST)');
 
 
+        // RIGHT COLUMN: FINANCIALS & STATUS
+        yield FormField::addColumn(6);
+
         yield FormField::addFieldset('Status & Tracking')
             ->setIcon('fa fa-clock');
 
@@ -181,15 +183,54 @@ class PolicyCrudController extends BaseCrudController
             ->setColumns(12);
 
         yield DateField::new('nextDueDate', 'Next Premium Due')
-            ->setColumns(6);
+            ->setColumns(4);
 
         yield DateField::new('fup', 'FUP Date')
-            ->setColumns(6);
+            ->setColumns(4);
 
         yield DateField::new('maturityDate', 'Maturity Date')
-            ->setColumns(6)
+            ->setColumns(4)
             ->hideOnIndex();
 
+        // CONDITIONAL LIFE ASSURED SECTION
+        yield FormField::addFieldset('Life Assured Details')
+            ->setIcon('fa fa-user-shield')
+            ->setHelp('Fill ONLY if policy is for minor or different life assured.');
+                
+        // This is just a UI toggle, it doesn't save to the database (mapped: false)
+        yield BooleanField::new('isDifferentLifeAssured', 'Life Assured is different from Client')
+            ->setFormTypeOption('mapped', false)
+            ->setFormTypeOption('row_attr', ['class' => 'la-toggle-wrapper']);
+
+        yield TextField::new('lifeAssuredName', 'Life Assured Name')
+            ->setColumns(12)
+            ->setFormTypeOption('row_attr', ['class' => 'conditional-la-field']);
+                
+        yield DateField::new('lifeAssuredDob', 'Life Assured DOB')
+            ->setColumns(6)
+            ->setFormTypeOption('row_attr', ['class' => 'conditional-la-field']);
+
+        yield ChoiceField::new('lifeAssuredGender', 'Life Assured Gender')
+            ->setChoices([
+                'Male' => 'MALE', 
+                'Female' => 'FEMALE'
+            ])
+            ->setColumns(6)
+            ->setFormTypeOption('row_attr', ['class' => 'conditional-la-field']);
+
+        // ADDITIONAL DETAILS SECTION
+        yield FormField::addFieldset('Additional Policy Details')
+            ->setIcon('fa fa-folder-open')
+            ->setHelp('LIC internal tracking and supplementary information.');
+            
+        yield TextField::new('licBondNumber', 'LIC Bond Number')
+            ->hideOnIndex();
+                
+        yield TextField::new('licBranch', 'LIC Branch')
+            ->hideOnIndex();
+                
+        yield TextareaField::new('notes', 'Notes')
+            ->hideOnIndex();
             
         // META DATA
         yield FormField::addFieldset('System Metadata')->setIcon('fa fa-database');
