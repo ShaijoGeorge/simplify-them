@@ -77,6 +77,12 @@ class Policy
     #[ORM\OneToMany(targetEntity: PremiumReceipt::class, mappedBy: 'policy')]
     private Collection $premiumReceipts;
 
+    /**
+     * @var Collection<int, Nominee>
+     */
+    #[ORM\OneToMany(targetEntity: Nominee::class, mappedBy: 'policy', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $nominees;
+
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     #[Gedmo\Timestampable(on: 'create')]
     private ?\DateTimeInterface $createdAt = null;
@@ -117,6 +123,7 @@ class Policy
     public function __construct()
     {
         $this->premiumReceipts = new ArrayCollection();
+        $this->nominees = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -466,7 +473,7 @@ class Policy
             $nextDue = clone $this->commencementDate;
             $today = new \DateTime();
             $today->setTime(0, 0, 0); // Ignoring time for accurate comparison
-            
+
             // Determine interval based on mode
             $interval = match ($this->premiumMode) {
                 'YLY', 'YEARLY' => '+1 year',
@@ -516,7 +523,7 @@ class Policy
                 $gstRate = 18.0; // Old Term Plan Rate
             } else {
                 // Endowment/Traditional: 4.5% 1st Year is standard
-                $gstRate = 4.5; 
+                $gstRate = 4.5;
             }
             
         } else {
@@ -568,6 +575,43 @@ class Policy
         }
 
         return $this;
+    }
+
+    // return Collection<int, Nominee>
+    public function getNominees(): Collection
+    {
+        return $this->nominees;
+    }
+
+    public function addNominee(Nominee $nominee): static
+    {
+        if (!$this->nominees->contains($nominee)) {
+            $this->nominees->add($nominee);
+            $nominee->setPolicy($this);
+        }
+
+        return $this;
+    }
+
+    public function removeNominee(Nominee $nominee): static
+    {
+        if ($this->nominees->removeElement($nominee)) {
+            if ($nominee->getPolicy() === $this) {
+                $nominee->setPolicy(null);
+            }
+        }
+
+        return $this;
+    }
+
+    // Returns total share percentage allocated to all nominees.
+    public function getTotalNomineeShare(): float
+    {
+        $total = 0.0;
+        foreach ($this->nominees as $nominee) {
+            $total += (float) $nominee->getSharePercentage();
+        }
+        return $total;
     }
 
     public function __toString(): string
