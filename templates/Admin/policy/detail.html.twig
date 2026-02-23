@@ -1,0 +1,188 @@
+{# templates/Admin/policy/detail.html.twig #}
+{# Extends EasyAdmin's default detail page and injects a Nominees panel below #}
+{% extends '@EasyAdmin/crud/detail.html.twig' %}
+
+{% block main %}
+    {# ── Render the standard EasyAdmin detail fields ── #}
+    {{ parent() }}
+
+    {# ── Nominees Section ── #}
+    {% set policy = entity.instance %}
+    {% set nominees = policy.nominees %}
+
+    <div class="card mt-4 border-0 shadow-sm" id="nominees-panel">
+        <div class="card-header d-flex align-items-center justify-content-between py-3"
+             style="background: linear-gradient(135deg,#f5f3ff,#eef2ff); border-bottom: 1.5px solid #e0dfff;">
+            <div class="d-flex align-items-center gap-2">
+                <span style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);
+                             display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;">
+                    <i class="fas fa-user-shield"></i>
+                </span>
+                <div>
+                    <h6 class="mb-0 fw-bold" style="color:#1e1b4b;">Nominees</h6>
+                    <small class="text-muted">Beneficiaries registered against this policy</small>
+                </div>
+            </div>
+
+            {# "Add Nominee" button — links to the Nominee NEW page pre-filled with policyId #}
+            <a href="{{ ea_url()
+                .setController('App\\Controller\\Admin\\NomineeCrudController')
+                .setAction('new')
+                .set('policyId', policy.id) }}"
+               class="btn btn-sm btn-primary"
+               style="border-radius:10px;font-weight:600;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;box-shadow:0 4px 12px rgba(99,102,241,.35);">
+                <i class="fas fa-plus me-1"></i> Add Nominee
+            </a>
+        </div>
+
+        <div class="card-body p-0">
+            {% if nominees|length == 0 %}
+                {# Empty state #}
+                <div class="text-center py-5">
+                    <div style="width:64px;height:64px;border-radius:50%;background:#f5f3ff;
+                                display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:26px;color:#c4b5fd;">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <p class="text-muted mb-1" style="font-weight:600;">No nominees added yet</p>
+                    <small class="text-muted">Add at least one nominee to ensure the policy benefit reaches the right person.</small>
+                </div>
+            {% else %}
+                {# Share-percentage progress bar #}
+                {% set totalShare = policy.totalNomineeShare %}
+                <div class="px-4 pt-3 pb-2">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="fw-semibold" style="color:#4338ca;">Total Share Allocated</small>
+                        <small class="fw-bold {% if totalShare == 100 %}text-success{% elseif totalShare > 100 %}text-danger{% else %}text-warning{% endif %}">
+                            {{ totalShare|number_format(2) }}%
+                            {% if totalShare == 100 %}
+                                <i class="fas fa-check-circle ms-1"></i>
+                            {% elseif totalShare > 100 %}
+                                <i class="fas fa-exclamation-circle ms-1"></i>
+                            {% else %}
+                                <i class="fas fa-exclamation-triangle ms-1"></i>
+                            {% endif %}
+                        </small>
+                    </div>
+                    <div class="progress" style="height:6px;border-radius:3px;background:#e0dfff;">
+                        <div class="progress-bar {% if totalShare == 100 %}bg-success{% elseif totalShare > 100 %}bg-danger{% else %}bg-warning{% endif %}"
+                             role="progressbar"
+                             style="width: {{ totalShare > 100 ? 100 : totalShare }}%; border-radius:3px; transition: width .4s ease;"
+                             aria-valuenow="{{ totalShare }}" aria-valuemin="0" aria-valuemax="100">
+                        </div>
+                    </div>
+                    {% if totalShare != 100 %}
+                        <small class="text-muted mt-1 d-block">
+                            {% if totalShare > 100 %}
+                                <span class="text-danger">⚠ Shares exceed 100%. Please correct before claim processing.</span>
+                            {% else %}
+                                Remaining {{ (100 - totalShare)|number_format(2) }}% is unallocated.
+                            {% endif %}
+                        </small>
+                    {% endif %}
+                </div>
+
+                {# Nominees table #}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle" style="font-size:13.5px;">
+                        <thead>
+                            <tr style="background:#fafafe;border-bottom:2px solid #e0dfff;">
+                                <th class="ps-4 py-3" style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Name</th>
+                                <th class="py-3" style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Relationship</th>
+                                <th class="py-3" style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Date of Birth</th>
+                                <th class="py-3" style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Guardian</th>
+                                <th class="py-3" style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Mobile</th>
+                                <th class="py-3" style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Share %</th>
+                                <th class="py-3 pe-3" style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for nominee in nominees %}
+                                <tr>
+                                    <td class="ps-4 fw-semibold" style="color:#1e1b4b;">
+                                        {{ nominee.name }}
+                                        {% if nominee.isMinor %}
+                                            <span class="badge ms-1" style="background:#fef3c7;color:#92400e;font-size:10px;border-radius:6px;padding:2px 7px;">Minor</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        {% set relColor = {
+                                            'SPOUSE': '#dbeafe,#1e40af',
+                                            'SON': '#dcfce7,#166534',
+                                            'DAUGHTER': '#fce7f3,#9d174d',
+                                            'FATHER': '#ede9fe,#4c1d95',
+                                            'MOTHER': '#fef3c7,#92400e',
+                                            'BROTHER': '#e0f2fe,#075985',
+                                            'SISTER': '#fae8ff,#701a75',
+                                            'OTHER': '#f3f4f6,#374151'
+                                        } %}
+                                        {% set colors = relColor[nominee.relationship] ?? '#f3f4f6,#374151' %}
+                                        {% set bg = colors|split(',')|first %}
+                                        {% set fg = colors|split(',')|last %}
+                                        <span class="badge" style="background:{{ bg }};color:{{ fg }};border-radius:8px;padding:3px 10px;font-size:11px;font-weight:600;">
+                                            {{ nominee.relationship|capitalize }}
+                                        </span>
+                                    </td>
+
+                                    <td class="text-muted">
+                                        {% if nominee.dob %}
+                                            {{ nominee.dob|date('d M Y') }}
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        {% if nominee.guardianName %}
+                                            <span style="color:#374151;">{{ nominee.guardianName }}</span>
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td class="text-muted">
+                                        {{ nominee.mobile ?: '—' }}
+                                    </td>
+
+                                    <td>
+                                        <span class="fw-bold" style="color:#6366f1;font-size:14px;">
+                                            {{ nominee.sharePercentage|number_format(2) }}%
+                                        </span>
+                                    </td>
+
+                                    <td class="pe-3">
+                                        <div class="d-flex gap-2">
+                                            <a href="{{ ea_url()
+                                                .setController('App\\Controller\\Admin\\NomineeCrudController')
+                                                .setAction('edit')
+                                                .setEntityId(nominee.id) }}"
+                                               class="btn btn-xs btn-outline-primary"
+                                               title="Edit"
+                                               style="border-radius:7px;font-size:12px;padding:3px 10px;">
+                                                <i class="fas fa-pencil-alt"></i>
+                                            </a>
+                                            <a href="{{ ea_url()
+                                                .setController('App\\Controller\\Admin\\NomineeCrudController')
+                                                .setAction('delete')
+                                                .setEntityId(nominee.id) }}"
+                                               class="btn btn-xs btn-outline-danger"
+                                               title="Delete"
+                                               data-action-name="delete"
+                                               style="border-radius:7px;font-size:12px;padding:3px 10px;"
+                                               formaction="{{ ea_url()
+                                                    .setController('App\\Controller\\Admin\\NomineeCrudController')
+                                                    .setAction('delete')
+                                                    .setEntityId(nominee.id) }}">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
