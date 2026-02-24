@@ -101,6 +101,7 @@ class PremiumReceiptCrudController extends BaseCrudController
 
         yield MoneyField::new('amount', 'Amount Received')
             ->setCurrency('INR')
+            ->setStoredAsCents(false)
             ->setColumns(12);
 
         yield ChoiceField::new('paymentMode', 'Payment Mode')
@@ -115,6 +116,7 @@ class PremiumReceiptCrudController extends BaseCrudController
         // HIDDEN FIELDS
         yield MoneyField::new('commissionEarned', 'Commission Earned')
             ->setCurrency('INR')
+            ->setStoredAsCents(false)
             ->hideOnForm();
         
         // META DATA
