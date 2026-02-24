@@ -194,14 +194,17 @@ class PolicyCrudController extends BaseCrudController
         // This is just a UI toggle, it doesn't save to the database (mapped: false)
         yield BooleanField::new('isDifferentLifeAssured', 'Life Assured is different from Client')
             ->setFormTypeOption('mapped', false)
-            ->setFormTypeOption('row_attr', ['class' => 'la-toggle-wrapper']);
+            ->setFormTypeOption('row_attr', ['class' => 'la-toggle-wrapper'])
+            ->hideOnIndex();
 
         yield TextField::new('lifeAssuredName', 'Life Assured Name')
             ->setColumns(12)
+            ->hideOnIndex()
             ->setFormTypeOption('row_attr', ['class' => 'conditional-la-field']);
 
         yield DateField::new('lifeAssuredDob', 'Life Assured DOB')
             ->setColumns(6)
+            ->hideOnIndex()
             ->setFormTypeOption('row_attr', ['class' => 'conditional-la-field']);
 
         yield ChoiceField::new('lifeAssuredGender', 'Life Assured Gender')
@@ -210,6 +213,7 @@ class PolicyCrudController extends BaseCrudController
                 'Female' => 'FEMALE'
             ])
             ->setColumns(6)
+            ->hideOnIndex()
             ->setFormTypeOption('row_attr', ['class' => 'conditional-la-field']);
 
         // ADDITIONAL DETAILS SECTION
