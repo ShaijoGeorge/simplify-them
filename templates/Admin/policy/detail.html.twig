@@ -6,8 +6,117 @@
     {# ── Render the standard EasyAdmin detail fields ── #}
     {{ parent() }}
 
-    {# ── Nominees Section ── #}
+    {# ══════════════════════════════════════════════════════════
+       PAID-UP BENEFIT BANNER
+       Shown only when policy status is PAID_UP.
+       Gives the agent the exact reduced SA to communicate to client.
+       ══════════════════════════════════════════════════════════ #}
     {% set policy = entity.instance %}
+    {% if policy.status == 'PAID_UP' %}
+        {% set paidUpSA = policy.paidUpSumAssured %}
+        {% set originalSA = policy.sumAssured %}
+        {% set ppt = policy.premiumPayingTerm %}
+        {% set doc = policy.commencementDate %}
+        {% set yearsElapsed = doc ? (date() | date('Y') - doc | date('Y')) : 0 %}
+        {% set yearsElapsed = yearsElapsed > ppt ? ppt : yearsElapsed %}
+
+        <div class="card mt-4 border-0 shadow-sm" id="paidup-banner"
+             style="border-left: 5px solid #f59e0b !important; background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 60%, #fde68a 100%);">
+            <div class="card-body p-4">
+
+                {# ── Top row: icon + title + explanation ── #}
+                <div class="d-flex align-items-start gap-3 mb-4">
+                    <div style="width:52px;height:52px;min-width:52px;border-radius:16px;
+                                background:linear-gradient(135deg,#f59e0b,#d97706);
+                                display:flex;align-items:center;justify-content:center;
+                                color:#fff;font-size:22px;box-shadow:0 6px 18px rgba(245,158,11,.4);">
+                        <i class="fas fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <h5 class="mb-0 fw-bold" style="color:#92400e;">This Policy is PAID-UP</h5>
+                            <span class="badge" style="background:#f59e0b;color:#fff;border-radius:8px;font-size:11px;padding:3px 10px;font-weight:700;">
+                                PAID-UP
+                            </span>
+                        </div>
+                        <p class="mb-0" style="color:#78350f;font-size:13.5px;line-height:1.5;">
+                            Premium payments have ceased. The policy continues in force with a proportionally reduced Sum Assured.
+                            The benefit below is what the client or nominee will receive on claim or maturity.
+                        </p>
+                    </div>
+                </div>
+
+                {# ── Key figures row ── #}
+                <div class="row g-3">
+
+                    {# Paid-Up SA — the hero figure #}
+                    <div class="col-md-4">
+                        <div class="p-3 text-center h-100"
+                             style="background:#fff;border-radius:14px;border:2px solid #f59e0b;box-shadow:0 4px 16px rgba(245,158,11,.18);">
+                            <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#b45309;margin-bottom:6px;">
+                                <i class="fas fa-indian-rupee-sign me-1"></i> Paid-Up Sum Assured
+                            </div>
+                            {% if paidUpSA %}
+                                <div style="font-size:1.9rem;font-weight:800;color:#92400e;line-height:1.1;">
+                                    ₹{{ paidUpSA | number_format(0, '.', ',') }}
+                                </div>
+                                <div style="font-size:11px;color:#b45309;margin-top:4px;">
+                                    Benefit payable to client / nominee
+                                </div>
+                            {% else %}
+                                <div style="font-size:1.1rem;font-weight:600;color:#d97706;">
+                                    <i class="fas fa-calculator me-1"></i> Not yet calculated
+                                </div>
+                                <div style="font-size:11px;color:#b45309;margin-top:4px;">
+                                    Re-save the policy to trigger calculation
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {# Original SA #}
+                    <div class="col-md-4">
+                        <div class="p-3 text-center h-100"
+                             style="background:rgba(255,255,255,.7);border-radius:14px;border:1.5px solid #fcd34d;">
+                            <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#b45309;margin-bottom:6px;">
+                                <i class="fas fa-file-contract me-1"></i> Original Sum Assured
+                            </div>
+                            <div style="font-size:1.5rem;font-weight:700;color:#78350f;">
+                                ₹{{ originalSA | number_format(0, '.', ',') }}
+                            </div>
+                            <div style="font-size:11px;color:#b45309;margin-top:4px;">
+                                Full benefit if all {{ ppt }} yrs premiums were paid
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Formula breakdown #}
+                    <div class="col-md-4">
+                        <div class="p-3 text-center h-100"
+                             style="background:rgba(255,255,255,.7);border-radius:14px;border:1.5px solid #fcd34d;">
+                            <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#b45309;margin-bottom:6px;">
+                                <i class="fas fa-percent me-1"></i> Calculation Basis
+                            </div>
+                            <div style="font-size:13px;font-weight:600;color:#92400e;line-height:1.6;">
+                                {% if paidUpSA and originalSA %}
+                                    {% set ratio = (paidUpSA / originalSA * 100) | round(1) %}
+                                    <span style="font-size:1.5rem;font-weight:800;">{{ ratio }}%</span><br>
+                                    <span style="font-size:11px;color:#b45309;">of original SA retained</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </div>
+                            <div style="font-size:11px;color:#b45309;margin-top:6px;font-family:monospace;background:rgba(245,158,11,.1);border-radius:6px;padding:4px 8px;">
+                                ({{ yearsElapsed }} yrs paid ÷ {{ ppt }} PPT) × SA
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {# ── Nominees Section ── #}
     {% set nominees = policy.nominees %}
 
     <div class="card mt-4 border-0 shadow-sm" id="nominees-panel">
