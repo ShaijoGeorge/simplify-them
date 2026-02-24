@@ -136,24 +136,28 @@ class PolicyCrudController extends BaseCrudController
         yield MoneyField::new('sumAssured', 'Sum Assured')
             ->setCurrency('INR')
             ->setColumns(12)
-            ->hideOnIndex();
+            ->hideOnIndex()
+            ->setStoredAsCents(false);
 
         // Group premiums visually
         yield MoneyField::new('basicPremium', 'Basic Premium')
             ->setCurrency('INR')
             ->setColumns(4)
             ->setHelp('Enter amount BEFORE tax')
-            ->hideOnIndex();
+            ->hideOnIndex()
+            ->setStoredAsCents(false);
 
         yield MoneyField::new('gst', 'GST')
             ->setCurrency('INR')
             ->setColumns(4)
-            ->setDisabled(true);
+            ->setDisabled(true)
+            ->setStoredAsCents(false);
 
         yield MoneyField::new('totalPremium', 'Total')
             ->setCurrency('INR')
             ->setColumns(4)
             ->setDisabled(true)
+            ->setStoredAsCents(false)
             ->setHelp('Auto-calculated (Basic + GST)');
 
 
@@ -257,6 +261,11 @@ class PolicyCrudController extends BaseCrudController
             if ($user && $user->getAgency() && $entityInstance->getAgency() === null) {
                 $entityInstance->setAgency($user->getAgency());
             }
+
+            // Auto-calculate Paid-Up SA when status is set to PAID_UP
+            if ($entityInstance->getStatus() === 'PAID_UP') {
+                $entityInstance->calculatePaidUpSumAssured();
+            }
         }
         parent::persistEntity($entityManager, $entityInstance);
     }
@@ -268,6 +277,14 @@ class PolicyCrudController extends BaseCrudController
 
             if ($user && $user->getAgency() && $entityInstance->getAgency() === null) {
                 $entityInstance->setAgency($user->getAgency());
+            }
+
+            // Auto-calculate Paid-Up SA when status is set to PAID_UP
+            if ($entityInstance->getStatus() === 'PAID_UP') {
+                $entityInstance->calculatePaidUpSumAssured();
+            } elseif ($entityInstance->getStatus() !== 'PAID_UP') {
+                // Clear stored value if status moves away from PAID_UP
+                $entityInstance->setPaidUpSumAssured(null);
             }
         }
 
