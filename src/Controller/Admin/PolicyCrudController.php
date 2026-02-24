@@ -257,6 +257,11 @@ class PolicyCrudController extends BaseCrudController
             if ($user && $user->getAgency() && $entityInstance->getAgency() === null) {
                 $entityInstance->setAgency($user->getAgency());
             }
+
+            // Auto-calculate Paid-Up SA when status is set to PAID_UP
+            if ($entityInstance->getStatus() === 'PAID_UP') {
+                $entityInstance->calculatePaidUpSumAssured();
+            }
         }
         parent::persistEntity($entityManager, $entityInstance);
     }
@@ -268,6 +273,14 @@ class PolicyCrudController extends BaseCrudController
 
             if ($user && $user->getAgency() && $entityInstance->getAgency() === null) {
                 $entityInstance->setAgency($user->getAgency());
+            }
+
+            // Auto-calculate Paid-Up SA when status is set to PAID_UP
+            if ($entityInstance->getStatus() === 'PAID_UP') {
+                $entityInstance->calculatePaidUpSumAssured();
+            } elseif ($entityInstance->getStatus() !== 'PAID_UP') {
+                // Clear stored value if status moves away from PAID_UP
+                $entityInstance->setPaidUpSumAssured(null);
             }
         }
 
