@@ -136,24 +136,28 @@ class PolicyCrudController extends BaseCrudController
         yield MoneyField::new('sumAssured', 'Sum Assured')
             ->setCurrency('INR')
             ->setColumns(12)
-            ->hideOnIndex();
+            ->hideOnIndex()
+            ->setStoredAsCents(false);
 
         // Group premiums visually
         yield MoneyField::new('basicPremium', 'Basic Premium')
             ->setCurrency('INR')
             ->setColumns(4)
             ->setHelp('Enter amount BEFORE tax')
-            ->hideOnIndex();
+            ->hideOnIndex()
+            ->setStoredAsCents(false);
 
         yield MoneyField::new('gst', 'GST')
             ->setCurrency('INR')
             ->setColumns(4)
-            ->setDisabled(true);
+            ->setDisabled(true)
+            ->setStoredAsCents(false);
 
         yield MoneyField::new('totalPremium', 'Total')
             ->setCurrency('INR')
             ->setColumns(4)
             ->setDisabled(true)
+            ->setStoredAsCents(false)
             ->setHelp('Auto-calculated (Basic + GST)');
 
 
