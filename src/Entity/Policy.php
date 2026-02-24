@@ -120,6 +120,9 @@ class Policy
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $notes = null;
 
+    #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 2, nullable: true)]
+    private ?string $paidUpSumAssured = null;
+
     public function __construct()
     {
         $this->premiumReceipts = new ArrayCollection();
@@ -444,6 +447,17 @@ class Policy
         return $this;
     }
 
+    public function getPaidUpSumAssured(): ?string
+    {
+        return $this->paidUpSumAssured;
+    }
+
+    public function setPaidUpSumAssured(?string $paidUpSumAssured): static
+    {
+        $this->paidUpSumAssured = $paidUpSumAssured;
+        return $this;
+    }
+
     // Calculate entry age
     #[ORM\PrePersist]
     #[ORM\PreUpdate]
@@ -612,6 +626,34 @@ class Policy
             $total += (float) $nominee->getSharePercentage();
         }
         return $total;
+    }
+
+    // Calculates and stores the Paid-Up Sum Assured.
+    // Formula: (PPT years elapsed / PPT) * Sum Assured
+    // "PPT years elapsed" = full years of premiums paid from DOC up to today
+    // (capped at PPT so it never exceeds the full SA).
+    // Call this whenever status transitions to PAID_UP.
+    public function calculatePaidUpSumAssured(): void
+    {
+        if (!$this->commencementDate || !$this->premiumPayingTerm || !$this->sumAssured) {
+            return;
+        }
+
+        $ppt = (int) $this->premiumPayingTerm;
+        if ($ppt <= 0) {
+            return;
+        }
+
+        // Years elapsed since commencement (full years only)
+        $elapsed = (int) $this->commencementDate->diff(new \DateTime())->y;
+
+        // Cap at PPT - can never exceed the full SA
+        $elapsed = min($elapsed, $ppt);
+
+        $sa = (float) $this->sumAssured;
+        $paidUpSA = ($elapsed / $ppt) * $sa;
+
+        $this->paidUpSumAssured = (string) round($paidUpSA, 2);
     }
 
     public function __toString(): string
