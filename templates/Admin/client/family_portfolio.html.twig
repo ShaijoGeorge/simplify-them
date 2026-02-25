@@ -145,7 +145,7 @@
                         <div class="report-meta">Family Insurance Portfolio</div>
                     </td>
                     <td valign="top" align="right" style="text-align: right;">
-                        <div style="font-size: 14px; font-weight: bold;">{{ head.firstName }} {{ head.lastName }}</div>
+                        <div style="font-size: 14px; font-weight: bold;">{{ head.name }}</div>
                         <div class="report-meta">Generated: {{ "now"|date("d M Y") }}</div>
                     </td>
                 </tr>
@@ -180,7 +180,7 @@
                 
                 <div class="member-card">
                     <div class="member-header">
-                        {{ member.firstName }} {{ member.lastName }}
+                        {{ member.name }}
                         <span class="member-age">(DOB: {{ member.dob|date('d-M-Y') }})</span>
                     </div>
 

@@ -43,8 +43,7 @@ class QuickPolicyController extends AbstractController
             if ($form->isValid() && count($form->get('policyNumber')->getErrors()) === 0) {
                 // 1. Create the Client
                 $client = new Client();
-                $client->setFirstName($data['firstName']);
-                $client->setLastName($data['lastName']);
+                $client->setName($data['name']);
                 $client->setMobile($data['mobile']);
                 $client->setDob($data['dob']);
                 if ($agency) {

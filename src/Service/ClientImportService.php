@@ -25,13 +25,13 @@ class ClientImportService
             $row = $rows[$i];
             
             // Map Columns:
-            // 0: First Name, 1: Last Name, 2: DOB, 3: Mobile
-            // 4: Email, 5: Address, 6: City, 7: Pincode
+            // 0: Name, 1: DOB, 2: Mobile
+            // 3: Email, 4: Address, 5: City, 6: Pincode
 
-            $firstName = $row[0] ?? null;
-            $mobile = $row[3] ?? null;
+            $name = $row[0] ?? null;
+            $mobile = $row[2] ?? null;
 
-            if (!$firstName || !$mobile) {
+            if (!$name || !$mobile) {
                 continue; // Skip invalid rows
             }
 
@@ -46,13 +46,12 @@ class ClientImportService
             }
 
             $client = new Client();
-            $client->setFirstName($firstName);
-            $client->setLastName($row[1] ?? '');
+            $client->setName($name);
             
             // Handle Date
-            if (!empty($row[2])) {
+            if (!empty($row[1])) {
                 try {
-                    $client->setDob(new \DateTime($row[2]));
+                    $client->setDob(new \DateTime($row[1]));
                 } catch (\Exception $e) {
                     $client->setDob(new \DateTime('1990-01-01')); // Default fallback
                 }
@@ -61,10 +60,10 @@ class ClientImportService
             }
 
             $client->setMobile($mobile);
-            $client->setEmail($row[4] ?? null);
-            $client->setAddress($row[5] ?? null);
-            $client->setCity($row[6] ?? null);
-            $client->setPincode($row[7] ?? null);
+            $client->setEmail($row[3] ?? null);
+            $client->setAddress($row[4] ?? null);
+            $client->setCity($row[5] ?? null);
+            $client->setPincode($row[6] ?? null);
             $client->setAgency($agency);
 
             $this->em->persist($client);

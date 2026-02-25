@@ -110,16 +110,8 @@ class ClientCrudController extends BaseCrudController
         yield FormField::addFieldset('Personal Information')
             ->setIcon('fa fa-user');
 
-        yield TextField::new('fullName', 'Client Name')
-            ->onlyOnIndex();
-
-        yield TextField::new('firstName', 'First Name')
-            ->setColumns(6)
-            ->hideOnIndex();
-
-        yield TextField::new('lastName', 'Last Name')
-            ->setColumns(6)
-            ->hideOnIndex();
+        yield TextField::new('name', 'Client Name')
+            ->setColumns(12);
             
         yield DateField::new('dob', 'Date of Birth')->setColumns(12);
 
@@ -225,32 +217,30 @@ class ClientCrudController extends BaseCrudController
 
         // Set Full Headers
         $headers = [
-            'First Name',   // Col A
-            'Last Name',    // Col B
-            'DOB (Y-m-d)',  // Col C
-            'Mobile',       // Col D
-            'Email',        // Col E
-            'Address',      // Col F
-            'City',         // Col G
-            'Pincode'       // Col H
+            'Name',         // Col A
+            'DOB (Y-m-d)',  // Col B
+            'Mobile',       // Col C
+            'Email',        // Col D
+            'Address',      // Col E
+            'City',         // Col F
+            'Pincode'       // Col G
         ];
         $sheet->fromArray($headers, null, 'A1');
 
         // Sample Data
         $sample = [
-            'Rahul', 
-            'Sharma', 
+            'P M Moidunni', 
             '1990-01-01', 
             '9876543210',
-            'rahul@example.com',
+            'moidunni@example.com',
             '123 MG Road',
-            'Mumbai',
-            '400001'
+            'Kottayam',
+            '686001'
         ];
         $sheet->fromArray($sample, null, 'A2');
 
         // Auto-size columns
-        foreach (range('A', 'H') as $col) {
+        foreach (range('A', 'G') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
@@ -332,7 +322,7 @@ class ClientCrudController extends BaseCrudController
             200,
             [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="Family_Portfolio_'.$head->getFirstName().'.pdf"',
+                'Content-Disposition' => 'inline; filename="Family_Portfolio_'.$head->getName().'.pdf"',
             ]
         );
     }

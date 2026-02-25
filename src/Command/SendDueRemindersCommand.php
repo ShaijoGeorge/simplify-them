@@ -62,11 +62,11 @@ class SendDueRemindersCommand extends Command
             // if (!$agency->isActive()) continue; 
 
             if ($client && $client->getMobile()) {
-                $io->text("-> Sending to {$client->getFirstName()} ({$policy->getPolicyNumber()})...");
+                $io->text("-> Sending to {$client->getName()} ({$policy->getPolicyNumber()})...");
                 
                 $this->whatsAppService->sendPremiumReminder(
                     $client->getMobile(),
-                    $client->getFirstName(),
+                    $client->getName(),
                     $policy->getPolicyNumber(),
                     $policy->getNextDueDate()->format('d-M-Y'),
                     $policy->getTotalPremium()

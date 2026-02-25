@@ -23,11 +23,8 @@ class Client
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 100)]
-    private ?string $firstName = null;
-
-    #[ORM\Column(length: 100, nullable: true)]
-    private ?string $lastName = null;
+    #[ORM\Column(length: 200)]
+    private ?string $name = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTime $dob = null;
@@ -93,26 +90,14 @@ class Client
         return $this->id;
     }
 
-    public function getFirstName(): ?string
+    public function getName(): ?string
     {
-        return $this->firstName;
+        return $this->name;
     }
 
-    public function setFirstName(string $firstName): static
+    public function setName(string $name): static
     {
-        $this->firstName = $firstName;
-
-        return $this;
-    }
-
-    public function getLastName(): ?string
-    {
-        return $this->lastName;
-    }
-
-    public function setLastName(?string $lastName): static
-    {
-        $this->lastName = $lastName;
+        $this->name = $name;
 
         return $this;
     }
@@ -319,12 +304,11 @@ class Client
 
     public function getFullName(): string
     {
-        return trim($this->firstName . ' ' . ($this->lastName ?? ''));
+        return $this->name ?? '';
     }
 
     public function __toString(): string
     {
-        // display "Rahul Gupta" in the dropdown
-        return $this->firstName . ' ' . ($this->lastName ?? '');
+        return $this->name ?? '';
     }
 }

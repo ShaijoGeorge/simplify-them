@@ -20,23 +20,13 @@ class QuickPolicyType extends AbstractType
     {
         // CLIENT FIELDS
         $builder
-            ->add('firstName', TextType::class, [
-                'label' => 'First Name',
+            ->add('name', TextType::class, [
+                'label' => 'Name',
                 'constraints' => [
-                    new Assert\NotBlank(message: 'First Name is required.'),
+                    new Assert\NotBlank(message: 'Name is required.'),
                     new Assert\Regex(
-                        pattern: '/^[a-zA-Z\s]+$/',
-                        message: 'First Name must contain only letters and spaces.',
-                    ),
-                ],
-            ])
-            ->add('lastName', TextType::class, [
-                'label' => 'Last Name',
-                'required' => false,
-                'constraints' => [
-                    new Assert\Regex(
-                        pattern: '/^[a-zA-Z\s]*$/',
-                        message: 'Last Name must contain only letters and spaces.',
+                        pattern: '/^[a-zA-Z.\s]+$/',
+                        message: 'Name must contain only letters, dots, and spaces.',
                     ),
                 ],
             ])

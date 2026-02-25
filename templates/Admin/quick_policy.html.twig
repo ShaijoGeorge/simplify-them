@@ -72,18 +72,10 @@
                 <div class="qw-fields-grid">
                     <div class="qw-field qw-field--icon">
                         <i class="qw-ico fas fa-user"></i>
-                        {{ form_row(form.firstName, {
-                            label: 'First Name *',
+                        {{ form_row(form.name, {
+                            label: 'Name *',
                             row_attr: {class: 'qw-fg'},
-                            attr: {class: 'qw-in', placeholder: 'e.g. Shaijo', id: 'qf_firstName', 'data-preview': 'pv_firstName'}
-                        }) }}
-                    </div>
-                    <div class="qw-field qw-field--icon">
-                        <i class="qw-ico fas fa-user"></i>
-                        {{ form_row(form.lastName, {
-                            label: 'Last Name',
-                            row_attr: {class: 'qw-fg'},
-                            attr: {class: 'qw-in', placeholder: 'e.g. George', id: 'qf_lastName', 'data-preview': 'pv_lastName'}
+                            attr: {class: 'qw-in', placeholder: 'e.g. P M Moidunni', id: 'qf_name', 'data-preview': 'pv_name'}
                         }) }}
                     </div>
                     <div class="qw-field qw-field--icon">
@@ -615,10 +607,8 @@ function fmtDate(s){ if(!s) return ''; var d=new Date(s); return isNaN(d) ? s : 
             }
             // Field-specific validations when value is non-empty
             else if (val !== '') {
-                if (name.indexOf('[firstName]') > -1 && !/^[a-zA-Z\s]+$/.test(val)) {
-                    errorMsg = 'First Name must contain only letters and spaces.';
-                } else if (name.indexOf('[lastName]') > -1 && !/^[a-zA-Z\s]+$/.test(val)) {
-                    errorMsg = 'Last Name must contain only letters and spaces.';
+                if (name.indexOf('[name]') > -1 && !/^[a-zA-Z.\s]+$/.test(val)) {
+                    errorMsg = 'Name must contain only letters, dots, and spaces.';
                 } else if (name.indexOf('[mobile]') > -1 && !/^\+?[1-9]\d{7,14}$/.test(val)) {
                     errorMsg = 'Enter a valid international mobile number.';
                 } else if (name.indexOf('[policyNumber]') > -1) {
@@ -886,10 +876,10 @@ function setCalc(id, text, big){
 }
 
 function buildReview(){
-    var fn=getVal('quick_policy_firstName'), ln=getVal('quick_policy_lastName');
+    var clientName=getVal('quick_policy_name');
     var rc = $id('review-client');
     if(rc) rc.innerHTML =
-        row('Full Name', [fn,ln].filter(Boolean).join(' ') || '-') +
+        row('Name', clientName || '-') +
         row('Mobile', getVal('quick_policy_mobile')||'-') +
         row('Date of Birth', fmtDate(getVal('quick_policy_dob'))||'-');
 
