@@ -12,6 +12,7 @@ use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 class QuickPolicyType extends AbstractType
 {
@@ -116,6 +117,16 @@ class QuickPolicyType extends AbstractType
                     new Assert\Positive(message: 'Sum Assured must be a positive number.'),
                 ],
             ])
+            ->add('licBranch', TextType::class, [
+                'label' => 'LIC Branch',
+                'required' => false,
+                'constraints' => [
+                    new Assert\Length(
+                        max: 100,
+                        maxMessage: 'LIC Branch cannot exceed {{ limit }} characters.',
+                    ),
+                ],
+            ])
             ->add('policyTerm', NumberType::class, [
                 'label' => 'Policy Term',
                 'constraints' => [
@@ -152,6 +163,53 @@ class QuickPolicyType extends AbstractType
                         message: 'Basic Premium must be a valid number.',
                     ),
                     new Assert\Positive(message: 'Basic Premium must be a positive number.'),
+                ],
+            ])
+
+        // NOMINEE FIELDS (all optional - a Nominee is created only if nomineeName is filled)
+            ->add('nomineeName', TextType::class, [
+                'label' => 'Nominee Name',
+                'required' => false,
+                'constraints' => [
+                    new Assert\Length(
+                        max: 200,
+                        maxMessage: 'Nominee Name cannot exceed {{ limit }} characters.',
+                    ),
+                    new Assert\Regex(
+                        pattern: '/^[a-zA-Z\s]*$/',
+                        message: 'Nominee Name must contain only letters and spaces.',
+                    ),
+                ],
+            ])
+            ->add('nomineeRelationship', ChoiceType::class, [
+                'label' => 'Relationship',
+                'required' => false,
+                'placeholder' => 'Select Relationship',
+                'choices' => [
+                    'Spouse' => 'SPOUSE',
+                    'Son' => 'SON',
+                    'Daughter' => 'DAUGHTER',
+                    'Father' => 'FATHER',
+                    'Mother' => 'MOTHER',
+                    'Brother' => 'BROTHER',
+                    'Sister' => 'SISTER',
+                    'Other' => 'OTHER',
+                ],
+            ])
+            ->add('nomineeSharePercentage', NumberType::class, [
+                'label' => 'Share Percentage (%)',
+                'required' => false,
+                'constraints' => [
+                    new Assert\Callback(function ($value, ExecutionContextInterface $context) {
+                        if ($value === null || $value === '') {
+                            return; // optional
+                        }
+                        $num = (float) $value;
+                        if ($num < 1 || $num > 100) {
+                            $context->buildViolation('Share Percentage must be between 1 and 100.')
+                                ->addViolation();
+                        }
+                    }),
                 ],
             ]);
     }
