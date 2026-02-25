@@ -3,6 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Client;
+use App\Entity\Nominee;
 use App\Entity\Policy;
 use App\Form\QuickPolicyType;
 use Doctrine\ORM\EntityManagerInterface;
@@ -53,7 +54,7 @@ class QuickPolicyController extends AbstractController
 
                 // Create the Policy and link it to the Client
                 $policy = new Policy();
-                $policy->setClient($client); // Link happens here!
+                $policy->setClient($client);
                 $policy->setPolicyNumber($data['policyNumber']);
                 $policy->setLicPlan($data['licPlan']);
                 $policy->setCommencementDate($data['commencementDate']);
@@ -63,6 +64,17 @@ class QuickPolicyController extends AbstractController
                 $policy->setPremiumMode($data['premiumMode']);
                 $policy->setBasicPremium($data['basicPremium']);
                 $policy->setStatus('IN_FORCE');
+
+                // Set Life Assured DOB from client DOB (triggers entryAge calculation via lifecycle hook)
+                if ($data['dob']) {
+                    $policy->setLifeAssuredDob($data['dob']);
+                }
+
+                // Set LIC Branch
+                if (!empty($data['licBranch'])) {
+                    $policy->setLicBranch($data['licBranch']);
+                }
+
                 if ($agency) {
                     $policy->setAgency($agency);
                 }
@@ -71,7 +83,17 @@ class QuickPolicyController extends AbstractController
                 // calculate the GST, Total Premium, Maturity, and Next Due Dates.
                 $em->persist($policy);
 
-                // Save both to database
+                // Create Nominee if nomineeName is provided
+                if (!empty($data['nomineeName'])) {
+                    $nominee = new Nominee();
+                    $nominee->setPolicy($policy);
+                    $nominee->setName($data['nomineeName']);
+                    $nominee->setRelationship($data['nomineeRelationship'] ?? 'OTHER');
+                    $nominee->setSharePercentage((string) ($data['nomineeSharePercentage'] ?? 100));
+                    $em->persist($nominee);
+                }
+
+                // Save all to database
                 $em->flush();
 
                 $this->addFlash('success', 'Client and Policy successfully created together!');
