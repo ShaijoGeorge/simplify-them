@@ -42,6 +42,10 @@
                 <div class="qw-step-label">Premium</div>
             </button>
             <button type="button" class="qw-step" data-goto="4" id="step-btn-4">
+                <div class="qw-step-circle"><i class="fas fa-user-shield"></i></div>
+                <div class="qw-step-label">Nominee</div>
+            </button>
+            <button type="button" class="qw-step" data-goto="5" id="step-btn-5">
                 <div class="qw-step-circle"><i class="fas fa-rocket"></i></div>
                 <div class="qw-step-label">Submit</div>
             </button>
@@ -60,7 +64,7 @@
                 <div class="qw-panel-head">
                     <div class="qw-panel-icon bg-client"><i class="fas fa-user-circle"></i></div>
                     <div>
-                        <p class="qw-panel-step-lbl">Step 1 of 4</p>
+                        <p class="qw-panel-step-lbl">Step 1 of 5</p>
                         <h3 class="qw-panel-title">Client Details</h3>
                         <p class="qw-panel-desc">Enter the client's personal information to create their profile.</p>
                     </div>
@@ -111,7 +115,7 @@
                 <div class="qw-panel-head">
                     <div class="qw-panel-icon bg-policy"><i class="fas fa-file-shield"></i></div>
                     <div>
-                        <p class="qw-panel-step-lbl">Step 2 of 4</p>
+                        <p class="qw-panel-step-lbl">Step 2 of 5</p>
                         <h3 class="qw-panel-title">Policy Details</h3>
                         <p class="qw-panel-desc">Select the LIC plan and set the core policy parameters.</p>
                     </div>
@@ -149,6 +153,21 @@
                             attr: {class: 'qw-in', placeholder: 'e.g. 500000', id: 'qf_sumAssured', 'data-preview': 'pv_sa'}
                         }) }}
                     </div>
+                    <div class="qw-field qw-field--icon">
+                        <i class="qw-ico fas fa-building-columns"></i>
+                        {{ form_row(form.licBranch, {
+                            label: 'LIC Branch',
+                            row_attr: {class: 'qw-fg'},
+                            attr: {class: 'qw-in', placeholder: 'e.g. Kottayam', id: 'qf_licBranch', 'data-preview': 'pv_branch'}
+                        }) }}
+                    </div>
+                    <div class="qw-field">
+                        <div class="qw-fg">
+                            <label class="qw-entry-age-label"><i class="fas fa-birthday-cake" style="margin-right:5px;color:#6366f1;"></i> Entry Age (auto)</label>
+                            <div class="qw-entry-age-badge" id="qw-entry-age">-</div>
+                            <div class="qw-entry-age-hint">Calculated from DOB &amp; DOC</div>
+                        </div>
+                    </div>
                 </div>
                 <div class="qw-panel-foot">
                     <button type="button" class="qw-btn-back" onclick="qwGoto(1)">
@@ -165,7 +184,7 @@
                 <div class="qw-panel-head">
                     <div class="qw-panel-icon bg-premium"><i class="fas fa-coins"></i></div>
                     <div>
-                        <p class="qw-panel-step-lbl">Step 3 of 4</p>
+                        <p class="qw-panel-step-lbl">Step 3 of 5</p>
                         <h3 class="qw-panel-title">Premium Settings</h3>
                         <p class="qw-panel-desc">Define the policy term, payment schedule and premium amount.</p>
                     </div>
@@ -210,17 +229,63 @@
                         <i class="fas fa-arrow-left"></i> Back
                     </button>
                     <button type="button" class="qw-btn-next" onclick="qwGoto(4)">
+                        Continue <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            {# PANEL 4: Nominee Details (optional) #}
+            <div class="qw-panel" id="panel-4">
+                <div class="qw-panel-head">
+                    <div class="qw-panel-icon bg-nominee"><i class="fas fa-user-shield"></i></div>
+                    <div>
+                        <p class="qw-panel-step-lbl">Step 4 of 5</p>
+                        <h3 class="qw-panel-title">Nominee Details</h3>
+                        <p class="qw-panel-desc">Add the primary nominee for this policy. These fields are optional - more nominees can be added later.</p>
+                    </div>
+                </div>
+                <div class="qw-fields-grid">
+                    <div class="qw-field qw-field--icon">
+                        <i class="qw-ico fas fa-user"></i>
+                        {{ form_row(form.nomineeName, {
+                            label: 'Nominee Name',
+                            row_attr: {class: 'qw-fg'},
+                            attr: {class: 'qw-in', placeholder: 'e.g. Priya George', id: 'qf_nomineeName', 'data-preview': 'pv_nomineeName'}
+                        }) }}
+                    </div>
+                    <div class="qw-field qw-field--icon">
+                        <i class="qw-ico fas fa-people-arrows"></i>
+                        {{ form_row(form.nomineeRelationship, {
+                            label: 'Relationship',
+                            row_attr: {class: 'qw-fg'},
+                            attr: {class: 'qw-sel', id: 'qf_nomineeRelationship', 'data-preview': 'pv_nomineeRel'}
+                        }) }}
+                    </div>
+                    <div class="qw-field qw-field--icon">
+                        <i class="qw-ico fas fa-percent"></i>
+                        {{ form_row(form.nomineeSharePercentage, {
+                            label: 'Share Percentage (%)',
+                            row_attr: {class: 'qw-fg'},
+                            attr: {class: 'qw-in', placeholder: 'e.g. 100', id: 'qf_nomineeSharePercentage', 'data-preview': 'pv_nomineeShare'}
+                        }) }}
+                    </div>
+                </div>
+                <div class="qw-panel-foot">
+                    <button type="button" class="qw-btn-back" onclick="qwGoto(3)">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <button type="button" class="qw-btn-next" onclick="qwGoto(5)">
                         Review &amp; Submit <i class="fas fa-arrow-right"></i>
                     </button>
                 </div>
             </div>
 
-            {# PANEL 4: Review & Submit #}
-            <div class="qw-panel" id="panel-4">
+            {# PANEL 5: Review & Submit #}
+            <div class="qw-panel" id="panel-5">
                 <div class="qw-panel-head">
                     <div class="qw-panel-icon bg-review"><i class="fas fa-rocket"></i></div>
                     <div>
-                        <p class="qw-panel-step-lbl">Step 4 of 4</p>
+                        <p class="qw-panel-step-lbl">Step 5 of 5</p>
                         <h3 class="qw-panel-title">Review &amp; Submit</h3>
                         <p class="qw-panel-desc">Verify all details before creating the client and policy record.</p>
                     </div>
@@ -249,6 +314,13 @@
                         </div>
                         <div class="qw-review-rows" id="review-premium"></div>
                     </div>
+                    <div class="qw-review-section">
+                        <div class="qw-review-sec-hdr">
+                            <i class="fas fa-user-shield"></i> Nominee
+                            <button type="button" class="qw-edit-link" onclick="qwGoto(4)">Edit</button>
+                        </div>
+                        <div class="qw-review-rows" id="review-nominee"></div>
+                    </div>
                 </div>
 
                 {# Live Calculated Figures #}
@@ -260,6 +332,10 @@
                         <span class="qw-calc-hint">Computed live from your inputs</span>
                     </div>
                     <div class="qw-calc-grid">
+                        <div class="qw-calc-cell">
+                            <div class="qw-calc-label"><i class="fas fa-user-clock"></i> Entry Age</div>
+                            <div class="qw-calc-val" id="calc-entry-age">-</div>
+                        </div>
                         <div class="qw-calc-cell">
                             <div class="qw-calc-label"><i class="fas fa-percent"></i> GST Rate</div>
                             <div class="qw-calc-val" id="calc-gst-rate">-</div>
@@ -285,7 +361,7 @@
                 </div>
 
                 <div class="qw-panel-foot">
-                    <button type="button" class="qw-btn-back" onclick="qwGoto(3)">
+                    <button type="button" class="qw-btn-back" onclick="qwGoto(4)">
                         <i class="fas fa-arrow-left"></i> Back
                     </button>
                     <button type="submit" class="qw-btn-submit" id="qw-submit-btn">
@@ -361,6 +437,7 @@
 .bg-policy  { background:linear-gradient(135deg,#0ea5e9,#6366f1); }
 .bg-premium { background:linear-gradient(135deg,#f59e0b,#f97316); }
 .bg-review  { background:linear-gradient(135deg,#10b981,#6366f1); }
+.bg-nominee { background:linear-gradient(135deg,#e11d48,#f97316); }
 .qw-panel-step-lbl { font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#a5b4fc;margin:0 0 3px; }
 .qw-panel-title { font-size:1.15rem;font-weight:800;color:#1e1b4b;margin:0 0 4px; }
 .qw-panel-desc { font-size:13px;color:#6b7280;margin:0; }
@@ -410,8 +487,14 @@
 @media(max-width:700px){ .qw-review-grid{grid-template-columns:1fr;} }
 .qw-review-section { background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;overflow:hidden; }
 .qw-review-highlight { background:linear-gradient(135deg,#fdf4ff,#f5f3ff);border-color:#d8b4fe; }
-.qw-review-section:last-child { grid-column:span 2; }
+.qw-review-section:last-child { grid-column:span 1; }
 @media(max-width:700px){ .qw-review-section:last-child{grid-column:span 1;} }
+
+/* Entry Age Badge */
+.qw-entry-age-label { display:block;font-size:11px!important;font-weight:700!important;text-transform:uppercase!important;letter-spacing:.5px!important;color:#6366f1!important;margin-bottom:7px!important; }
+.qw-entry-age-badge { display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#ede9fe,#f5f3ff);border:1.5px solid #c4b5fd;border-radius:10px;padding:10px 18px;font-size:18px;font-weight:800;color:#4338ca;min-width:60px;transition:all .3s; }
+.qw-entry-age-badge.has-value { background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-color:#6366f1;box-shadow:0 4px 14px rgba(99,102,241,.3); }
+.qw-entry-age-hint { font-size:10.5px;color:#9ca3af;margin-top:5px;font-weight:500; }
 .qw-review-sec-hdr { display:flex;align-items:center;gap:8px;padding:12px 16px;background:rgba(99,102,241,.06);border-bottom:1.5px solid var(--border);font-size:12px;font-weight:700;color:#4338ca;text-transform:uppercase;letter-spacing:.5px; }
 .qw-review-sec-hdr i { color:#6366f1; }
 .qw-edit-link { margin-left:auto;background:none;border:none;color:#6366f1;font-size:11px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0; }
@@ -464,7 +547,7 @@
 (function(){
 'use strict';
 
-var TOTAL = 4;
+var TOTAL = 5;
 var current = 1;
 
 var modeMap = {YLY:'Yearly',HLY:'Half-Yearly',QLY:'Quarterly',NACH:'Monthly (NACH)',SINGLE:'Single'};
@@ -596,6 +679,15 @@ function fmtDate(s){ if(!s) return ''; var d=new Date(s); return isNaN(d) ? s : 
                             errorMsg = 'Year must be 4 digits and not before 1900.';
                         }
                     }
+                } else if (name.indexOf('[nomineeName]') > -1 && !/^[a-zA-Z\s]*$/.test(val)) {
+                    errorMsg = 'Nominee Name must contain only letters and spaces.';
+                } else if (name.indexOf('[nomineeSharePercentage]') > -1) {
+                    var shareNum = parseFloat(val);
+                    if (isNaN(shareNum)) {
+                        errorMsg = 'Share Percentage must be a valid number.';
+                    } else if (shareNum < 1 || shareNum > 100) {
+                        errorMsg = 'Share Percentage must be between 1 and 100.';
+                    }
                 }
             }
 
@@ -635,9 +727,9 @@ function fmtDate(s){ if(!s) return ''; var d=new Date(s); return isNaN(d) ? s : 
         return isValid;
     }
 
-    /* Validation toast notification — powered by SweetAlert2 */
+    /* Validation toast notification - powered by SweetAlert2 */
     function showValidationToast(step) {
-        var stepNames = {1:'Client Details',2:'Policy Details',3:'Premium Settings'};
+        var stepNames = {1:'Client Details',2:'Policy Details',3:'Premium Settings',4:'Nominee Details'};
         var msg = 'Please complete all required fields in ' + (stepNames[step]||'this section') + ' before proceeding.';
 
         if (typeof SimplifySwal !== 'undefined') {
@@ -706,9 +798,21 @@ function row(key, val, highlight){
 function calcAutoFields(){
     var basic   = parseFloat(getVal('quick_policy_basicPremium').replace(/,/g,''));
     var docStr  = getVal('quick_policy_commencementDate');   // yyyy-mm-dd
+    var dobStr  = getVal('quick_policy_dob');                 // yyyy-mm-dd
     var term    = parseInt(getVal('quick_policy_policyTerm'), 10);
     var modeEl  = $id('quick_policy_premiumMode');
     var mode    = modeEl ? modeEl.value : '';
+
+    /* ── Entry Age: years between DOB and DOC ── */
+    var entryAge = null;
+    var dob = dobStr ? new Date(dobStr) : null;
+    var doc = docStr ? new Date(docStr) : null;
+    if (dob && !isNaN(dob) && doc && !isNaN(doc)) {
+        var age = doc.getFullYear() - dob.getFullYear();
+        var m = doc.getMonth() - dob.getMonth();
+        if (m < 0 || (m === 0 && doc.getDate() < dob.getDate())) { age--; }
+        if (age >= 0) entryAge = age;
+    }
 
     /* ── GST logic: mirrors calculateTotals() in Policy.php ──
        Reform date: 22 Sept 2025  (new regime = 0%)
@@ -717,8 +821,6 @@ function calcAutoFields(){
         we default "before-reform" to 4.5% - same as endowment.)
     */
     var GST_REFORM = new Date('2025-09-22');
-    var doc = docStr ? new Date(docStr) : null;
-
     var gstRate  = 0;
     var regime   = '';
     if (doc && !isNaN(doc)) {
@@ -756,7 +858,21 @@ function calcAutoFields(){
         }
     }
 
-    return { gstRate:gstRate, gstAmt:gstAmt, total:total, maturity:maturity, nextDue:nextDue, regime:regime };
+    return { entryAge:entryAge, gstRate:gstRate, gstAmt:gstAmt, total:total, maturity:maturity, nextDue:nextDue, regime:regime };
+}
+
+/* ── Real-time Entry Age badge updater ── */
+function updateEntryAgeBadge() {
+    var c = calcAutoFields();
+    var badge = $id('qw-entry-age');
+    if (!badge) return;
+    if (c.entryAge !== null) {
+        badge.textContent = c.entryAge + ' yrs';
+        badge.classList.add('has-value');
+    } else {
+        badge.textContent = '\u2014';
+        badge.classList.remove('has-value');
+    }
 }
 
 function setCalc(id, text, big){
@@ -782,7 +898,8 @@ function buildReview(){
         row('LIC Plan', getSelText('quick_policy_licPlan')||'-') +
         row('Policy Number', getVal('quick_policy_policyNumber')||'-') +
         row('DOC', fmtDate(getVal('quick_policy_commencementDate'))||'-') +
-        row('Sum Assured', fmtINR(getVal('quick_policy_sumAssured'))||'-');
+        row('Sum Assured', fmtINR(getVal('quick_policy_sumAssured'))||'-') +
+        row('LIC Branch', getVal('quick_policy_licBranch')||'-');
 
     var modeEl = $id('quick_policy_premiumMode');
     var modeVal = modeEl ? modeEl.value : '';
@@ -796,8 +913,28 @@ function buildReview(){
         row('Payment Mode', modeLbl) +
         row('Basic Premium', fmtINR(getVal('quick_policy_basicPremium'))||'-', true);
 
+    // Nominee review section
+    var relMap = {SPOUSE:'Spouse',SON:'Son',DAUGHTER:'Daughter',FATHER:'Father',MOTHER:'Mother',BROTHER:'Brother',SISTER:'Sister',OTHER:'Other'};
+    var nn = getVal('quick_policy_nomineeName');
+    var nrEl = $id('quick_policy_nomineeRelationship');
+    var nrVal = nrEl ? nrEl.value : '';
+    var nrLbl = relMap[nrVal] || nrVal || '-';
+    var ns = getVal('quick_policy_nomineeSharePercentage');
+    var rnom = $id('review-nominee');
+    if(rnom) {
+        if (nn) {
+            rnom.innerHTML =
+                row('Nominee Name', nn) +
+                row('Relationship', nrLbl) +
+                row('Share %', ns ? ns + '%' : '-');
+        } else {
+            rnom.innerHTML = '<div class="qw-rrow"><span class="qw-rkey" style="color:#9ca3af;font-style:italic;">No nominee added (can be added later)</span></div>';
+        }
+    }
+
     /* ── Populate live calc card ── */
     var c = calcAutoFields();
+    setCalc('calc-entry-age', c.entryAge !== null ? c.entryAge + ' yrs' : '-');
     setCalc('calc-gst-rate', isNaN(c.gstRate) ? '-' : c.gstRate + '%');
     setCalc('calc-gst-amt',  isNaN(c.gstAmt)  ? '-' : fmtINR(c.gstAmt.toFixed(2)));
     setCalc('calc-total',    isNaN(c.total)    ? '-' : fmtINR(c.total.toFixed(2)), true);
@@ -940,6 +1077,13 @@ document.addEventListener('DOMContentLoaded', function(){
     initStepBtns();
     initSubmit();
     initPolicyNumberCheck();
+    updateEntryAgeBadge();
+
+    // Auto-update entry-age badge when DOB or DOC changes
+    var dobInput = $id('quick_policy_dob');
+    var docInput = $id('quick_policy_commencementDate');
+    if (dobInput) dobInput.addEventListener('change', updateEntryAgeBadge);
+    if (docInput) docInput.addEventListener('change', updateEntryAgeBadge);
 
     // Automatically remove validation error borders and messages when user starts typing/changing
     ['input', 'change'].forEach(function(evt) {
