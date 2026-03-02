@@ -1,147 +1,255 @@
+/**
+ * policy_dates.js
+ *
+ * Auto-calculates Maturity Date, Next Due Date, GST and Total Premium
+ * inside the EasyAdmin Policy create/edit form.
+ *
+ * GST Rate Matrix (mirrors Policy::calculateTotals()):
+ *
+ *  Regime       │ Plan category          │ Policy Year 1 │ Year 2+
+ * ──────────────┼────────────────────────┼───────────────┼────────
+ *  Old regime   │ Traditional*           │     4.50 %    │ 2.25 %
+ *  (DOC before  │ Term                   │    18.00 %    │ 18.00 %
+ *  22 Sep 2025) │ Single Premium         │     1.25 %    │  N/A
+ * ──────────────┼────────────────────────┼───────────────┼────────
+ *  New regime   │ All categories         │     0.00 %    │  0.00 %
+ *  (DOC on/after│                        │               │
+ *  22 Sep 2025) │                        │               │
+ *
+ * * Traditional = Endowment, Whole Life, Money Back, etc.
+ *   (plan-type name does NOT contain the word "TERM").
+ *
+ * "Policy year" is 1-based: year 1 = 0 full years since DOC, year 2 = 1
+ * full year since DOC, etc. — identical to Policy::calculateTotals().
+ */
 document.addEventListener('DOMContentLoaded', function () {
-    // --- Configuration & Selectors ---
-    // EasyAdmin field IDs follow the pattern: Policy_fieldName
-    const selectors = {
-        commencementDate: '#Policy_commencementDate',
-        policyTerm: '#Policy_policyTerm',
-        premiumMode: '#Policy_premiumMode',
-        maturityDate: '#Policy_maturityDate',
-        nextDueDate: '#Policy_nextDueDate',
-        basicPremium: '#Policy_basicPremium',
-        gst: '#Policy_gst',
-        totalPremium: '#Policy_totalPremium'
+
+    // ── Field selectors (EasyAdmin uses entity name prefix) ──────────────────
+    var selectors = {
+        commencementDate : '#Policy_commencementDate',
+        policyTerm       : '#Policy_policyTerm',
+        premiumMode      : '#Policy_premiumMode',
+        maturityDate     : '#Policy_maturityDate',
+        nextDueDate      : '#Policy_nextDueDate',
+        basicPremium     : '#Policy_basicPremium',
+        gst              : '#Policy_gst',
+        totalPremium     : '#Policy_totalPremium',
     };
 
-    // GST Reform Date: 22 Sept 2025 - after this date, GST is 0%
-    const GST_REFORM_DATE = new Date('2025-09-22');
-    // Default GST rate for old regime (Endowment/Traditional plans)
-    // Term plans are 18%, but we default to 4.5% since most policies are traditional.
-    // Backend will finalize the correct rate on save based on plan type.
-    const OLD_REGIME_DEFAULT_GST_RATE = 4.5;
+    /** GST Reform Date: from this date onwards the rate is 0 %. */
+    var GST_REFORM_DATE = new Date('2025-09-22');
 
-    // Helper: Get element by selector
-    const getEl = (selector) => document.querySelector(selector);
+    // ── Helper: query a single element ───────────────────────────────────────
+    function getEl(selector) {
+        return document.querySelector(selector);
+    }
 
-    // --- Date Calculations ---
+    // ── Helper: read the selected plan-type name from the LicPlan dropdown ───
+    // EasyAdmin renders an <option> whose text contains "tableNumber – planName".
+    // We piggyback on a data attribute if available, otherwise we attempt to
+    // read the currently selected plan's type from a hidden field injected by
+    // the server.  Fallback: empty string (treated as Traditional).
+    function getPlanTypeName() {
+        // The most reliable approach: EasyAdmin can expose a data attribute on
+        // the plan select if you add it via configureFields().  Until then, we
+        // look for a hidden input that the server may render as
+        // <input type="hidden" id="Policy_planTypeName" value="TERM">.
+        var hidden = document.querySelector('#Policy_planTypeName');
+        if (hidden) {
+            return hidden.value.toUpperCase();
+        }
+
+        // Secondary fallback: read from a data attribute on the select element.
+        var planSelect = document.querySelector('#Policy_licPlan');
+        if (planSelect) {
+            var selected = planSelect.options[planSelect.selectedIndex];
+            if (selected && selected.dataset && selected.dataset.planType) {
+                return selected.dataset.planType.toUpperCase();
+            }
+        }
+
+        return '';
+    }
+
+    // ── Determine current policy year (1-based) ───────────────────────────────
+    // Mirrors the PHP logic in calculateTotals():
+    //   fullYearsElapsed = floor(diff in years between DOC and today)
+    //   policyYear = fullYearsElapsed + 1
+    function getPolicyYear(docDateStr) {
+        if (!docDateStr) return 1;
+
+        var doc   = new Date(docDateStr);
+        var today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (isNaN(doc.getTime())) return 1;
+
+        // Compute full years elapsed (same algorithm as PHP's DateInterval->y)
+        var years = today.getFullYear() - doc.getFullYear();
+        var monthDiff = today.getMonth() - doc.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < doc.getDate())) {
+            years--;
+        }
+        if (years < 0) years = 0;  // future DOC → still year 1
+
+        return years + 1;  // 1-based
+    }
+
+    // ── Resolve GST rate from all relevant inputs ─────────────────────────────
+    function resolveGstRate(docDateStr, premiumMode, planTypeName) {
+        if (!docDateStr) return 0.0;
+
+        var doc = new Date(docDateStr);
+        if (isNaN(doc.getTime())) return 0.0;
+
+        // New regime (on/after 22 Sep 2025) → always 0 %
+        if (doc >= GST_REFORM_DATE) {
+            return 0.0;
+        }
+
+        // Old regime logic
+        var isTerm   = planTypeName.indexOf('TERM') !== -1;
+        var isSingle = premiumMode === 'SINGLE';
+        var policyYear = getPolicyYear(docDateStr);
+
+        if (isTerm) {
+            return 18.0;                              // Term: flat 18 % all years
+        }
+
+        if (isSingle) {
+            return 1.25;                              // Single-premium endowment: 1.25 %
+        }
+
+        // Traditional (Endowment, Money Back, Whole Life …)
+        return policyYear === 1 ? 4.5 : 2.25;
+    }
+
+    // ── Date Calculations ─────────────────────────────────────────────────────
 
     function calculateMaturityDate() {
-        const docInput = getEl(selectors.commencementDate);
-        const termInput = getEl(selectors.policyTerm);
-        const maturityInput = getEl(selectors.maturityDate);
+        var docInput      = getEl(selectors.commencementDate);
+        var termInput     = getEl(selectors.policyTerm);
+        var maturityInput = getEl(selectors.maturityDate);
 
         if (!docInput || !termInput || !maturityInput) return;
 
-        const docValue = docInput.value; // YYYY-MM-DD
-        const termValue = parseInt(termInput.value, 10);
+        var docValue  = docInput.value;           // YYYY-MM-DD
+        var termValue = parseInt(termInput.value, 10);
 
-        if (docValue && !isNaN(termValue)) {
-            const date = new Date(docValue);
+        if (docValue && !isNaN(termValue) && termValue > 0) {
+            var date = new Date(docValue);
             date.setFullYear(date.getFullYear() + termValue);
             maturityInput.value = date.toISOString().split('T')[0];
         }
     }
 
     function calculateNextDueDate() {
-        const docInput = getEl(selectors.commencementDate);
-        const modeInput = getEl(selectors.premiumMode);
-        const nextDueInput = getEl(selectors.nextDueDate);
+        var docInput     = getEl(selectors.commencementDate);
+        var modeInput    = getEl(selectors.premiumMode);
+        var nextDueInput = getEl(selectors.nextDueDate);
 
         if (!docInput || !modeInput || !nextDueInput) return;
 
-        const docValue = docInput.value;
-        const modeValue = modeInput.value;
+        var docValue  = docInput.value;
+        var modeValue = modeInput.value;
 
-        if (docValue && modeValue) {
-            let nextDueDate = new Date(docValue);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
+        if (!docValue || !modeValue) return;
 
-            let monthsToAdd = 0;
-            switch (modeValue) {
-                case 'YLY':
-                case 'YEARLY':
-                    monthsToAdd = 12;
-                    break;
-                case 'HLY':
-                case 'HALF-YEARLY':
-                    monthsToAdd = 6;
-                    break;
-                case 'QLY':
-                case 'QUARTERLY':
-                    monthsToAdd = 3;
-                    break;
-                case 'NACH':
-                case 'MLY':
-                case 'MONTHLY':
-                    monthsToAdd = 1;
-                    break;
-                case 'SINGLE':
-                    nextDueDate = null;
-                    break;
-                default:
-                    monthsToAdd = 0;
-            }
+        var nextDueDate  = new Date(docValue);
+        var today        = new Date();
+        today.setHours(0, 0, 0, 0);
 
-            if (monthsToAdd > 0) {
-                addMonths(nextDueDate, monthsToAdd);
-
-                let safetyCounter = 0;
-                while (nextDueDate < today && safetyCounter < 1000) {
-                    addMonths(nextDueDate, monthsToAdd);
-                    safetyCounter++;
-                }
-
-                nextDueInput.value = nextDueDate.toISOString().split('T')[0];
-            } else if (modeValue === 'SINGLE') {
+        var monthsToAdd = 0;
+        switch (modeValue) {
+            case 'YLY':
+            case 'YEARLY':
+                monthsToAdd = 12;
+                break;
+            case 'HLY':
+            case 'HALF-YEARLY':
+                monthsToAdd = 6;
+                break;
+            case 'QLY':
+            case 'QUARTERLY':
+                monthsToAdd = 3;
+                break;
+            case 'NACH':
+            case 'MLY':
+            case 'MONTHLY':
+                monthsToAdd = 1;
+                break;
+            case 'SINGLE':
                 nextDueInput.value = '';
+                return;
+            default:
+                monthsToAdd = 0;
+        }
+
+        if (monthsToAdd > 0) {
+            addMonths(nextDueDate, monthsToAdd);
+
+            var safetyCounter = 0;
+            while (nextDueDate < today && safetyCounter < 1000) {
+                addMonths(nextDueDate, monthsToAdd);
+                safetyCounter++;
             }
+
+            nextDueInput.value = nextDueDate.toISOString().split('T')[0];
         }
     }
 
-    // --- Financial Calculations (GST & Total Premium) ---
+    // ── Financial Calculations (GST & Total Premium) ──────────────────────────
 
     function calculateFinancials() {
-        const docInput = getEl(selectors.commencementDate);
-        const basicInput = getEl(selectors.basicPremium);
-        const gstInput = getEl(selectors.gst);
-        const totalInput = getEl(selectors.totalPremium);
+        var docInput   = getEl(selectors.commencementDate);
+        var modeInput  = getEl(selectors.premiumMode);
+        var basicInput = getEl(selectors.basicPremium);
+        var gstInput   = getEl(selectors.gst);
+        var totalInput = getEl(selectors.totalPremium);
 
         if (!basicInput || !gstInput || !totalInput) return;
 
-        const basicValue = parseFloat(basicInput.value);
-        if (isNaN(basicValue) || basicValue === 0) return;
-
-        // Determine GST rate based on Commencement Date
-        let gstRate = 0.0;
-        if (docInput && docInput.value) {
-            const docDate = new Date(docInput.value);
-            if (docDate < GST_REFORM_DATE) {
-                // Old Tax Regime (before Sept 2025) - default 4.5%
-                // Backend will adjust for Term plans (18%) on save
-                gstRate = OLD_REGIME_DEFAULT_GST_RATE;
-            } else {
-                // New Tax Regime (after Sept 2025) - 0% GST
-                gstRate = 0.0;
-            }
+        var basicValue = parseFloat(basicInput.value);
+        if (isNaN(basicValue) || basicValue === 0) {
+            gstInput.value  = '';
+            totalInput.value = '';
+            return;
         }
 
-        // Calculate GST amount and Total
-        const calculatedGst = (basicValue * gstRate) / 100;
-        const total = basicValue + calculatedGst;
+        var docDateStr   = docInput  ? docInput.value  : '';
+        var premiumMode  = modeInput ? modeInput.value : '';
+        var planTypeName = getPlanTypeName();
 
-        // Update the disabled fields
-        gstInput.value = Math.round(calculatedGst);
+        var gstRate        = resolveGstRate(docDateStr, premiumMode, planTypeName);
+        var calculatedGst  = (basicValue * gstRate) / 100;
+        var total          = basicValue + calculatedGst;
+
+        gstInput.value   = Math.round(calculatedGst);
         totalInput.value = Math.round(total);
+
+        // Update the GST rate hint label if present (optional UI element)
+        var rateHint = document.querySelector('#gst-rate-hint');
+        if (rateHint) {
+            var policyYear   = getPolicyYear(docDateStr);
+            var docDate      = docDateStr ? new Date(docDateStr) : null;
+            var isNewRegime  = docDate && docDate >= GST_REFORM_DATE;
+
+            if (isNewRegime) {
+                rateHint.textContent = 'New regime (post Sep-2025): 0% GST';
+            } else {
+                rateHint.textContent = 'Old regime — Policy Year ' + policyYear + ': ' + gstRate + '% GST';
+            }
+        }
     }
 
-    // --- Helpers ---
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
-    // Add months handling end-of-month edge cases (e.g. Jan 31 + 1 month -> Feb 28)
+    /** Add months, clamping to end-of-month when needed (e.g. Jan 31 + 1 month → Feb 28). */
     function addMonths(date, months) {
-        const d = date.getDate();
+        var d = date.getDate();
         date.setMonth(date.getMonth() + months);
-        if (date.getDate() != d) {
-            date.setDate(0);
+        if (date.getDate() !== d) {
+            date.setDate(0);  // roll back to last day of previous month
         }
         return date;
     }
@@ -152,33 +260,36 @@ document.addEventListener('DOMContentLoaded', function () {
         calculateFinancials();
     }
 
-    // --- Event Listeners ---
+    // ── Event Listeners ───────────────────────────────────────────────────────
 
-    // Date & term fields trigger date recalculations
-    const dateInputs = [
+    // Fields that affect date calculations AND GST (DOC also drives the regime check)
+    [
         selectors.commencementDate,
         selectors.policyTerm,
-        selectors.premiumMode
-    ];
-
-    dateInputs.forEach(selector => {
-        const el = getEl(selector);
-        if (el) {
-            el.addEventListener('change', recalculateAll);
-            if (el.tagName === 'INPUT') {
-                el.addEventListener('input', recalculateAll);
-            }
+        selectors.premiumMode,
+    ].forEach(function (selector) {
+        var el = getEl(selector);
+        if (!el) return;
+        el.addEventListener('change', recalculateAll);
+        if (el.tagName === 'INPUT') {
+            el.addEventListener('input', recalculateAll);
         }
     });
 
-    // Basic Premium field triggers financial recalculation
-    const basicEl = getEl(selectors.basicPremium);
+    // Basic Premium only affects financials
+    var basicEl = getEl(selectors.basicPremium);
     if (basicEl) {
         basicEl.addEventListener('change', calculateFinancials);
-        basicEl.addEventListener('input', calculateFinancials);
+        basicEl.addEventListener('input',  calculateFinancials);
     }
 
-    // Run once on load to populate if data exists (e.g. edit mode)
-    recalculateAll();
+    // If the LIC Plan select exists, re-evaluate financials whenever the plan
+    // changes (plan type may switch between TERM and Traditional).
+    var planEl = document.querySelector('#Policy_licPlan');
+    if (planEl) {
+        planEl.addEventListener('change', calculateFinancials);
+    }
 
+    // Run once on page load to populate fields in edit mode
+    recalculateAll();
 });
