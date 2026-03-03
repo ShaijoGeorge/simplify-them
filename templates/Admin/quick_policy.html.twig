@@ -120,6 +120,11 @@
                             row_attr: {class: 'qw-fg'},
                             attr: {class: 'qw-sel', id: 'qf_licPlan', 'data-preview': 'pv_plan'}
                         }) }}
+                        {# Limited Premium hint — shown by JS when plan has isLimitedPremium=true #}
+                        <div id="qw-lp-hint" style="display:none;margin-top:8px;padding:9px 13px;background:#fff8e1;border:1.5px solid #fbbf24;border-radius:10px;font-size:12px;font-weight:600;color:#92400e;">
+                            <i class="fas fa-info-circle" style="margin-right:6px;color:#f59e0b;"></i>
+                            <strong>Limited Premium Plan</strong> — PPT must be less than Policy Term.
+                        </div>
                     </div>
                     <div class="qw-field qw-field--icon">
                         <i class="qw-ico fas fa-hashtag"></i>
@@ -205,6 +210,8 @@
                             row_attr: {class: 'qw-fg'},
                             attr: {class: 'qw-sel', id: 'qf_premiumMode', 'data-preview': 'pv_mode'}
                         }) }}
+                        {# Mirror input: JS swaps name here when premiumMode is disabled for single-premium plans #}
+                        <input type="hidden" id="qw-mode-mirror" name="" value="">
                     </div>
                     <div class="qw-field qw-field--icon">
                         <i class="qw-ico fas fa-wallet"></i>
@@ -544,6 +551,73 @@ var current = 1;
 
 var modeMap = {YLY:'Yearly',HLY:'Half-Yearly',QLY:'Quarterly',NACH:'Monthly (NACH)',SINGLE:'Single'};
 
+/* Plan flags (isSinglePremium / isLimitedPremium) */
+var qwPlanFlagsCache = {};
+var qwPlanFlags = { isSinglePremium: false, isLimitedPremium: false, planTypeName: '' };
+
+function fetchPlanFlags(planId, callback) {
+    if (!planId) { callback({}); return; }
+    if (qwPlanFlagsCache[planId]) { callback(qwPlanFlagsCache[planId]); return; }
+    fetch('/admin/api/lic-plan/' + planId + '/flags', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(flags){ qwPlanFlagsCache[planId] = flags; callback(flags); })
+    .catch(function(){ callback({}); });
+}
+
+function applyPlanFlagBehaviours() {
+    var modeEl   = $id('quick_policy_premiumMode');
+    var mirrorEl = $id('qw-mode-mirror');
+    var lpHint   = $id('qw-lp-hint');
+
+    if (qwPlanFlags.isSinglePremium) {
+        if (modeEl) {
+            modeEl.value    = 'SINGLE';
+            modeEl.disabled = true;
+            modeEl.style.opacity = '0.65';
+            if (mirrorEl) {
+                mirrorEl.name  = modeEl.name;
+                mirrorEl.value = 'SINGLE';
+                modeEl.name    = '';
+            }
+        }
+        document.querySelectorAll('.qw-mode-badge').forEach(function(b){
+            b.classList.toggle('active', b.getAttribute('data-mode') === 'SINGLE');
+        });
+    } else {
+        if (modeEl) {
+            modeEl.disabled      = false;
+            modeEl.style.opacity = '';
+            if (mirrorEl && mirrorEl.name) {
+                modeEl.name    = mirrorEl.name;
+                mirrorEl.name  = '';
+                mirrorEl.value = '';
+            }
+        }
+    }
+
+    if (lpHint) lpHint.style.display = qwPlanFlags.isLimitedPremium ? '' : 'none';
+}
+
+function onPlanChange() {
+    var planEl = $id('quick_policy_licPlan');
+    var planId = planEl ? planEl.value : null;
+    if (!planId) {
+        qwPlanFlags = { isSinglePremium: false, isLimitedPremium: false, planTypeName: '' };
+        applyPlanFlagBehaviours();
+        return;
+    }
+    fetchPlanFlags(planId, function(flags) {
+        qwPlanFlags = {
+            isSinglePremium:  !!flags.isSinglePremium,
+            isLimitedPremium: !!flags.isLimitedPremium,
+            planTypeName:     flags.planTypeName || ''
+        };
+        applyPlanFlagBehaviours();
+    });
+}
+
 /* ─── helpers ─── */
 function $id(id){ return document.getElementById(id); }
 function getVal(id){ var el=$id(id); return el ? el.value.trim() : ''; }
@@ -806,17 +880,28 @@ function calcAutoFields(){
 
     /* ── GST logic: mirrors calculateTotals() in Policy.php ──
        Reform date: 22 Sept 2025  (new regime = 0%)
-       Before reform: TERM = 18%, others = 4.5%
-       (Plan type cannot be known in JS without an API call;
-        we default "before-reform" to 4.5% - same as endowment.)
+       Before reform:
+         Single Premium (plan flag OR mode=SINGLE) → 1.25%
+         Term plan                                  → 18%
+         Traditional / others                       → 4.5%
     */
     var GST_REFORM = new Date('2025-09-22');
     var gstRate  = 0;
     var regime   = '';
     if (doc && !isNaN(doc)) {
         if (doc < GST_REFORM) {
-            gstRate = 4.5;
-            regime  = '⚠\uFE0F Old regime (pre Sep-2025): 4.5% GST applied. Rate may vary for Term plans (18%).';
+            var isSingle = (mode === 'SINGLE') || !!(qwPlanFlags && qwPlanFlags.isSinglePremium);
+            var isTerm   = !!(qwPlanFlags && qwPlanFlags.planTypeName && qwPlanFlags.planTypeName.toUpperCase().indexOf('TERM') !== -1);
+            if (isSingle) {
+                gstRate = 1.25;
+                regime  = '⚠\uFE0F Old regime (pre Sep-2025): 1.25% GST — Single Premium plan.';
+            } else if (isTerm) {
+                gstRate = 18;
+                regime  = '⚠\uFE0F Old regime (pre Sep-2025): 18% GST — Term plan.';
+            } else {
+                gstRate = 4.5;
+                regime  = '⚠\uFE0F Old regime (pre Sep-2025): 4.5% GST applied.';
+            }
         } else {
             gstRate = 0;
             regime  = '✅ New regime (post Sep-2025): 0% GST on individual life insurance.';
@@ -1074,6 +1159,13 @@ document.addEventListener('DOMContentLoaded', function(){
     var docInput = $id('quick_policy_commencementDate');
     if (dobInput) dobInput.addEventListener('change', updateEntryAgeBadge);
     if (docInput) docInput.addEventListener('change', updateEntryAgeBadge);
+
+    // Plan flags: fetch when plan changes and on page load (edit mode)
+    var planInput = $id('quick_policy_licPlan');
+    if (planInput) {
+        planInput.addEventListener('change', onPlanChange);
+        if (planInput.value) onPlanChange(); // pre-selected on edit
+    }
 
     // Automatically remove validation error borders and messages when user starts typing/changing
     ['input', 'change'].forEach(function(evt) {
