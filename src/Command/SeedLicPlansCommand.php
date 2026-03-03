@@ -41,8 +41,11 @@ class SeedLicPlansCommand extends Command
             return Command::FAILURE;
         }
 
-        // 2. Comprehensive Data Array
-        // Format: [Table No, Plan Name, Category Name, IsActive, Description, isSinglePremium, isLimitedPremium]
+        // 2. Dataset
+        // Format: [Table No, Plan Name, Category, IsActive, Description, IsSinglePremium, IsLimitedPremium]
+        //
+        // IsSinglePremium  = true  → one-time lump-sum premium; drives 1.25% GST + 2% commission
+        // IsLimitedPremium = true  → PPT < PolicyTerm by design (informational UI hint)
         $licPlansDataset = [
             // ════════════════════════════════════════════════════════════════════════
             // 1. ACTIVE PLANS (Currently available for sale - Post 2024/2025 Updates)
@@ -207,19 +210,12 @@ class SeedLicPlansCommand extends Command
         $skippedCount = 0;
 
         foreach ($licPlansDataset as $data) {
-            $tableNo = $data[0];
-            $planName = $data[1];
-            $categoryName = strtoupper($data[2]);
-            $isActive = $data[3];
-            $desc = $data[4];
-            $isSinglePremium = $data[5];
-            $isLimitedPremium = $data[6];
+            [$tableNo, $planName, $categoryName, $isActive, $desc, $isSinglePremium, $isLimitedPremium] = $data;
 
-            // Resolve the PlanType Entity
-            $planType = $typeMap[$categoryName] ?? null;
+            $planType = $typeMap[strtoupper($categoryName)] ?? null;
 
             if (!$planType) {
-                $io->warning("Plan Type '{$data[2]}' not found for Table {$tableNo}. Skipping.");
+                $io->warning("Plan Type '{$categoryName}' not found for Table {$tableNo}. Skipping.");
                 continue;
             }
 
@@ -229,7 +225,7 @@ class SeedLicPlansCommand extends Command
             if ($plan) {
                 // Determine if an update is needed
                 $needsUpdate = false;
-                
+
                 if ($plan->getPlanType() !== $planType) {
                     $plan->setPlanType($planType);
                     $needsUpdate = true;
@@ -238,8 +234,8 @@ class SeedLicPlansCommand extends Command
                     $plan->setIsActive($isActive);
                     $needsUpdate = true;
                 }
-                
-                // Compare new boolean flags
+                // Always sync the new flags (they default to false, so first run
+                // will update every existing row that needs a flag set to true).
                 if ($plan->isSinglePremium() !== $isSinglePremium) {
                     $plan->setIsSinglePremium($isSinglePremium);
                     $needsUpdate = true;
@@ -258,12 +254,13 @@ class SeedLicPlansCommand extends Command
 
                 if ($needsUpdate) {
                     $updated++;
-                    $io->text("  <comment>UPDATED</comment> Table {$tableNo} - {$planName}");
+                    $sp = $isSinglePremium  ? ' [SP]' : '';
+                    $lp = $isLimitedPremium ? ' [LP]' : '';
+                    $io->text("  <comment>UPDATED</comment> Table {$tableNo} - {$planName}{$sp}{$lp}");
                 } else {
                     $skippedCount++;
                 }
             } else {
-                // Insert New Plan
                 $plan = new LicPlan();
                 $plan->setTableNumber($tableNo);
                 $plan->setPlanName($planName);
@@ -275,7 +272,9 @@ class SeedLicPlansCommand extends Command
 
                 $this->entityManager->persist($plan);
                 $inserted++;
-                $io->text("  <info>INSERTED</info> Table {$tableNo} - {$planName}");
+                $sp = $isSinglePremium  ? ' [SP]' : '';
+                $lp = $isLimitedPremium ? ' [LP]' : '';
+                $io->text("  <info>INSERTED</info> Table {$tableNo} - {$planName}{$sp}{$lp}");
             }
         }
 
@@ -284,11 +283,13 @@ class SeedLicPlansCommand extends Command
 
         $io->newLine();
         $io->success(sprintf(
-            'Seeding Complete! Inserted: %d | Updated: %d | Skipped (No changes): %d', 
-            $inserted, 
-            $updated, 
+            'Seeding Complete! Inserted: %d | Updated: %d | Skipped (No changes): %d',
+            $inserted,
+            $updated,
             $skippedCount
         ));
+
+        $io->note('[SP] = Single Premium flag set  |  [LP] = Limited Premium flag set');
 
         return Command::SUCCESS;
     }
