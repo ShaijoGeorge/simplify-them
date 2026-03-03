@@ -2,6 +2,7 @@
 
 namespace App\Controller\Admin;
 
+use App\Entity\LicPlan;
 use App\Entity\Policy;
 use App\Entity\User;
 use App\Service\PermissionCheckerService;
@@ -19,6 +20,9 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\MoneyField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Attribute\Route;
 
 class PolicyCrudController extends BaseCrudController
 {
@@ -82,7 +86,6 @@ class PolicyCrudController extends BaseCrudController
         // Get current User to check permissions/roles
         /** @var User $user */
         $user = $this->getUser();
-        $isSuperAdmin = in_array('ROLE_SUPER_ADMIN', $user->getRoles());
 
         //LEFT COLUMN (6/12): CONTRACT DETAILS
         yield FormField::addColumn(6);
@@ -100,7 +103,8 @@ class PolicyCrudController extends BaseCrudController
 
         yield AssociationField::new('licPlan', 'Plan Table')
             ->setColumns(12)
-            ->setRequired(true);
+            ->setRequired(true)
+            ->setHelp('Selecting a Single Premium plan will auto-lock the Payment Mode.');
 
         yield DateField::new('commencementDate', 'Date of Commencement (DOC)')
             ->setColumns(12)
@@ -193,7 +197,7 @@ class PolicyCrudController extends BaseCrudController
         // CONDITIONAL LIFE ASSURED SECTION
         yield FormField::addFieldset('Life Assured Details')
             ->setIcon('fa fa-user-shield')
-            ->setHelp('Fill ONLY if policy is for minor or different life assured.');
+            ->setHelp('Fill ONLY if policy is for a minor or a different life assured.');
 
         // This is just a UI toggle, it doesn't save to the database (mapped: false)
         yield BooleanField::new('isDifferentLifeAssured', 'Life Assured is different from Client')
@@ -294,9 +298,26 @@ class PolicyCrudController extends BaseCrudController
     public function configureFilters(Filters $filters): Filters
     {
         return $filters
-            ->add('status')       // filtering by Status (Lapsed/InForce)
-            ->add('nextDueDate')  // filtering by Date
-            ->add('client')       // searching by Client
-            ->add('agency');      // for Super Admin
+            ->add('status')
+            ->add('nextDueDate')
+            ->add('client')
+            ->add('agency');
+    }
+
+    // AJAX: Return plan flags for the JS premium-behaviour engine
+    #[Route('/admin/api/lic-plan/{id}/flags', name: 'app_admin_lic_plan_flags', methods: ['GET'])]
+    public function getLicPlanFlags(int $id): JsonResponse
+    {
+        $plan = $this->entityManager->getRepository(LicPlan::class)->find($id);
+
+        if (!$plan) {
+            return $this->json(['error' => 'Plan not found'], 404);
+        }
+
+        return $this->json([
+            'isSinglePremium'  => $plan->isSinglePremium(),
+            'isLimitedPremium' => $plan->isLimitedPremium(),
+            'planTypeName'     => $plan->getPlanType()?->getName() ?? '',
+        ]);
     }
 }
