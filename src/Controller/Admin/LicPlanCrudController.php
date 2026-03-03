@@ -75,9 +75,18 @@ class LicPlanCrudController extends BaseCrudController
             ->setColumns(12)
             ->setHelp('Select the category (e.g. Endowment, Money Back)');
 
+        yield BooleanField::new('isSinglePremium', 'Single Premium Plan')
+            ->setColumns(6)
+            ->renderAsSwitch(false);
+
+        yield BooleanField::new('isLimitedPremium', 'Limited Premium Plan')
+            ->setColumns(6)
+            ->renderAsSwitch(false);
+
         yield BooleanField::new('isActive', 'Plan Status')
             ->setLabel('Active for New Policies')
-            ->setColumns(12);
+            ->setColumns(12)
+            ->renderAsSwitch(false);
 
         // FULL WIDTH: DESCRIPTION 
         yield FormField::addColumn(12);
