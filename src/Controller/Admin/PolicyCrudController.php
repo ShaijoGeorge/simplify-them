@@ -143,13 +143,28 @@ class PolicyCrudController extends BaseCrudController
             ->hideOnIndex()
             ->setStoredAsCents(false);
 
-        // Group premiums visually
-        yield MoneyField::new('basicPremium', 'Basic Premium')
+        // Annual (tabular) premium — the primary input
+        yield MoneyField::new('annualPremium', 'Annual Premium')
             ->setCurrency('INR')
             ->setColumns(4)
-            ->setHelp('Enter amount BEFORE tax')
+            ->setHelp('Tabular annual premium from LIC plan table')
             ->hideOnIndex()
             ->setStoredAsCents(false);
+
+        // Group premiums visually
+        yield MoneyField::new('basicPremium', 'Modal Premium')
+            ->setCurrency('INR')
+            ->setColumns(4)
+            ->setHelp('Auto-calculated: Annual × rebate factor')
+            ->hideOnIndex()
+            ->setStoredAsCents(false);
+
+        yield NumberField::new('modalRebate', 'Rebate Factor')
+            ->setColumns(4)
+            ->setDisabled(true)
+            ->hideOnIndex()
+            ->setNumDecimals(4)
+            ->setHelp('HLY=0.51, QLY=0.26, MLY=0.0875');
 
         yield MoneyField::new('gst', 'GST')
             ->setCurrency('INR')
@@ -162,7 +177,7 @@ class PolicyCrudController extends BaseCrudController
             ->setColumns(4)
             ->setDisabled(true)
             ->setStoredAsCents(false)
-            ->setHelp('Auto-calculated (Basic + GST)');
+            ->setHelp('Auto-calculated (Modal + GST)');
 
 
         // RIGHT COLUMN: FINANCIALS & STATUS
