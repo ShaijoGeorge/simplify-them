@@ -151,12 +151,56 @@
         </div>
     </div>
 
+    <!-- PREMIUM BREAKDOWN (base + riders) -->
+    {% set riders = receipt.policy.riders %}
+    {% set totalRiderPremium = receipt.policy.totalRiderPremium %}
+
+    {% if riders|length > 0 %}
+    <div class="info" style="margin-top:16px;">
+        <div style="font-weight:bold;color:#444;padding:8px 0;border-bottom:2px solid #ddd;margin-bottom:4px;">
+            Premium Breakdown
+        </div>
+
+        <div class="row">
+            <div class="label">Base Premium</div>
+            <div class="value">
+                {{ (receipt.policy.basicPremium / 100)|format_currency('INR', {fraction_digit: 2}, 'en_IN') }}
+            </div>
+        </div>
+
+        {% for rider in riders %}
+            {% if rider.active %}
+            <div class="row">
+                <div class="label" style="padding-left:12px;font-style:italic;">
+                    ↳ {{ rider.riderTypeLabel }}
+                </div>
+                <div class="value">
+                    + {{ (rider.riderPremium / 100)|format_currency('INR', {fraction_digit: 2}, 'en_IN') }}
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+
+        <div class="row" style="border-top:1px dashed #aaa;margin-top:4px;">
+            <div class="label">GST</div>
+            <div class="value">
+                {{ (receipt.policy.gst / 100)|format_currency('INR', {fraction_digit: 2}, 'en_IN') }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- AMOUNT -->
     <div class="amount-box">
         <div class="amount-label">Amount Collected</div>
         <div class="amount-value">
             {{ (receipt.amount / 100)|format_currency('INR', {fraction_digit: 2}, 'en_IN') }}
         </div>
+        {% if riders|length > 0 %}
+        <div style="font-size:9px;color:#888;margin-top:6px;">
+            Includes base premium + {{ riders|filter(r => r.active)|length }} active rider(s)
+        </div>
+        {% endif %}
     </div>
 
     <!-- DISCLAIMER -->
