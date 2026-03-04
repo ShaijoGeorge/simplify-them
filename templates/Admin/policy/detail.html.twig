@@ -49,7 +49,7 @@
                 {# ── Key figures row ── #}
                 <div class="row g-3">
 
-                    {# Paid-Up SA — the hero figure #}
+                    {# Paid-Up SA - the hero figure #}
                     <div class="col-md-4">
                         <div class="p-3 text-center h-100"
                              style="background:#fff;border-radius:14px;border:2px solid #f59e0b;box-shadow:0 4px 16px rgba(245,158,11,.18);">
@@ -116,6 +116,300 @@
         </div>
     {% endif %}
 
+    {# ══════════════════════════════════════════════════════════
+       DAB DEATH-CLAIM ALERT BANNER
+       Shown only when status = DEATH_CLAIM AND an active DAB rider exists.
+       Alerts the agent that additional (doubled) sum assured is claimable.
+       ══════════════════════════════════════════════════════════ #}
+    {% if policy.status == 'DEATH_CLAIM' and policy.hasActiveDabRider %}
+        <div class="card mt-4 border-0 shadow-sm"
+             style="border-left: 5px solid #ef4444 !important;
+                    background: linear-gradient(135deg, #fff5f5 0%, #fee2e2 60%, #fecaca 100%);">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-start gap-3">
+                    <div style="width:52px;height:52px;min-width:52px;border-radius:16px;
+                                background:linear-gradient(135deg,#ef4444,#dc2626);
+                                display:flex;align-items:center;justify-content:center;
+                                color:#fff;font-size:22px;
+                                box-shadow:0 6px 18px rgba(239,68,68,.4);">
+                        <i class="fas fa-triangle-exclamation"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <h5 class="mb-0 fw-bold" style="color:#7f1d1d;">
+                                DAB Rider - Additional Benefit Claimable
+                            </h5>
+                            <span class="badge"
+                                  style="background:#ef4444;color:#fff;border-radius:8px;
+                                         font-size:11px;padding:3px 10px;font-weight:700;">
+                                ACTION REQUIRED
+                            </span>
+                        </div>
+                        <p class="mb-3" style="color:#991b1b;font-size:13.5px;line-height:1.6;">
+                            This policy has an active <strong>Double Accident Benefit (DAB) rider</strong>.
+                            If the cause of death was accidental, the nominee is entitled to
+                            <strong>an additional sum assured</strong> on top of the base policy benefit.
+                            Ensure the death certificate clearly states the cause before filing the claim.
+                        </p>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="p-3 text-center"
+                                     style="background:#fff;border-radius:12px;
+                                            border:2px solid #ef4444;
+                                            box-shadow:0 4px 14px rgba(239,68,68,.15);">
+                                    <div style="font-size:10px;font-weight:700;text-transform:uppercase;
+                                                letter-spacing:.6px;color:#b91c1c;margin-bottom:5px;">
+                                        Base Sum Assured
+                                    </div>
+                                    <div style="font-size:1.5rem;font-weight:800;color:#7f1d1d;">
+                                        ₹{{ policy.sumAssured|number_format(0, '.', ',') }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 text-center"
+                                     style="background:#fff;border-radius:12px;
+                                            border:2px solid #f97316;
+                                            box-shadow:0 4px 14px rgba(249,115,22,.15);">
+                                    <div style="font-size:10px;font-weight:700;text-transform:uppercase;
+                                                letter-spacing:.6px;color:#c2410c;margin-bottom:5px;">
+                                        DAB Additional Benefit
+                                    </div>
+                                    <div style="font-size:1.5rem;font-weight:800;color:#7c2d12;">
+                                        ₹{{ policy.dabClaimableAmount|number_format(0, '.', ',') }}
+                                    </div>
+                                    <div style="font-size:11px;color:#c2410c;margin-top:3px;">
+                                        (if death was accidental)
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 text-center"
+                                     style="background:linear-gradient(135deg,#7f1d1d,#991b1b);
+                                            border-radius:12px;
+                                            box-shadow:0 4px 14px rgba(127,29,29,.3);">
+                                    <div style="font-size:10px;font-weight:700;text-transform:uppercase;
+                                                letter-spacing:.6px;color:rgba(255,255,255,.8);margin-bottom:5px;">
+                                        Total Claimable (Accidental)
+                                    </div>
+                                    <div style="font-size:1.7rem;font-weight:800;color:#fff;">
+                                        ₹{{ (policy.sumAssured|number_format(0,'.','')|replace({',':''}) + policy.dabClaimableAmount)|number_format(0, '.', ',') }}
+                                    </div>
+                                    <div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:3px;">
+                                        Base SA + DAB rider
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {# ══════════════════════════════════════════════════════════
+       POLICY RIDERS PANEL
+       ══════════════════════════════════════════════════════════ #}
+    {% set riders = policy.riders %}
+
+    <div class="card mt-4 border-0 shadow-sm" id="riders-panel">
+        <div class="card-header d-flex align-items-center justify-content-between py-3"
+             style="background: linear-gradient(135deg,#fff7ed,#ffedd5);
+                    border-bottom: 1.5px solid #fed7aa;">
+            <div class="d-flex align-items-center gap-2">
+                <span style="width:36px;height:36px;border-radius:10px;
+                             background:linear-gradient(135deg,#f97316,#ea580c);
+                             display:flex;align-items:center;justify-content:center;
+                             color:#fff;font-size:15px;">
+                    <i class="fas fa-shield-halved"></i>
+                </span>
+                <div>
+                    <h6 class="mb-0 fw-bold" style="color:#7c2d12;">Policy Riders</h6>
+                    <small class="text-muted">Add-on benefits attached to this policy</small>
+                </div>
+            </div>
+
+            {# "Add Rider" button - links to the Rider NEW page pre-filled with policyId #}
+            <a href="{{ ea_url()
+                .unset('entityId')
+                .setController('App\\Controller\\Admin\\PolicyRiderCrudController')
+                .setAction('new')
+                .set('policyId', policy.id) }}"
+               class="btn btn-sm btn-warning"
+               style="border-radius:10px;font-weight:600;
+                      background:linear-gradient(135deg,#f97316,#ea580c);
+                      border:none;color:#fff;
+                      box-shadow:0 4px 12px rgba(249,115,22,.35);">
+                <i class="fas fa-plus me-1"></i> Add Rider
+            </a>
+        </div>
+
+        <div class="card-body p-0">
+            {% if riders|length == 0 %}
+                {# Empty state #}
+                <div class="text-center py-5">
+                    <div style="width:64px;height:64px;border-radius:50%;background:#fff7ed;
+                                display:flex;align-items:center;justify-content:center;
+                                margin:0 auto 16px;font-size:26px;color:#fdba74;">
+                        <i class="fas fa-shield-halved"></i>
+                    </div>
+                    <p class="text-muted mb-1" style="font-weight:600;">No riders added yet</p>
+                    <small class="text-muted">
+                        Add riders like DAB, PWBP or Critical Illness to track additional benefits.
+                    </small>
+                </div>
+            {% else %}
+                {# Total rider premium summary bar #}
+                {% set totalRiderPremium = policy.totalRiderPremium %}
+                <div class="px-4 pt-3 pb-2 d-flex justify-content-between align-items-center"
+                     style="background:#fffbf5;border-bottom:1px solid #fed7aa;">
+                    <small class="fw-semibold" style="color:#c2410c;">
+                        <i class="fas fa-coins me-1"></i>
+                        Total Annual Rider Premium
+                    </small>
+                    <span class="fw-bold" style="color:#ea580c;font-size:15px;">
+                        ₹{{ totalRiderPremium|number_format(2, '.', ',') }}
+                    </span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle" style="font-size:13.5px;">
+                        <thead>
+                            <tr style="background:#fffbf5;border-bottom:2px solid #fed7aa;">
+                                <th class="ps-4 py-3"
+                                    style="color:#6b7280;font-size:11px;text-transform:uppercase;
+                                           letter-spacing:.5px;font-weight:700;">Rider Type</th>
+                                <th class="py-3"
+                                    style="color:#6b7280;font-size:11px;text-transform:uppercase;
+                                           letter-spacing:.5px;font-weight:700;">Rider SA</th>
+                                <th class="py-3"
+                                    style="color:#6b7280;font-size:11px;text-transform:uppercase;
+                                           letter-spacing:.5px;font-weight:700;">Annual Premium</th>
+                                <th class="py-3"
+                                    style="color:#6b7280;font-size:11px;text-transform:uppercase;
+                                           letter-spacing:.5px;font-weight:700;">Start Date</th>
+                                <th class="py-3"
+                                    style="color:#6b7280;font-size:11px;text-transform:uppercase;
+                                           letter-spacing:.5px;font-weight:700;">End Date</th>
+                                <th class="py-3"
+                                    style="color:#6b7280;font-size:11px;text-transform:uppercase;
+                                           letter-spacing:.5px;font-weight:700;">Status</th>
+                                <th class="py-3 pe-3"
+                                    style="color:#6b7280;font-size:11px;text-transform:uppercase;
+                                           letter-spacing:.5px;font-weight:700;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rider in riders %}
+                                {% set typeColors = {
+                                    'DAB':         '#fff7ed,#c2410c,#f97316',
+                                    'PWBP':        '#eff6ff,#1d4ed8,#3b82f6',
+                                    'CI':          '#fff5f5,#b91c1c,#ef4444',
+                                    'TERM_RIDER':  '#f0fdf4,#15803d,#22c55e'
+                                } %}
+                                {% set colors = typeColors[rider.riderType] ?? '#f9fafb,#374151,#6b7280' %}
+                                {% set bg = colors|split(',')|first %}
+                                {% set fg = colors|split(',')|last %}
+                                {% set fgDark = (colors|split(','))[1] %}
+
+                                <tr>
+                                    <td class="ps-4">
+                                        <span class="badge"
+                                              style="background:{{ bg }};color:{{ fgDark }};
+                                                     border:1.5px solid {{ fg }};border-radius:8px;
+                                                     padding:4px 10px;font-size:11px;font-weight:700;">
+                                            {{ rider.riderTypeLabel }}
+                                        </span>
+                                        {% if rider.riderType == 'DAB' and rider.activeDabRider %}
+                                            <span class="badge ms-1"
+                                                  style="background:#fef3c7;color:#92400e;
+                                                         font-size:10px;border-radius:6px;padding:2px 7px;">
+                                                ⚡ Active
+                                            </span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td style="font-weight:600;color:#1e1b4b;">
+                                        {% if rider.riderSumAssured %}
+                                            ₹{{ rider.riderSumAssured|number_format(0, '.', ',') }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td style="font-weight:700;color:#ea580c;">
+                                        ₹{{ rider.riderPremium|number_format(2, '.', ',') }}
+                                        <span class="text-muted" style="font-size:10px;font-weight:400;">/yr</span>
+                                    </td>
+
+                                    <td class="text-muted">
+                                        {{ rider.riderStartDate ? rider.riderStartDate|date('d M Y') : '-' }}
+                                    </td>
+
+                                    <td class="text-muted">
+                                        {% if rider.riderEndDate %}
+                                            {{ rider.riderEndDate|date('d M Y') }}
+                                            {% if rider.riderEndDate < date() %}
+                                                <span class="badge ms-1"
+                                                      style="background:#fee2e2;color:#b91c1c;
+                                                             font-size:10px;border-radius:5px;">Expired</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted" style="font-size:12px;">Full term</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        {% if rider.active %}
+                                            <span class="badge"
+                                                  style="background:#dcfce7;color:#166534;
+                                                         border-radius:8px;padding:3px 10px;
+                                                         font-size:11px;font-weight:600;">
+                                                <i class="fas fa-circle" style="font-size:7px;margin-right:4px;"></i>
+                                                Active
+                                            </span>
+                                        {% else %}
+                                            <span class="badge"
+                                                  style="background:#f3f4f6;color:#6b7280;
+                                                         border-radius:8px;padding:3px 10px;
+                                                         font-size:11px;font-weight:600;">
+                                                Inactive
+                                            </span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td class="pe-3">
+                                        <div class="d-flex gap-2">
+                                            <a href="{{ ea_url()
+                                                .setController('App\\Controller\\Admin\\PolicyRiderCrudController')
+                                                .setAction('edit')
+                                                .setEntityId(rider.id) }}"
+                                               class="btn btn-xs btn-outline-warning"
+                                               title="Edit Rider"
+                                               style="border-radius:7px;font-size:12px;padding:3px 10px;">
+                                                <i class="fas fa-pencil-alt"></i>
+                                            </a>
+                                            <a href="{{ ea_url()
+                                                .setController('App\\Controller\\Admin\\PolicyRiderCrudController')
+                                                .setAction('delete')
+                                                .setEntityId(rider.id) }}"
+                                               class="btn btn-xs btn-outline-danger"
+                                               title="Delete Rider"
+                                               style="border-radius:7px;font-size:12px;padding:3px 10px;"
+                                               onclick="return confirm('Are you sure you want to delete this rider?');">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
     {# ── Nominees Section ── #}
     {% set nominees = policy.nominees %}
 
@@ -133,8 +427,9 @@
                 </div>
             </div>
 
-            {# "Add Nominee" button — links to the Nominee NEW page pre-filled with policyId #}
+            {# "Add Nominee" button - links to the Nominee NEW page pre-filled with policyId #}
             <a href="{{ ea_url()
+                .unset('entityId')
                 .setController('App\\Controller\\Admin\\NomineeCrudController')
                 .setAction('new')
                 .set('policyId', policy.id) }}"
@@ -237,7 +532,7 @@
                                         {% if nominee.dob %}
                                             {{ nominee.dob|date('d M Y') }}
                                         {% else %}
-                                            <span class="text-muted">—</span>
+                                            <span class="text-muted">-</span>
                                         {% endif %}
                                     </td>
 
@@ -245,12 +540,12 @@
                                         {% if nominee.guardianName %}
                                             <span style="color:#374151;">{{ nominee.guardianName }}</span>
                                         {% else %}
-                                            <span class="text-muted">—</span>
+                                            <span class="text-muted">-</span>
                                         {% endif %}
                                     </td>
 
                                     <td class="text-muted">
-                                        {{ nominee.mobile ?: '—' }}
+                                        {{ nominee.mobile ?: '-' }}
                                     </td>
 
                                     <td>
@@ -276,12 +571,8 @@
                                                 .setEntityId(nominee.id) }}"
                                                class="btn btn-xs btn-outline-danger"
                                                title="Delete"
-                                               data-action-name="delete"
                                                style="border-radius:7px;font-size:12px;padding:3px 10px;"
-                                               formaction="{{ ea_url()
-                                                    .setController('App\\Controller\\Admin\\NomineeCrudController')
-                                                    .setAction('delete')
-                                                    .setEntityId(nominee.id) }}">
+                                               onclick="return confirm('Are you sure you want to delete this nominee?');">
                                                 <i class="fas fa-trash-alt"></i>
                                             </a>
                                         </div>
