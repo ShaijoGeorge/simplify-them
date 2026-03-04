@@ -11,6 +11,7 @@ use App\Entity\Module;
 use App\Entity\Nominee;
 use App\Entity\Permission;
 use App\Entity\Policy;
+use App\Entity\PolicyRider;
 use App\Entity\PremiumReceipt;
 use App\Entity\Role;
 use App\Entity\User;
@@ -74,6 +75,7 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToRoute('Quick Policy Entry', 'fa fa-bolt', 'app_quick_policy');
         yield MenuItem::linkToCrud('Premium Collection', 'fa fa-rupee-sign', PremiumReceipt::class);
         yield MenuItem::linkToCrud('Nominees', 'fa fa-user-shield', Nominee::class);
+        yield MenuItem::linkToCrud('Policy Riders', 'fa fa-shield-halved', PolicyRider::class);
 
         // SETTINGS
         yield MenuItem::section('SETTINGS');
