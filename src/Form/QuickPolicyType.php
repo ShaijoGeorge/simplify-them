@@ -144,15 +144,26 @@ class QuickPolicyType extends AbstractType
                     new Assert\NotBlank(message: 'Please select a Payment Mode.'),
                 ],
             ])
-            ->add('basicPremium', TextType::class, [
-                'label' => 'Basic Premium Amount',
+            ->add('annualPremium', TextType::class, [
+                'label' => 'Annual Premium (Tabular)',
                 'constraints' => [
-                    new Assert\NotBlank(message: 'Basic Premium is required.'),
+                    new Assert\NotBlank(message: 'Annual Premium is required.'),
                     new Assert\Regex(
                         pattern: '/^\d+(\.\d+)?$/',
-                        message: 'Basic Premium must be a valid number.',
+                        message: 'Annual Premium must be a valid number.',
                     ),
-                    new Assert\Positive(message: 'Basic Premium must be a positive number.'),
+                    new Assert\Positive(message: 'Annual Premium must be a positive number.'),
+                ],
+            ])
+            ->add('basicPremium', TextType::class, [
+                'label' => 'Modal Premium Amount',
+                'required' => false,
+                'constraints' => [
+                    new Assert\Regex(
+                        pattern: '/^\d+(\.\d+)?$/',
+                        message: 'Modal Premium must be a valid number.',
+                    ),
+                    new Assert\Positive(message: 'Modal Premium must be a positive number.'),
                 ],
             ])
 

@@ -61,6 +61,7 @@ class QuickPolicyController extends AbstractController
                 $policy->setPolicyTerm($data['policyTerm']);
                 $policy->setPremiumPayingTerm($data['premiumPayingTerm']);
                 $policy->setPremiumMode($data['premiumMode']);
+                $policy->setAnnualPremium($data['annualPremium']);
                 $policy->setBasicPremium($data['basicPremium']);
                 $policy->setStatus('IN_FORCE');
 
