@@ -56,6 +56,14 @@ class LicPlan
     #[Gedmo\Blameable(on: 'update')]
     private ?string $updatedBy = null;
 
+
+    // flags for plan types
+    #[ORM\Column]
+    private bool $isSinglePremium = false;
+
+    #[ORM\Column]
+    private bool $isLimitedPremium = false;
+
     public function __construct()
     {
         $this->commissionRules = new ArrayCollection();
@@ -203,6 +211,30 @@ class LicPlan
     public function setUpdatedBy(?string $updatedBy): static
     {
         $this->updatedBy = $updatedBy;
+        return $this;
+    }
+
+    public function isSinglePremium(): bool
+    {
+        return $this->isSinglePremium;
+    }
+
+    public function setIsSinglePremium(bool $isSinglePremium): static
+    {
+        $this->isSinglePremium = $isSinglePremium;
+
+        return $this;
+    }
+
+    public function isLimitedPremium(): bool
+    {
+        return $this->isLimitedPremium;
+    }
+
+    public function setIsLimitedPremium(bool $isLimitedPremium): static
+    {
+        $this->isLimitedPremium = $isLimitedPremium;
+
         return $this;
     }
 }

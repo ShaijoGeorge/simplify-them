@@ -123,7 +123,8 @@ class Policy
     #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 2, nullable: true)]
     private ?string $paidUpSumAssured = null;
 
-    // Stores the policy year (1, 2, 3 …) that was in effect when GST was last calculated. Used for auditing and display purposes. calculated. Used for auditing and display purposes.
+    // Stores the policy year (1, 2, 3 …) that was in effect when GST was last calculated.
+    // Used for auditing and display purposes.
     #[ORM\Column(nullable: true)]
     private ?int $gstPolicyYear = null;
 
@@ -131,6 +132,164 @@ class Policy
     {
         $this->premiumReceipts = new ArrayCollection();
         $this->nominees = new ArrayCollection();
+    }
+
+    // HELPERS
+
+    /**
+     * Returns true when either:
+     *  (a) the premium mode is explicitly SINGLE, or
+     *  (b) the linked LIC plan is flagged as a single-premium product.
+     *
+     * Used by calculateTotals(), calculateDates(), and the commission engine.
+     */
+    public function isSinglePremiumPolicy(): bool
+    {
+        if ($this->premiumMode === 'SINGLE') {
+            return true;
+        }
+
+        return $this->licPlan?->isSinglePremium() ?? false;
+    }
+
+    // LIFECYCLE CALLBACKS
+
+    // Calculate entry age from Life Assured DOB vs DOC.
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function calculateEntryAge(): void
+    {
+        if ($this->lifeAssuredDob && $this->commencementDate) {
+            $this->entryAge = $this->lifeAssuredDob->diff($this->commencementDate)->y;
+        }
+    }
+
+    /**
+     * LOGIC 1: Automatic Date Calculations (Maturity & Next Due)
+     *
+     * Single-premium policies never have a next due date — cleared here
+     * regardless of whether the mode was set via premiumMode = SINGLE or
+     * via the LicPlan.isSinglePremium flag.
+     */
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function calculateDates(): void
+    {
+        // Calculate Maturity Date (DOC + Term)
+        if ($this->commencementDate && $this->policyTerm) {
+            $maturity = clone $this->commencementDate;
+            $maturity->modify('+' . $this->policyTerm . ' years');
+            $this->setMaturityDate($maturity);
+        }
+
+        // Single-premium policies have no renewal premiums → no next due date.
+        if ($this->isSinglePremiumPolicy()) {
+            $this->nextDueDate = null;
+            return;
+        }
+
+        // Calculate Next Due Date (Only if not manually set)
+        if ($this->commencementDate && $this->premiumMode && $this->nextDueDate === null) {
+            $nextDue = clone $this->commencementDate;
+            $today = new \DateTime();
+            $today->setTime(0, 0, 0);
+
+            $interval = match ($this->premiumMode) {
+                'YLY', 'YEARLY'         => '+1 year',
+                'HLY', 'HALF-YEARLY'    => '+6 months',
+                'QLY', 'QUARTERLY'      => '+3 months',
+                'NACH', 'MLY', 'MONTHLY'=> '+1 month',
+                default                 => null,
+            };
+
+            if ($interval) {
+                $nextDue->modify($interval);
+
+                while ($nextDue < $today) {
+                    $nextDue->modify($interval);
+                }
+
+                $this->setNextDueDate($nextDue);
+            }
+        }
+    }
+
+    /**
+     * LOGIC 2: Year-aware GST & Total Premium calculation.
+     *
+     * GST Rate Matrix:
+     *
+     *  Regime       │ Plan / Mode            │ Year 1 │ Year 2+
+     * ──────────────┼────────────────────────┼────────┼────────
+     *  Old regime   │ Single Premium *        │  1.25 %│   N/A
+     *  (DOC before  │ Term plan               │ 18.00 %│ 18.00 %
+     *  22 Sep 2025) │ Traditional             │  4.50 %│  2.25 %
+     * ──────────────┼────────────────────────┼────────┼────────
+     *  New regime   │ All                     │  0.00 %│  0.00 %
+     *  (DOC on/after│                        │        │
+     *  22 Sep 2025) │                        │        │
+     *
+     * * Single Premium = premiumMode === 'SINGLE'  OR  licPlan.isSinglePremium === true
+     * * Term          = planType name contains 'TERM' (case-insensitive)
+     * * Traditional   = everything else (Endowment, Money Back, Whole Life, etc.)
+     */
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function calculateTotals(): void
+    {
+        if (!$this->basicPremium) {
+            return;
+        }
+
+        $gstReformDate = new \DateTime('2025-09-22');
+        $today         = new \DateTime();
+
+        // Determine current policy year (1-based)
+        $policyYear = 1;
+        if ($this->commencementDate) {
+            $fullYearsElapsed = (int) $this->commencementDate->diff($today)->y;
+            $policyYear       = $fullYearsElapsed + 1;
+        }
+
+        // Plan category flags
+        $planTypeName = '';
+        if ($this->licPlan?->getPlanType()) {
+            $planTypeName = strtoupper($this->licPlan->getPlanType()->getName());
+        }
+
+        $isTerm   = str_contains($planTypeName, 'TERM');
+
+        // Single-premium: check BOTH premiumMode AND LicPlan flag so the GST
+        // is always correct even if the agent chose the wrong mode.
+        $isSingle = $this->isSinglePremiumPolicy();
+
+        // Resolve GST rate
+        $gstRate = 0.0;
+
+        if ($this->commencementDate && $this->commencementDate < $gstReformDate) {
+            // Old regime (DOC before 22 Sep 2025)
+            if ($isSingle) {
+                // Single-premium: 1.25 % one-time (no renewal, so year is irrelevant)
+                $gstRate = 1.25;
+            } elseif ($isTerm) {
+                // Term plans: flat 18 % all years
+                $gstRate = 18.0;
+            } else {
+                // Traditional plans (Endowment, Money Back, Whole Life …)
+                $gstRate = ($policyYear === 1) ? 4.5 : 2.25;
+            }
+        } else {
+            // New regime (DOC on/after 22 Sep 2025): always 0 %
+            $gstRate = 0.0;
+        }
+
+        // Persist the policy year used for this calculation
+        $this->gstPolicyYear = $policyYear;
+
+        // Compute and store GST & total
+        $calculatedGst = (float) $this->basicPremium * $gstRate / 100;
+        $this->setGst((string) $calculatedGst);
+        $this->setTotalPremium((string) ((float) $this->basicPremium + $calculatedGst));
     }
 
     public function getId(): ?int
@@ -471,139 +630,6 @@ class Policy
     {
         $this->gstPolicyYear = $gstPolicyYear;
         return $this;
-    }
-
-    // Calculate entry age from Life Assured DOB vs DOC. 
-    #[ORM\PrePersist]
-    #[ORM\PreUpdate]
-    public function calculateEntryAge(): void
-    {
-        if ($this->lifeAssuredDob && $this->commencementDate) {
-            $this->entryAge = $this->lifeAssuredDob->diff($this->commencementDate)->y;
-        }
-    }
-
-    /**
-     * LOGIC 1: Automatic Date Calculations (Maturity & Next Due)
-     */
-    #[ORM\PrePersist]
-    #[ORM\PreUpdate]
-    public function calculateDates(): void
-    {
-        // Calculate Maturity Date (DOC + Term)
-        if ($this->commencementDate && $this->policyTerm) {
-            $maturity = clone $this->commencementDate;
-            $maturity->modify('+' . $this->policyTerm . ' years');
-            $this->setMaturityDate($maturity);
-        }
-
-        // Calculate Next Due Date (Only if not manually set)
-        if ($this->commencementDate && $this->premiumMode && $this->nextDueDate === null) {
-            $nextDue = clone $this->commencementDate;
-            $today = new \DateTime();
-            $today->setTime(0, 0, 0); // Ignoring time for accurate comparison
-
-            // Determine interval based on mode
-            $interval = match ($this->premiumMode) {
-                'YLY', 'YEARLY' => '+1 year',
-                'HLY', 'HALF-YEARLY' => '+6 months',
-                'QLY', 'QUARTERLY' => '+3 months',
-                'NACH', 'MLY', 'MONTHLY' => '+1 month',
-                default => null,
-            };
-
-            if ($interval) {
-                // Advance at least once (First premium is paid at DOC, so next is DOC + Interval)
-                $nextDue->modify($interval);
-
-                // If the policy is old, loop until we reach a date >= Today
-                // This ensures "Next Due Date" reflects the upcoming premium for the current year
-                while ($nextDue < $today) {
-                    $nextDue->modify($interval);
-                }
-
-                $this->setNextDueDate($nextDue);
-            }
-        }
-    }
-
-    /**
-     * LOGIC 2: Year-aware GST & Total Premium calculation.
-     *
-     * GST Rate Matrix (mirrors the reference table):
-     *
-     *  Regime      │ Plan Category          │ Year 1 │ Year 2+
-     * ─────────────┼────────────────────────┼────────┼────────
-     *  Old (pre     │ Traditional*           │ 4.50 % │ 2.25 %
-     *  Sep-2025)    │ Term                   │ 18.00 %│ 18.00 %
-     *               │ Single Premium         │  1.25 %│  N/A
-     * ─────────────┼────────────────────────┼────────┼────────
-     *  New (post    │ All categories         │  0.00 %│  0.00 %
-     *  Sep-2025)    │                        │        │
-     *
-     * * Traditional = Endowment, Whole Life, Money Back, etc.
-     *   (anything whose plan-type name does NOT contain "TERM").
-     *
-     * "Policy year" is determined by counting full years elapsed since DOC
-     * up to today (the date the record is being saved).  Year 1 = 0 full
-     * years elapsed, Year 2 = 1 full year elapsed, etc.
-     */
-    #[ORM\PrePersist]
-    #[ORM\PreUpdate]
-    public function calculateTotals(): void
-    {
-        if (!$this->basicPremium) {
-            return;
-        }
-
-        $gstReformDate = new \DateTime('2025-09-22');
-        $today         = new \DateTime();
-
-        // ── Determine current policy year (1-based) ──────────────────────────
-        // Year 1 = DOC up to (but not including) DOC + 1 year
-        // Year 2 = DOC + 1 year up to DOC + 2 years … and so on.
-        $policyYear = 1;
-        if ($this->commencementDate) {
-            $fullYearsElapsed = (int) $this->commencementDate->diff($today)->y;
-            $policyYear       = $fullYearsElapsed + 1; // 1-based
-        }
-
-        // ── Determine plan category from PlanType name ───────────────────────
-        $planTypeName = '';
-        if ($this->licPlan?->getPlanType()) {
-            $planTypeName = strtoupper($this->licPlan->getPlanType()->getName());
-        }
-
-        $isTerm   = str_contains($planTypeName, 'TERM');
-        $isSingle = $this->premiumMode === 'SINGLE';
-
-        // ── Resolve GST rate ─────────────────────────────────────────────────
-        $gstRate = 0.0;
-
-        if ($this->commencementDate && $this->commencementDate < $gstReformDate) {
-            // ── Old regime (DOC before 22 Sep 2025) ──
-            if ($isTerm) {
-                // Term plans: flat 18 % all years
-                $gstRate = 18.0;
-            } elseif ($isSingle) {
-                // Single-premium endowment: 1.25 % (year 1 only; no renewal premiums)
-                $gstRate = 1.25;
-            } else {
-                // Traditional plans (Endowment, Money Back, Whole Life …)
-                $gstRate = ($policyYear === 1) ? 4.5 : 2.25;
-            }
-        } else {
-            // ── New regime (DOC on/after 22 Sep 2025) ──
-            $gstRate = 0.0;
-        }
-
-        // ── Persist the policy year used for this calculation ────────────────
-        $this->gstPolicyYear = $policyYear;
-
-        // ── Compute and store GST & total ────────────────────────────────────
-        $calculatedGst = (float) $this->basicPremium * $gstRate / 100;
-        $this->setGst((string) $calculatedGst);
-        $this->setTotalPremium((string) ((float) $this->basicPremium + $calculatedGst));
     }
 
     /**

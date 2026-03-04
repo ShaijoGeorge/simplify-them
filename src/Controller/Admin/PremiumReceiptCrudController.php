@@ -22,6 +22,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class PremiumReceiptCrudController extends BaseCrudController
 {
+    // Commission rate applied to all single-premium policies (flat, no CommissionRule needed).
+    private const SINGLE_PREMIUM_COMMISSION_RATE = 2.0;
+
     public function __construct(PermissionCheckerService $permissionChecker)
     {
         parent::__construct($permissionChecker);
@@ -77,7 +80,7 @@ class PremiumReceiptCrudController extends BaseCrudController
     {
         // LEFT COLUMN: TRANSACTION INFO
         yield FormField::addColumn(6);
-        
+
         yield FormField::addFieldset('Transaction Details')
             ->setIcon('fa fa-file-invoice')
             ->setHelp('Policy and date information');
@@ -113,15 +116,15 @@ class PremiumReceiptCrudController extends BaseCrudController
             ->renderAsBadges()
             ->setColumns(12);
 
-        // HIDDEN FIELDS
+        // HIDDEN (read-only) commission display
         yield MoneyField::new('commissionEarned', 'Commission Earned')
             ->setCurrency('INR')
             ->setStoredAsCents(false)
             ->hideOnForm();
-        
+
         // META DATA
         yield FormField::addFieldset('System Metadata')->setIcon('fa fa-database');
-        
+
         $agencyField = AssociationField::new('agency', 'Agency')
             ->setColumns(12);
 
@@ -188,19 +191,36 @@ class PremiumReceiptCrudController extends BaseCrudController
         parent::updateEntity($entityManager, $entityInstance);
     }
 
-    // To calculate commission based on rules.
+    // COMMISSION CALCULATION
+    // Priority order:
+    //   1. Single-premium override  → 2 % flat (no CommissionRule lookup needed)
+    //   2. CommissionRule DB lookup → rate defined per plan / year / term
+    //   3. Fallback                 → 0 % (no matching rule found)
     private function calculateCommission(EntityManagerInterface $em, PremiumReceipt $receipt): void
     {
         $policy = $receipt->getPolicy();
-        if (!$policy) return;
+        if (!$policy) {
+            return;
+        }
 
         $plan = $policy->getLicPlan();
-        if (!$plan) return;
+        if (!$plan) {
+            return;
+        }
 
-        // Calculate Policy Year
+        // 1. Single-premium override
+        // Check BOTH the LicPlan flag AND the policy's premiumMode so the override
+        // fires regardless of which mechanism identified the policy as single-premium.
+        if ($plan->isSinglePremium() || $policy->isSinglePremiumPolicy()) {
+            $commission = ((float) $receipt->getAmount() * self::SINGLE_PREMIUM_COMMISSION_RATE) / 100;
+            $receipt->setCommissionEarned((string) round($commission, 2));
+            return;
+        }
+
+        // 2. Standard CommissionRule lookup
         $doc = $policy->getCommencementDate();
         $payDate = $receipt->getPaymentDate() ?? new \DateTime();
-        
+
         $diff = $doc->diff($payDate);
         $policyYear = $diff->y + 1;
         $term = $policy->getPolicyTerm();
@@ -220,35 +240,40 @@ class PremiumReceiptCrudController extends BaseCrudController
             ->getOneOrNullResult();
 
         if ($rule) {
-            $commission = ($receipt->getAmount() * $rule->getCommissionRate()) / 100;
-            $receipt->setCommissionEarned($commission);
+            $commission = ((float) $receipt->getAmount() * (float) $rule->getCommissionRate()) / 100;
+            $receipt->setCommissionEarned((string) round($commission, 2));
         } else {
-            $receipt->setCommissionEarned(0);
+            // 3. No rule found — zero commission
+            $receipt->setCommissionEarned('0');
         }
     }
 
-    // To advance the policy due date.
+    // Advance the policy's next due date by one premium interval after payment.
     private function advancePolicyDueDate(EntityManagerInterface $em, PremiumReceipt $receipt): void
     {
         $policy = $receipt->getPolicy();
-        if ($policy && $policy->getNextDueDate()) {
-            $newDueDate = clone $policy->getNextDueDate();
-            $mode = strtoupper($policy->getPremiumMode());
 
-            match ($mode) {
+        // Single-premium policies have no recurring due date — skip.
+        if (!$policy || !$policy->getNextDueDate() || $policy->isSinglePremiumPolicy()) {
+            return;
+        }
+
+        $newDueDate = clone $policy->getNextDueDate();
+        $mode = strtoupper($policy->getPremiumMode());
+
+        match ($mode) {
                 'YLY', 'YEARLY' => $newDueDate->modify('+1 year'),
                 'HLY', 'HALF-YEARLY' => $newDueDate->modify('+6 months'),
                 'QLY', 'QUARTERLY' => $newDueDate->modify('+3 months'),
-                'MLY', 'MONTHLY', 'NACH' => $newDueDate->modify('+1 month'),
+            'MLY', 'MONTHLY', 'NACH' => $newDueDate->modify('+1 month'),
                 default => null,
-            };
+        };
 
-            $policy->setNextDueDate($newDueDate);
-            $em->persist($policy);
-        }
+        $policy->setNextDueDate($newDueDate);
+        $em->persist($policy);
     }
 
-    // PDF Generator
+    // PDF Receipt Generator
     public function generatePdf(AdminContext $context, EntityManagerInterface $entityManager)
     {
         $receiptId = $context->getRequest()->query->get('entityId');
@@ -257,7 +282,7 @@ class PremiumReceiptCrudController extends BaseCrudController
         if (!$receipt) {
             throw $this->createNotFoundException('Receipt not found');
         }
-        
+
         $html = $this->renderView(
             'Admin/premium_receipt/receipt.html.twig',
             ['receipt' => $receipt]
@@ -270,7 +295,7 @@ class PremiumReceiptCrudController extends BaseCrudController
 
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
-        $dompdf->setPaper('A5', 'portrait'); 
+        $dompdf->setPaper('A5', 'portrait');
         $dompdf->render();
 
         // Output the PDF to browser
