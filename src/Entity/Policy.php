@@ -83,6 +83,9 @@ class Policy
     #[ORM\OneToMany(targetEntity: Nominee::class, mappedBy: 'policy', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $nominees;
 
+    #[ORM\OneToMany(targetEntity: PolicyRider::class, mappedBy: 'policy', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $riders;
+
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     #[Gedmo\Timestampable(on: 'create')]
     private ?\DateTimeInterface $createdAt = null;
@@ -140,6 +143,7 @@ class Policy
     {
         $this->premiumReceipts = new ArrayCollection();
         $this->nominees = new ArrayCollection();
+        $this->riders = new ArrayCollection();
     }
 
     // HELPERS
@@ -199,7 +203,7 @@ class Policy
     /**
      * LOGIC 1: Automatic Date Calculations (Maturity & Next Due)
      *
-     * Single-premium policies never have a next due date — cleared here
+     * Single-premium policies never have a next due date - cleared here
      * regardless of whether the mode was set via premiumMode = SINGLE or
      * via the LicPlan.isSinglePremium flag.
      */
@@ -779,6 +783,76 @@ class Policy
         $paidUpSA = ($elapsed / $ppt) * $sa;
 
         $this->paidUpSumAssured = (string) round($paidUpSA, 2);
+    }
+
+    public function getRiders(): Collection
+    {
+        return $this->riders;
+    }
+
+    public function addRider(PolicyRider $rider): static
+    {
+        if (!$this->riders->contains($rider)) {
+            $this->riders->add($rider);
+            $rider->setPolicy($this);
+        }
+        return $this;
+    }
+
+    public function removeRider(PolicyRider $rider): static
+    {
+        if ($this->riders->removeElement($rider)) {
+            if ($rider->getPolicy() === $this) {
+                $rider->setPolicy(null);
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * Returns the total annual rider premium across all active riders.
+     * Used in the receipt PDF premium breakdown.
+     */
+    public function getTotalRiderPremium(): float
+    {
+        $total = 0.0;
+        foreach ($this->riders as $rider) {
+            if ($rider->isActive()) {
+                $total += $rider->getRiderPremiumFloat();
+            }
+        }
+        return $total;
+    }
+
+    /**
+     * Returns true when the policy has at least one active DAB rider.
+     * Called from the Policy detail template and death-claim logic.
+     */
+    public function hasActiveDabRider(): bool
+    {
+        foreach ($this->riders as $rider) {
+            if ($rider->isActiveDabRider()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns the total claimable DAB sum assured (sum of all active DAB rider SAs).
+     * If a DAB rider has no SA set, falls back to the base sumAssured.
+     */
+    public function getDabClaimableAmount(): float
+    {
+        $total = 0.0;
+        foreach ($this->riders as $rider) {
+            if ($rider->isActiveDabRider()) {
+                $riderSA = $rider->getRiderSumAssuredFloat();
+                // If rider SA is 0 / not set, use the base policy SA
+                $total += ($riderSA > 0) ? $riderSA : (float) $this->sumAssured;
+            }
+        }
+        return $total;
     }
 
     public function __toString(): string
