@@ -123,6 +123,14 @@ class Policy
     #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 2, nullable: true)]
     private ?string $paidUpSumAssured = null;
 
+    // The tabular annual premium from LIC's plan table.
+    #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 2, nullable: true)]
+    private ?string $annualPremium = null;
+
+    // The modal rebate factor applied (e.g. 0.51 for HLY, 0.26 for QLY).
+    #[ORM\Column(type: Types::DECIMAL, precision: 6, scale: 4, nullable: true)]
+    private ?string $modalRebate = null;
+
     // Stores the policy year (1, 2, 3 …) that was in effect when GST was last calculated.
     // Used for auditing and display purposes.
     #[ORM\Column(nullable: true)]
@@ -153,6 +161,30 @@ class Policy
     }
 
     // LIFECYCLE CALLBACKS
+
+    /**
+     * Modal Rebate: auto-calculate basicPremium from annualPremium × factor.
+     *
+     * Factors: YLY/SINGLE → 1.0, HLY → 0.51, QLY → 0.26, MLY/NACH → 0.0875
+     */
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function calculateModalPremium(): void
+    {
+        if (!$this->annualPremium || !$this->premiumMode) {
+            return;
+        }
+
+        $factor = match ($this->premiumMode) {
+            'HLY', 'HALF-YEARLY'     => 0.51,
+            'QLY', 'QUARTERLY'       => 0.26,
+            'NACH', 'MLY', 'MONTHLY' => 0.0875,
+            default                  => 1.0,   // YLY, SINGLE, etc.
+        };
+
+        $this->modalRebate  = (string) $factor;
+        $this->basicPremium = (string) round((float) $this->annualPremium * $factor, 2);
+    }
 
     // Calculate entry age from Life Assured DOB vs DOC.
     #[ORM\PrePersist]
@@ -618,6 +650,28 @@ class Policy
     public function setPaidUpSumAssured(?string $paidUpSumAssured): static
     {
         $this->paidUpSumAssured = $paidUpSumAssured;
+        return $this;
+    }
+
+    public function getAnnualPremium(): ?string
+    {
+        return $this->annualPremium;
+    }
+
+    public function setAnnualPremium(?string $annualPremium): static
+    {
+        $this->annualPremium = $annualPremium;
+        return $this;
+    }
+
+    public function getModalRebate(): ?string
+    {
+        return $this->modalRebate;
+    }
+
+    public function setModalRebate(?string $modalRebate): static
+    {
+        $this->modalRebate = $modalRebate;
         return $this;
     }
 
