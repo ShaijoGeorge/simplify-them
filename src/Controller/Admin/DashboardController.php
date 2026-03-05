@@ -14,9 +14,11 @@ use App\Entity\Policy;
 use App\Entity\PolicyRider;
 use App\Entity\PremiumReceipt;
 use App\Entity\Role;
+use App\Entity\SurvivalBenefit;
 use App\Entity\User;
 use App\Repository\ClientRepository;
 use App\Repository\PolicyRepository;
+use App\Repository\SurvivalBenefitRepository;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
@@ -28,7 +30,8 @@ class DashboardController extends AbstractDashboardController
 {
     public function __construct(
         private PolicyRepository $policyRepository,
-        private ClientRepository $clientRepository
+        private ClientRepository $clientRepository,
+        private SurvivalBenefitRepository $survivalBenefitRepository
     ) {}
 
     public function index(): Response
@@ -42,11 +45,13 @@ class DashboardController extends AbstractDashboardController
         $dueAmount = $this->policyRepository->getPremiumDueAmountThisMonth($agencyId);
         $birthdays = $this->clientRepository->findBirthdaysThisMonth($agencyId);
         $lapsedCount = $this->policyRepository->countRevivalOpportunities($agencyId);
+        $survivalBenefits = $this->survivalBenefitRepository->findPendingDueThisMonth($agencyId);
 
         return $this->render('Admin/dashboard.html.twig', [
             'due_amount' => $dueAmount,
             'birthdays' => $birthdays,
             'lapsed_count' => $lapsedCount,
+            'survival_benefits' => $survivalBenefits,
             'current_month' => date('F'),
         ]);
     }
@@ -76,6 +81,7 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToCrud('Premium Collection', 'fa fa-rupee-sign', PremiumReceipt::class);
         yield MenuItem::linkToCrud('Nominees', 'fa fa-user-shield', Nominee::class);
         yield MenuItem::linkToCrud('Policy Riders', 'fa fa-shield-halved', PolicyRider::class);
+        yield MenuItem::linkToCrud('Survival Benefits', 'fa fa-hand-holding-dollar', SurvivalBenefit::class);
 
         // SETTINGS
         yield MenuItem::section('SETTINGS');
