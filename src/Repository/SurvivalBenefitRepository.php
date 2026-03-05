@@ -60,4 +60,30 @@ class SurvivalBenefitRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * Returns PENDING survival benefits due this month OR overdue from
+     * previous months, scoped to a specific agency.
+     *
+     * @return SurvivalBenefit[]
+     */
+    public function findPendingDueThisMonth(int $agencyId): array
+    {
+        $endOfMonth = new \DateTime('last day of this month');
+        $endOfMonth->setTime(23, 59, 59);
+
+        return $this->createQueryBuilder('sb')
+            ->join('sb.policy', 'p')
+            ->join('p.client', 'c')
+            ->addSelect('p', 'c')
+            ->where('sb.status = :status')
+            ->andWhere('sb.dueDate <= :endOfMonth')
+            ->andWhere('p.agency = :agency')
+            ->setParameter('status', SurvivalBenefit::STATUS_PENDING)
+            ->setParameter('endOfMonth', $endOfMonth)
+            ->setParameter('agency', $agencyId)
+            ->orderBy('sb.dueDate', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }
