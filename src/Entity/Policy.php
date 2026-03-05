@@ -86,6 +86,9 @@ class Policy
     #[ORM\OneToMany(targetEntity: PolicyRider::class, mappedBy: 'policy', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $riders;
 
+    #[ORM\OneToMany(targetEntity: SurvivalBenefit::class, mappedBy: 'policy', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $survivalBenefits;
+
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     #[Gedmo\Timestampable(on: 'create')]
     private ?\DateTimeInterface $createdAt = null;
@@ -144,6 +147,7 @@ class Policy
         $this->premiumReceipts = new ArrayCollection();
         $this->nominees = new ArrayCollection();
         $this->riders = new ArrayCollection();
+        $this->survivalBenefits = new ArrayCollection();
     }
 
     // HELPERS
@@ -853,6 +857,31 @@ class Policy
             }
         }
         return $total;
+    }
+
+    // Survival Benefits collection
+    public function getSurvivalBenefits(): Collection
+    {
+        return $this->survivalBenefits;
+    }
+
+    public function addSurvivalBenefit(SurvivalBenefit $survivalBenefit): static
+    {
+        if (!$this->survivalBenefits->contains($survivalBenefit)) {
+            $this->survivalBenefits->add($survivalBenefit);
+            $survivalBenefit->setPolicy($this);
+        }
+        return $this;
+    }
+
+    public function removeSurvivalBenefit(SurvivalBenefit $survivalBenefit): static
+    {
+        if ($this->survivalBenefits->removeElement($survivalBenefit)) {
+            if ($survivalBenefit->getPolicy() === $this) {
+                $survivalBenefit->setPolicy(null);
+            }
+        }
+        return $this;
     }
 
     public function __toString(): string
