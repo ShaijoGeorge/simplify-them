@@ -261,17 +261,15 @@ class Policy
      *
      *  Regime       │ Plan / Mode            │ Year 1 │ Year 2+
      * ──────────────┼────────────────────────┼────────┼────────
-     *  Old regime   │ Single Premium *        │  1.25 %│   N/A
-     *  (DOC before  │ Term plan               │ 18.00 %│ 18.00 %
-     *  22 Sep 2025) │ Traditional             │  4.50 %│  2.25 %
+     * Pre-2014     │ All (Absorbed by LIC)  │  0.00 %│  0.00 %
      * ──────────────┼────────────────────────┼────────┼────────
-     *  New regime   │ All                     │  0.00 %│  0.00 %
-     *  (DOC on/after│                        │        │
-     *  22 Sep 2025) │                        │        │
-     *
-     * * Single Premium = premiumMode === 'SINGLE'  OR  licPlan.isSinglePremium === true
-     * * Term          = planType name contains 'TERM' (case-insensitive)
-     * * Traditional   = everything else (Endowment, Money Back, Whole Life, etc.)
+     * Old regime   │ Single Premium * │  1.25 %│   N/A
+     * (Jan 2014 to │ Term plan              │ 18.00 %│ 18.00 %
+     * 21 Sep 2025) │ Traditional            │  4.50 %│  2.25 %
+     * ──────────────┼────────────────────────┼────────┼────────
+     * New regime   │ All                    │  0.00 %│  0.00 %
+     * (DOC on/after│                        │        │
+     * 22 Sep 2025) │                        │        │
      */
     #[ORM\PrePersist]
     #[ORM\PreUpdate]
@@ -282,6 +280,7 @@ class Policy
         }
 
         $gstReformDate = new \DateTime('2025-09-22');
+        $serviceTaxStartDate = new \DateTime('2014-01-01');
         $today         = new \DateTime();
 
         // Determine current policy year (1-based)
@@ -306,10 +305,13 @@ class Policy
         // Resolve GST rate
         $gstRate = 0.0;
 
-        if ($this->commencementDate && $this->commencementDate < $gstReformDate) {
-            // Old regime (DOC before 22 Sep 2025)
+        if ($this->commencementDate && $this->commencementDate < $serviceTaxStartDate) {
+            // Pre-2014 policies: Service Tax absorbed internally by LIC
+            $gstRate = 0.0;
+        } elseif ($this->commencementDate && $this->commencementDate < $gstReformDate) {
+            // Old regime (DOC between Jan 1, 2014 and Sep 21, 2025)
             if ($isSingle) {
-                // Single-premium: 1.25 % one-time (no renewal, so year is irrelevant)
+                // Single-premium: 1.25 % one-time
                 $gstRate = 1.25;
             } elseif ($isTerm) {
                 // Term plans: flat 18 % all years
@@ -328,8 +330,8 @@ class Policy
 
         // Compute and store GST & total
         $calculatedGst = (float) $this->basicPremium * $gstRate / 100;
-        $this->setGst((string) $calculatedGst);
-        $this->setTotalPremium((string) ((float) $this->basicPremium + $calculatedGst));
+        $this->setGst((string) round($calculatedGst, 2)); // round() to prevent long decimals
+        $this->setTotalPremium((string) round(((float) $this->basicPremium + $calculatedGst), 2));
     }
 
     public function getId(): ?int
