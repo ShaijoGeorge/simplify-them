@@ -1,0 +1,114 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title %}
+    <div class="d-flex align-items-center justify-content-between">
+        <div>
+            <h2 class="mb-0">Commission Statement</h2>
+            <small class="text-muted">{{ agency.businessName }} — {{ month|date('F Y') }}</small>
+        </div>
+    </div>
+{% endblock %}
+
+{% block main %}
+<div class="container-fluid">
+
+    {# MONTH NAV #}
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <a href="{{ path('admin_commission_statement', {month: prevMonth}) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-chevron-left me-1"></i>Previous
+        </a>
+        <h5 class="mb-0 fw-semibold">{{ month|date('F Y') }}</h5>
+        <a href="{{ path('admin_commission_statement', {month: nextMonth}) }}" class="btn btn-outline-secondary btn-sm">
+            Next<i class="fas fa-chevron-right ms-1"></i>
+        </a>
+    </div>
+
+    {# SUMMARY CARDS #}
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0" style="border-left:4px solid #1cc88a !important;">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted mb-1">Gross Commission</h6>
+                    <h3 class="fw-bold mb-0">₹{{ totals.gross|number_format(2) }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0" style="border-left:4px solid #e74a3b !important;">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted mb-1">TDS Deducted</h6>
+                    <h3 class="fw-bold text-danger mb-0">− ₹{{ totals.tds|number_format(2) }}</h3>
+                    <small class="text-muted">{{ hasPan ? '5 % (PAN on file)' : '20 % (No PAN)' }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0" style="border-left:4px solid #4e73df !important;">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted mb-1">Net Payable</h6>
+                    <h3 class="fw-bold text-primary mb-0">₹{{ totals.net|number_format(2) }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# DETAIL TABLE #}
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white fw-semibold">
+            <i class="fas fa-list me-2"></i>Receipt-wise Breakdown
+        </div>
+        <div class="card-body p-0">
+            {% if receipts|length > 0 %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Receipt #</th>
+                            <th>Policy</th>
+                            <th class="text-end">Premium</th>
+                            <th class="text-end">Gross Comm</th>
+                            <th class="text-center">TDS %</th>
+                            <th class="text-end">TDS Amt</th>
+                            <th class="text-end">Net Comm</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in receipts %}
+                        <tr>
+                            <td>{{ r.paymentDate|date('d-M-Y') }}</td>
+                            <td><span class="fw-semibold">{{ r.receiptNumber }}</span></td>
+                            <td>{{ r.policy.policyNumber ?? '—' }}</td>
+                            <td class="text-end">₹{{ r.amount|number_format(2) }}</td>
+                            <td class="text-end">₹{{ r.grossCommission|number_format(2) }}</td>
+                            <td class="text-center">
+                                <span class="badge {{ hasPan ? 'bg-success' : 'bg-warning text-dark' }}">
+                                    {{ hasPan ? '5%' : '20%' }}
+                                </span>
+                            </td>
+                            <td class="text-end text-danger">− ₹{{ r.tdsOnCommission|number_format(2) }}</td>
+                            <td class="text-end fw-semibold">₹{{ r.netCommission|number_format(2) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-light fw-bold">
+                        <tr>
+                            <td colspan="4">Total</td>
+                            <td class="text-end">₹{{ totals.gross|number_format(2) }}</td>
+                            <td></td>
+                            <td class="text-end text-danger">− ₹{{ totals.tds|number_format(2) }}</td>
+                            <td class="text-end text-primary">₹{{ totals.net|number_format(2) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-inbox fa-3x mb-3 d-block" style="opacity:.3"></i>
+                No premium receipts found for {{ month|date('F Y') }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

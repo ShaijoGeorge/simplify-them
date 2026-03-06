@@ -16,28 +16,43 @@ class PremiumReceiptRepository extends ServiceEntityRepository
         parent::__construct($registry, PremiumReceipt::class);
     }
 
-    //    /**
-    //     * @return PremiumReceipt[] Returns an array of PremiumReceipt objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('p.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * Get monthly commission statement data for an agency.
+     *
+     * @return array{totals: array{gross: float, tds: float, net: float}, receipts: PremiumReceipt[]}
+     */
+    public function getMonthlyCommissionStatement(int $agencyId, int $year, int $month): array
+    {
+        $from = new \DateTime("$year-$month-01");
+        $to   = (clone $from)->modify('last day of this month')->setTime(23, 59, 59);
 
-    //    public function findOneBySomeField($value): ?PremiumReceipt
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        $receipts = $this->createQueryBuilder('r')
+            ->andWhere('r.agency = :agency')
+            ->andWhere('r.paymentDate BETWEEN :from AND :to')
+            ->setParameter('agency', $agencyId)
+            ->setParameter('from', $from)
+            ->setParameter('to', $to)
+            ->orderBy('r.paymentDate', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        $totalGross = 0.0;
+        $totalTds   = 0.0;
+        $totalNet   = 0.0;
+
+        foreach ($receipts as $r) {
+            $totalGross += (float) $r->getGrossCommission();
+            $totalTds   += (float) $r->getTdsOnCommission();
+            $totalNet   += (float) $r->getNetCommission();
+        }
+
+        return [
+            'totals' => [
+                'gross' => round($totalGross, 2),
+                'tds'   => round($totalTds, 2),
+                'net'   => round($totalNet, 2),
+            ],
+            'receipts' => $receipts,
+        ];
+    }
 }

@@ -19,11 +19,14 @@ use App\Entity\User;
 use App\Repository\ClientRepository;
 use App\Repository\PolicyRepository;
 use App\Repository\SurvivalBenefitRepository;
+use App\Repository\PremiumReceiptRepository;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
 
 #[AdminDashboard(routePath: '/admin', routeName: 'admin')]
 class DashboardController extends AbstractDashboardController
@@ -31,7 +34,8 @@ class DashboardController extends AbstractDashboardController
     public function __construct(
         private PolicyRepository $policyRepository,
         private ClientRepository $clientRepository,
-        private SurvivalBenefitRepository $survivalBenefitRepository
+        private SurvivalBenefitRepository $survivalBenefitRepository,
+        private PremiumReceiptRepository $receiptRepository,
     ) {}
 
     public function index(): Response
@@ -53,6 +57,42 @@ class DashboardController extends AbstractDashboardController
             'lapsed_count' => $lapsedCount,
             'survival_benefits' => $survivalBenefits,
             'current_month' => date('F'),
+        ]);
+    }
+
+    #[Route('/admin/commission-statement', name: 'admin_commission_statement')]
+    public function commissionStatement(Request $request): Response
+    {
+        $user = $this->getUser();
+        $agency = $user->getAgency();
+
+        if (!$agency) {
+            throw $this->createAccessDeniedException('No agency assigned.');
+        }
+
+        // Default to current month
+        $monthParam = $request->query->get('month', date('Y-m'));
+        [$year, $month] = explode('-', $monthParam);
+
+        $data = $this->receiptRepository->getMonthlyCommissionStatement(
+            $agency->getId(),
+            (int) $year,
+            (int) $month,
+        );
+
+        // Build prev/next month links
+        $current = new \DateTime("$year-$month-01");
+        $prev = (clone $current)->modify('-1 month')->format('Y-m');
+        $next = (clone $current)->modify('+1 month')->format('Y-m');
+
+        return $this->render('Admin/commission_statement/index.html.twig', [
+            'agency'   => $agency,
+            'totals'   => $data['totals'],
+            'receipts' => $data['receipts'],
+            'month'    => $current,
+            'prevMonth' => $prev,
+            'nextMonth' => $next,
+            'hasPan'   => $agency->hasPan(),
         ]);
     }
 
@@ -82,6 +122,7 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToCrud('Nominees', 'fa fa-user-shield', Nominee::class);
         yield MenuItem::linkToCrud('Policy Riders', 'fa fa-shield-halved', PolicyRider::class);
         yield MenuItem::linkToCrud('Survival Benefits', 'fa fa-hand-holding-dollar', SurvivalBenefit::class);
+        yield MenuItem::linkToRoute('Commission Statement', 'fa fa-file-invoice-dollar', 'admin_commission_statement');
 
         // SETTINGS
         yield MenuItem::section('SETTINGS');
