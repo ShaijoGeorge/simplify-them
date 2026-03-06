@@ -27,13 +27,22 @@
 
     // Currently active plan flags (set after fetch)
     var currentPlanFlags = {
-        isSinglePremium:  false,
+        isSinglePremium: false,
         isLimitedPremium: false,
-        planTypeName:     ''
+        planTypeName: ''
+    };
+
+    // Modal rebate factors (must match Policy.php calculateModalPremium)
+    var MODAL_FACTORS = {
+        'YLY': 1.0, 'YEARLY': 1.0,
+        'HLY': 0.51, 'HALF-YEARLY': 0.51,
+        'QLY': 0.26, 'QUARTERLY': 0.26,
+        'NACH': 0.0875, 'MLY': 0.0875, 'MONTHLY': 0.0875,
+        'SINGLE': 1.0
     };
 
     // DOM field references (resolved once on DOMContentLoaded) ─────────────
-    var $basicPremium, $gst, $totalPremium, $doc, $mode, $nextDue, $plan;
+    var $annualPremium, $basicPremium, $gst, $totalPremium, $doc, $mode, $nextDue, $plan;
 
     // 1. PLAN FLAGS - fetch from AJAX endpoint
 
@@ -65,7 +74,31 @@
             });
     }
 
-    // 2. GST CALCULATION
+    // 2. MODAL PREMIUM CALCULATION
+
+    /**
+     * Live-calculate basicPremium = annualPremium × modal factor.
+     * Mirrors Policy.php calculateModalPremium().
+     */
+    function recalculateModalPremium() {
+        if (!$annualPremium || !$basicPremium) return;
+
+        var annual = parseFloat($annualPremium.value) || 0;
+        var mode = $mode ? $mode.value : '';
+
+        if (annual <= 0 || !mode) return;
+
+        var factor = MODAL_FACTORS[mode];
+        if (factor === undefined) factor = 1.0;
+
+        var modal = Math.round(annual * factor * 100) / 100;  // round to 2 dp
+        $basicPremium.value = modal.toFixed(2);
+
+        // Chain: recalculate GST with the new basic premium
+        recalculateGst();
+    }
+
+    // 3. GST CALCULATION
 
     /**
      * Resolve the applicable GST percentage.
@@ -103,7 +136,7 @@
         var today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        var diffMs    = today - docDate;
+        var diffMs = today - docDate;
         var diffYears = diffMs / (1000 * 60 * 60 * 24 * 365.25);
         var policyYear = Math.floor(diffYears) + 1;
 
@@ -117,10 +150,10 @@
         var basic = parseFloat($basicPremium.value) || 0;
 
         // Parse DOC
-        var docVal  = $doc ? $doc.value : '';
+        var docVal = $doc ? $doc.value : '';
         var docDate = docVal ? new Date(docVal) : null;
 
-        var mode    = $mode ? $mode.value : '';
+        var mode = $mode ? $mode.value : '';
 
         var rate = resolveGstRate(
             docDate,
@@ -129,10 +162,10 @@
             currentPlanFlags.planTypeName
         );
 
-        var gstAmt   = Math.round(basic * rate) / 100;
+        var gstAmt = Math.round(basic * rate / 100 * 100) / 100;  // matches PHP: round(basic*rate/100, 2)
         var totalAmt = basic + gstAmt;
 
-        $gst.value   = gstAmt.toFixed(2);
+        $gst.value = gstAmt.toFixed(2);
         $totalPremium.value = totalAmt.toFixed(2);
     }
 
@@ -143,14 +176,14 @@
 
         // Single premium → clear and lock next due
         if (currentPlanFlags.isSinglePremium || ($mode && $mode.value === 'SINGLE')) {
-            $nextDue.value    = '';
+            $nextDue.value = '';
             $nextDue.readOnly = true;
             $nextDue.style.opacity = '0.5';
             return;
         }
 
         // Unlock if it was previously locked
-        $nextDue.readOnly     = false;
+        $nextDue.readOnly = false;
         $nextDue.style.opacity = '';
 
         var docVal = $doc.value;
@@ -163,15 +196,15 @@
 
         var addMonths = 0;
         switch (mode) {
-            case 'YLY':  case 'YEARLY':       addMonths = 12; break;
-            case 'HLY':  case 'HALF-YEARLY':  addMonths = 6;  break;
-            case 'QLY':  case 'QUARTERLY':    addMonths = 3;  break;
-            case 'MLY':  case 'MONTHLY':
-            case 'NACH':                      addMonths = 1;  break;
+            case 'YLY': case 'YEARLY': addMonths = 12; break;
+            case 'HLY': case 'HALF-YEARLY': addMonths = 6; break;
+            case 'QLY': case 'QUARTERLY': addMonths = 3; break;
+            case 'MLY': case 'MONTHLY':
+            case 'NACH': addMonths = 1; break;
             default: return;
         }
 
-        var today   = new Date();
+        var today = new Date();
         today.setHours(0, 0, 0, 0);
 
         var nextDue = new Date(docDate);
@@ -182,8 +215,8 @@
         }
 
         var yyyy = nextDue.getFullYear();
-        var mm   = String(nextDue.getMonth() + 1).padStart(2, '0');
-        var dd   = String(nextDue.getDate()).padStart(2, '0');
+        var mm = String(nextDue.getMonth() + 1).padStart(2, '0');
+        var dd = String(nextDue.getDate()).padStart(2, '0');
         $nextDue.value = yyyy + '-' + mm + '-' + dd;
     }
 
@@ -199,7 +232,7 @@
         if (currentPlanFlags.isSinglePremium) {
             // Lock mode to SINGLE
             if ($mode) {
-                $mode.value    = 'SINGLE';
+                $mode.value = 'SINGLE';
                 $mode.disabled = true;
                 ensureHiddenMirror($mode);
             }
@@ -244,9 +277,9 @@
         if (document.getElementById(mirrorId)) return;
 
         var hidden = document.createElement('input');
-        hidden.type  = 'hidden';
-        hidden.id    = mirrorId;
-        hidden.name  = select.name;
+        hidden.type = 'hidden';
+        hidden.id = mirrorId;
+        hidden.name = select.name;
         hidden.value = select.value;
         select.parentNode.insertBefore(hidden, select.nextSibling);
 
@@ -279,9 +312,9 @@
 
         fetchPlanFlags(planId, function (flags) {
             currentPlanFlags = {
-                isSinglePremium:  !!flags.isSinglePremium,
+                isSinglePremium: !!flags.isSinglePremium,
                 isLimitedPremium: !!flags.isLimitedPremium,
-                planTypeName:     flags.planTypeName || ''
+                planTypeName: flags.planTypeName || ''
             };
             applyPlanFlagBehaviours();
         });
@@ -294,13 +327,14 @@
     }
 
     function resolveFields() {
+        $annualPremium = resolveField('[id$="_annualPremium"]');
         $basicPremium = resolveField('[id$="_basicPremium"]');
-        $gst          = resolveField('[id$="_gst"]');
+        $gst = resolveField('[id$="_gst"]');
         $totalPremium = resolveField('[id$="_totalPremium"]');
-        $doc          = resolveField('[id$="_commencementDate"]');
-        $mode         = resolveField('[id$="_premiumMode"]');
-        $nextDue      = resolveField('[id$="_nextDueDate"]');
-        $plan         = resolveField('[id$="_licPlan"]');
+        $doc = resolveField('[id$="_commencementDate"]');
+        $mode = resolveField('[id$="_premiumMode"]');
+        $nextDue = resolveField('[id$="_nextDueDate"]');
+        $plan = resolveField('[id$="_licPlan"]');
     }
 
     // 8. BOOT
@@ -314,6 +348,11 @@
         }
 
         // Attach listeners
+        if ($annualPremium) {
+            $annualPremium.addEventListener('input', recalculateModalPremium);
+            $annualPremium.addEventListener('change', recalculateModalPremium);
+        }
+
         if ($basicPremium) {
             $basicPremium.addEventListener('input', recalculateGst);
             $basicPremium.addEventListener('change', recalculateGst);
@@ -328,6 +367,7 @@
 
         if ($mode) {
             $mode.addEventListener('change', function () {
+                recalculateModalPremium();
                 recalculateGst();
                 recalculateNextDue();
             });
@@ -347,6 +387,7 @@
             onPlanChange();
         } else {
             // Still run initial calc in case values are pre-filled
+            recalculateModalPremium();
             recalculateGst();
             recalculateNextDue();
         }
