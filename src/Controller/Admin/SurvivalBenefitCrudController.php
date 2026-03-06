@@ -19,6 +19,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 class SurvivalBenefitCrudController extends BaseCrudController
 {
@@ -145,6 +146,17 @@ class SurvivalBenefitCrudController extends BaseCrudController
     {
         $entityId = $context->getRequest()->query->get('entityId');
         $benefit = $em->getRepository(SurvivalBenefit::class)->find($entityId);
+
+        $user = $this->getUser();
+        if (
+            $benefit
+            && $user
+            && !$this->isGranted('ROLE_SUPER_ADMIN')
+            && $user->getAgency()
+            && $benefit->getPolicy()?->getAgency()?->getId() !== $user->getAgency()->getId()
+        ) {
+            throw new AccessDeniedException('Access Denied: You do not own this Survival Benefit.');
+        }
 
         if ($benefit && $benefit->getStatus() === SurvivalBenefit::STATUS_PENDING) {
             $benefit->setStatus(SurvivalBenefit::STATUS_COLLECTED);

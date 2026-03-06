@@ -24,6 +24,21 @@ class AgencyResolver
             return $entity->getAgency()->getId();
         }
 
+        // Linked entities owned via policy (Nominee, Rider, SurvivalBenefit, etc.)
+        if (method_exists($entity, 'getPolicy') && $entity->getPolicy()?->getAgency()) {
+            return $entity->getPolicy()->getAgency()->getId();
+        }
+
+        // Linked entities owned via client
+        if (method_exists($entity, 'getClient') && $entity->getClient()?->getAgency()) {
+            return $entity->getClient()->getAgency()->getId();
+        }
+
+        // Linked entities owned via role (Permission)
+        if (method_exists($entity, 'getRole') && $entity->getRole()?->getAgency()) {
+            return $entity->getRole()->getAgency()->getId();
+        }
+
         return null; // Entity is global or has no agency link
     }
 }
