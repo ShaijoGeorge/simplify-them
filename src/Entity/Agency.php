@@ -36,6 +36,9 @@ class Agency
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $licBranchCode = null;
 
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $panNumber = null;
+
     #[ORM\Column]
     private ?bool $isActive = null;
 
@@ -150,6 +153,23 @@ class Agency
         $this->licBranchCode = $licBranchCode;
 
         return $this;
+    }
+
+    public function getPanNumber(): ?string
+    {
+        return $this->panNumber;
+    }
+
+    public function setPanNumber(?string $panNumber): static
+    {
+        $this->panNumber = $panNumber ? strtoupper($panNumber) : null;
+
+        return $this;
+    }
+
+    public function hasPan(): bool
+    {
+        return $this->panNumber !== null && $this->panNumber !== '';
     }
 
     public function isActive(): ?bool

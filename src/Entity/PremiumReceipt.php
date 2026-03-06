@@ -38,7 +38,13 @@ class PremiumReceipt
     private ?Agency $agency = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
-    private ?string $commissionEarned = null;
+    private ?string $grossCommission = null;
+
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
+    private ?string $tdsOnCommission = null;
+
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
+    private ?string $netCommission = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     #[Gedmo\Timestampable(on: 'create')]
@@ -182,14 +188,38 @@ class PremiumReceipt
         return $this->receiptNumber ?? 'New Receipt';
     }
 
-    public function getCommissionEarned(): ?string
+    public function getGrossCommission(): ?string
     {
-        return $this->commissionEarned;
+        return $this->grossCommission;
     }
 
-    public function setCommissionEarned(?string $commissionEarned): static
+    public function setGrossCommission(?string $grossCommission): static
     {
-        $this->commissionEarned = $commissionEarned;
+        $this->grossCommission = $grossCommission;
+
+        return $this;
+    }
+
+    public function getTdsOnCommission(): ?string
+    {
+        return $this->tdsOnCommission;
+    }
+
+    public function setTdsOnCommission(?string $tdsOnCommission): static
+    {
+        $this->tdsOnCommission = $tdsOnCommission;
+
+        return $this;
+    }
+
+    public function getNetCommission(): ?string
+    {
+        return $this->netCommission;
+    }
+
+    public function setNetCommission(?string $netCommission): static
+    {
+        $this->netCommission = $netCommission;
 
         return $this;
     }
