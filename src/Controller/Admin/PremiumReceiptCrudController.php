@@ -116,11 +116,23 @@ class PremiumReceiptCrudController extends BaseCrudController
             ->renderAsBadges()
             ->setColumns(12);
 
-        // HIDDEN (read-only) commission display
-        yield MoneyField::new('commissionEarned', 'Commission Earned')
+        // COMMISSION BREAKDOWN (read-only)
+        yield FormField::addFieldset('Commission & TDS')->setIcon('fa fa-calculator');
+
+        yield MoneyField::new('grossCommission', 'Gross Commission')
             ->setCurrency('INR')
             ->setStoredAsCents(false)
-            ->hideOnForm();
+            ->setDisabled(true);
+
+        yield MoneyField::new('tdsOnCommission', 'TDS Deducted')
+            ->setCurrency('INR')
+            ->setStoredAsCents(false)
+            ->setDisabled(true);
+
+        yield MoneyField::new('netCommission', 'Net Commission')
+            ->setCurrency('INR')
+            ->setStoredAsCents(false)
+            ->setDisabled(true);
 
         // META DATA
         yield FormField::addFieldset('System Metadata')->setIcon('fa fa-database');
@@ -208,44 +220,51 @@ class PremiumReceiptCrudController extends BaseCrudController
             return;
         }
 
+        $grossCommission = 0.0;
+
         // 1. Single-premium override
         // Check BOTH the LicPlan flag AND the policy's premiumMode so the override
         // fires regardless of which mechanism identified the policy as single-premium.
         if ($plan->isSinglePremium() || $policy->isSinglePremiumPolicy()) {
-            $commission = ((float) $receipt->getAmount() * self::SINGLE_PREMIUM_COMMISSION_RATE) / 100;
-            $receipt->setCommissionEarned((string) round($commission, 2));
-            return;
-        }
-
-        // 2. Standard CommissionRule lookup
-        $doc = $policy->getCommencementDate();
-        $payDate = $receipt->getPaymentDate() ?? new \DateTime();
-
-        $diff = $doc->diff($payDate);
-        $policyYear = $diff->y + 1;
-        $term = $policy->getPolicyTerm();
-
-        // Find Rule
-        $rule = $em->getRepository(CommissionRule::class)->createQueryBuilder('c')
-            ->where('c.licPlan = :plan')
-            ->andWhere('c.policyYearFrom <= :year')
-            ->andWhere('c.policyYearTo >= :year')
-            ->andWhere('c.minTerm <= :term')
-            ->andWhere('c.maxTerm >= :term')
-            ->setParameter('plan', $plan)
-            ->setParameter('year', $policyYear)
-            ->setParameter('term', $term)
-            ->setMaxResults(1)
-            ->getQuery()
-            ->getOneOrNullResult();
-
-        if ($rule) {
-            $commission = ((float) $receipt->getAmount() * (float) $rule->getCommissionRate()) / 100;
-            $receipt->setCommissionEarned((string) round($commission, 2));
+            $grossCommission = ((float) $receipt->getAmount() * self::SINGLE_PREMIUM_COMMISSION_RATE) / 100;
         } else {
-            // 3. No rule found — zero commission
-            $receipt->setCommissionEarned('0');
+            // 2. Standard CommissionRule lookup
+            $doc = $policy->getCommencementDate();
+            $payDate = $receipt->getPaymentDate() ?? new \DateTime();
+
+            $diff = $doc->diff($payDate);
+            $policyYear = $diff->y + 1;
+            $term = $policy->getPolicyTerm();
+
+            // Find Rule
+            $rule = $em->getRepository(CommissionRule::class)->createQueryBuilder('c')
+                ->where('c.licPlan = :plan')
+                ->andWhere('c.policyYearFrom <= :year')
+                ->andWhere('c.policyYearTo >= :year')
+                ->andWhere('c.minTerm <= :term')
+                ->andWhere('c.maxTerm >= :term')
+                ->setParameter('plan', $plan)
+                ->setParameter('year', $policyYear)
+                ->setParameter('term', $term)
+                ->setMaxResults(1)
+                ->getQuery()
+                ->getOneOrNullResult();
+
+            if ($rule) {
+                $grossCommission = ((float) $receipt->getAmount() * (float) $rule->getCommissionRate()) / 100;
+            }
+            // else: no rule found — stays 0
         }
+
+        // 3. Compute TDS (Section 194D): 5 % with PAN, 20 % without
+        $agency = $receipt->getAgency();
+        $tdsRate = ($agency && $agency->hasPan()) ? 5.0 : 20.0;
+        $tds = ($grossCommission * $tdsRate) / 100;
+        $net = $grossCommission - $tds;
+
+        $receipt->setGrossCommission((string) round($grossCommission, 2));
+        $receipt->setTdsOnCommission((string) round($tds, 2));
+        $receipt->setNetCommission((string) round($net, 2));
     }
 
     // Advance the policy's next due date by one premium interval after payment.
