@@ -75,6 +75,11 @@ class AgencyCrudController extends BaseCrudController
 
         yield TextField::new('licBranchCode', 'Branch Code')
             ->setColumns(12);
+
+        yield TextField::new('panNumber', 'PAN Number')
+            ->setColumns(12)
+            ->setHelp('10-char PAN (e.g. ABCDE1234F). TDS = 5 % with PAN, 20 % without.')
+            ->setFormTypeOption('attr', ['maxlength' => 10, 'style' => 'text-transform:uppercase']);
             
         yield BooleanField::new('isActive', 'Account Status')
             ->setLabel('Active Account')
