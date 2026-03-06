@@ -42,7 +42,7 @@
     };
 
     // DOM field references (resolved once on DOMContentLoaded) ─────────────
-    var $annualPremium, $basicPremium, $gst, $totalPremium, $doc, $mode, $nextDue, $plan;
+    var $annualPremium, $basicPremium, $modalRebate, $gst, $totalPremium, $doc, $mode, $nextDue, $plan;
 
     // 1. PLAN FLAGS - fetch from AJAX endpoint
 
@@ -93,6 +93,11 @@
 
         var modal = Math.round(annual * factor * 100) / 100;  // round to 2 dp
         $basicPremium.value = modal.toFixed(2);
+
+        // Update Rebate Factor display
+        if ($modalRebate) {
+            $modalRebate.value = factor.toFixed(4);
+        }
 
         // Chain: recalculate GST with the new basic premium
         recalculateGst();
@@ -329,6 +334,7 @@
     function resolveFields() {
         $annualPremium = resolveField('[id$="_annualPremium"]');
         $basicPremium = resolveField('[id$="_basicPremium"]');
+        $modalRebate = resolveField('[id$="_modalRebate"]');
         $gst = resolveField('[id$="_gst"]');
         $totalPremium = resolveField('[id$="_totalPremium"]');
         $doc = resolveField('[id$="_commencementDate"]');
