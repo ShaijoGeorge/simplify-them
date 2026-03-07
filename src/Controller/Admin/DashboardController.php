@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Entity\Agency;
 use App\Entity\Client;
+use App\Entity\BonusRate;
 use App\Entity\CommissionRule;
 use App\Entity\LicPlan;
 use App\Entity\LicPlanType;
@@ -111,6 +112,7 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToCrud('Agencies (Tenants)', 'fa fa-building', Agency::class);
         yield MenuItem::linkToCrud('LIC Plans', 'fa fa-book', LicPlan::class);
         yield MenuItem::linkToCrud('Commission Rules', 'fa fa-percentage', CommissionRule::class);
+        yield MenuItem::linkToCrud('Bonus Rates', 'fa fa-chart-line', BonusRate::class);
         yield MenuItem::linkToCrud('Plan Types', 'fa fa-tags', LicPlanType::class);
     
         // AGENT TOOLS
