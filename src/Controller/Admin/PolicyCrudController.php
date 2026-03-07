@@ -5,12 +5,14 @@ namespace App\Controller\Admin;
 use App\Entity\LicPlan;
 use App\Entity\Policy;
 use App\Entity\User;
+use App\Service\MaturityProjectionService;
 use App\Service\PermissionCheckerService;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
+use EasyCorp\Bundle\EasyAdminBundle\Config\KeyValueStore;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
@@ -28,6 +30,7 @@ class PolicyCrudController extends BaseCrudController
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
+        private MaturityProjectionService $maturityProjectionService,
         PermissionCheckerService $permissionChecker
     ) {
         parent::__construct($permissionChecker);
@@ -308,6 +311,22 @@ class PolicyCrudController extends BaseCrudController
         }
 
         parent::updateEntity($entityManager, $entityInstance);
+    }
+
+    public function configureResponseParameters(KeyValueStore $responseParameters): KeyValueStore
+    {
+        $responseParameters = parent::configureResponseParameters($responseParameters);
+
+        if (Crud::PAGE_DETAIL === $responseParameters->get('pageName')) {
+            $entity = $responseParameters->get('entity');
+            if ($entity) {
+                $policy = $entity->getInstance();
+                $projection = $this->maturityProjectionService->calculateProjection($policy);
+                $responseParameters->set('maturity_projection', $projection);
+            }
+        }
+
+        return $responseParameters;
     }
 
     public function configureFilters(Filters $filters): Filters
