@@ -40,6 +40,7 @@ class InsertModulesCommand extends Command
             ['name' => 'Policies', 'key' => 'policies'],
             ['name' => 'Policy Riders', 'key' => 'policy_riders'],
             ['name' => 'Premium Collection', 'key' => 'premium_collection'],
+            ['name' => 'Premium Tables', 'key' => 'premium_tables'],
             ['name' => 'Roles', 'key' => 'roles'],
             ['name' => 'Survival Benefits', 'key' => 'survival_benefit'],
             ['name' => 'Users', 'key' => 'users'],

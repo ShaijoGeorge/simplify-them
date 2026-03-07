@@ -14,6 +14,7 @@ use App\Entity\Permission;
 use App\Entity\Policy;
 use App\Entity\PolicyRider;
 use App\Entity\PremiumReceipt;
+use App\Entity\PremiumTable;
 use App\Entity\Role;
 use App\Entity\SurvivalBenefit;
 use App\Entity\User;
@@ -113,6 +114,7 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToCrud('LIC Plans', 'fa fa-book', LicPlan::class);
         yield MenuItem::linkToCrud('Commission Rules', 'fa fa-percentage', CommissionRule::class);
         yield MenuItem::linkToCrud('Bonus Rates', 'fa fa-chart-line', BonusRate::class);
+        yield MenuItem::linkToCrud('Premium Tables', 'fa fa-table', PremiumTable::class);
         yield MenuItem::linkToCrud('Plan Types', 'fa fa-tags', LicPlanType::class);
     
         // AGENT TOOLS
