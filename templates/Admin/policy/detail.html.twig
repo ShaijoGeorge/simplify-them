@@ -7,11 +7,137 @@
     {{ parent() }}
 
     {# ══════════════════════════════════════════════════════════
-       PAID-UP BENEFIT BANNER
-       Shown only when policy status is PAID_UP.
-       Gives the agent the exact reduced SA to communicate to client.
+       MATURITY PROJECTION BANNER
+       Shown when bonus rate data exists for this policy's plan.
+       Gives agents a quick estimated maturity value.
        ══════════════════════════════════════════════════════════ #}
     {% set policy = entity.instance %}
+    {% if maturity_projection is defined and maturity_projection is not null %}
+        {% set proj = maturity_projection %}
+        <div class="card mt-4 border-0 shadow-sm" id="maturity-projection-banner"
+             style="border-left: 5px solid #10b981 !important; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 60%, #a7f3d0 100%);">
+            <div class="card-body p-4">
+
+                {# Top row: icon + title + explanation #}
+                <div class="d-flex align-items-start gap-3 mb-4">
+                    <div style="width:52px;height:52px;min-width:52px;border-radius:16px;
+                                background:linear-gradient(135deg,#10b981,#059669);
+                                display:flex;align-items:center;justify-content:center;
+                                color:#fff;font-size:22px;box-shadow:0 6px 18px rgba(16,185,129,.4);">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <h5 class="mb-0 fw-bold" style="color:#064e3b;">Projected Maturity Amount (Estimated)</h5>
+                            <span class="badge" style="background:#10b981;color:#fff;border-radius:8px;font-size:11px;padding:3px 10px;font-weight:700;">
+                                PROJECTION
+                            </span>
+                        </div>
+                        <p class="mb-0" style="color:#065f46;font-size:13.5px;line-height:1.5;">
+                            Estimated maturity value based on currently declared LIC bonus rates for
+                            <strong>{{ policy.licPlan }}</strong>.
+                        </p>
+                    </div>
+                </div>
+
+                {# Key figures row #}
+                <div class="row g-3 mb-3">
+
+                    {# Projected Maturity - the hero figure #}
+                    <div class="col-md-3">
+                        <div class="p-3 text-center h-100"
+                             style="background:#fff;border-radius:14px;border:2px solid #10b981;box-shadow:0 4px 16px rgba(16,185,129,.18);">
+                            <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#047857;margin-bottom:6px;">
+                                <i class="fas fa-indian-rupee-sign me-1"></i> Projected Maturity
+                            </div>
+                            <div style="font-size:1.9rem;font-weight:800;color:#064e3b;line-height:1.1;">
+                                ₹{{ proj.maturityAmount|number_format(0, '.', ',') }}
+                            </div>
+                            <div style="font-size:11px;color:#047857;margin-top:4px;">
+                                SA + Bonus + FAB
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Sum Assured #}
+                    <div class="col-md-3">
+                        <div class="p-3 text-center h-100"
+                             style="background:rgba(255,255,255,.7);border-radius:14px;border:1.5px solid #6ee7b7;">
+                            <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#047857;margin-bottom:6px;">
+                                <i class="fas fa-file-contract me-1"></i> Sum Assured
+                            </div>
+                            <div style="font-size:1.5rem;font-weight:700;color:#065f46;">
+                                ₹{{ proj.sumAssured|number_format(0, '.', ',') }}
+                            </div>
+                            <div style="font-size:11px;color:#047857;margin-top:4px;">
+                                Base guarantee
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Accrued SRB #}
+                    <div class="col-md-3">
+                        <div class="p-3 text-center h-100"
+                             style="background:rgba(255,255,255,.7);border-radius:14px;border:1.5px solid #6ee7b7;">
+                            <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#047857;margin-bottom:6px;">
+                                <i class="fas fa-plus-circle me-1"></i> Accrued Bonus (SRB)
+                            </div>
+                            <div style="font-size:1.5rem;font-weight:700;color:#065f46;">
+                                ₹{{ proj.accruedBonus|number_format(0, '.', ',') }}
+                            </div>
+                            <div style="font-size:11px;color:#047857;margin-top:4px;">
+                                Over {{ proj.totalPolicyYears }} years
+                            </div>
+                        </div>
+                    </div>
+
+                    {# FAB #}
+                    <div class="col-md-3">
+                        <div class="p-3 text-center h-100"
+                             style="background:rgba(255,255,255,.7);border-radius:14px;border:1.5px solid #6ee7b7;">
+                            <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#047857;margin-bottom:6px;">
+                                <i class="fas fa-award me-1"></i> Final Additional Bonus
+                            </div>
+                            <div style="font-size:1.5rem;font-weight:700;color:#065f46;">
+                                {% if proj.fabAmount > 0 %}
+                                    ₹{{ proj.fabAmount|number_format(0, '.', ',') }}
+                                {% else %}
+                                    <span style="font-size:1rem;color:#6b7280;">N/A</span>
+                                {% endif %}
+                            </div>
+                            <div style="font-size:11px;color:#047857;margin-top:4px;">
+                                {% if proj.fabAmount > 0 %}
+                                    Term ≥ 15 years
+                                {% else %}
+                                    Not applicable
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# Rate reliability info #}
+                <div class="px-2 mb-2" style="font-size:12px;color:#065f46;">
+                    <i class="fas fa-info-circle me-1"></i>
+                    <strong>{{ proj.yearsWithActualRate }}</strong> of {{ proj.totalPolicyYears }} years used actual declared rates
+                    {% if proj.yearsWithEstimatedRate > 0 %}
+                        &middot; <strong>{{ proj.yearsWithEstimatedRate }}</strong> years estimated at ₹{{ proj.latestRateUsed|number_format(2) }}/₹1000 SA (latest rate)
+                    {% endif %}
+                </div>
+
+                {# Disclaimer #}
+                <div class="px-3 py-2 mt-2"
+                     style="background:rgba(16,185,129,.1);border-radius:10px;border:1px dashed #6ee7b7;">
+                    <small style="color:#065f46;">
+                        <i class="fas fa-exclamation-triangle me-1" style="color:#f59e0b;"></i>
+                        <strong>Disclaimer:</strong> This is an estimate based on currently declared bonus rates and may change.
+                        Actual maturity value will be determined by LIC at the time of maturity based on their valuation.
+                        This projection should not be treated as a guarantee.
+                    </small>
+                </div>
+            </div>
+        </div>
+    {% endif %}
     {% if policy.status == 'PAID_UP' %}
         {% set paidUpSA = policy.paidUpSumAssured %}
         {% set originalSA = policy.sumAssured %}
@@ -24,7 +150,7 @@
              style="border-left: 5px solid #f59e0b !important; background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 60%, #fde68a 100%);">
             <div class="card-body p-4">
 
-                {# ── Top row: icon + title + explanation ── #}
+                {# Top row: icon + title + explanation #}
                 <div class="d-flex align-items-start gap-3 mb-4">
                     <div style="width:52px;height:52px;min-width:52px;border-radius:16px;
                                 background:linear-gradient(135deg,#f59e0b,#d97706);
