@@ -43,6 +43,10 @@
 
     // DOM field references (resolved once on DOMContentLoaded) ─────────────
     var $annualPremium, $basicPremium, $modalRebate, $gst, $totalPremium, $doc, $mode, $nextDue, $plan;
+    var $lifeAssuredDob, $policyTerm, $sumAssured;
+
+    // Premium validation debounce timer
+    var premiumCheckTimer = null;
 
     // 1. PLAN FLAGS - fetch from AJAX endpoint
 
@@ -273,6 +277,7 @@
         // Recalculate everything with updated flags
         recalculateNextDue();
         recalculateGst();
+        checkPremiumAgainstTable();
     }
 
     // 5. HIDDEN MIRROR helper (for disabled selects that don't submit)
@@ -300,7 +305,93 @@
         if (old) old.parentNode.removeChild(old);
     }
 
-    // 6. PLAN CHANGE HANDLER
+    // 6. PREMIUM TABLE VALIDATION
+
+    /**
+     * Compute entry age from DOB + DOC (mirrors PHP Policy::calculateEntryAge).
+     * Returns null if either date is missing or invalid.
+     */
+    function computeEntryAge() {
+        var dobVal = $lifeAssuredDob ? $lifeAssuredDob.value : '';
+        var docVal = $doc ? $doc.value : '';
+        if (!dobVal || !docVal) return null;
+
+        var dob = new Date(dobVal);
+        var doc = new Date(docVal);
+        if (isNaN(dob.getTime()) || isNaN(doc.getTime())) return null;
+
+        var age = doc.getFullYear() - dob.getFullYear();
+        var m = doc.getMonth() - dob.getMonth();
+        if (m < 0 || (m === 0 && doc.getDate() < dob.getDate())) {
+            age--;
+        }
+        return age > 0 ? age : null;
+    }
+
+    function removePremiumWarning() {
+        var old = document.getElementById('ea-premium-warning');
+        if (old) old.parentNode.removeChild(old);
+    }
+
+    function showPremiumWarning(deviationPercent, expectedPremium) {
+        removePremiumWarning();
+
+        var hint = document.createElement('div');
+        hint.id = 'ea-premium-warning';
+        hint.style.cssText =
+            'margin-top:6px;padding:9px 13px;background:#fff8e1;border:1.5px solid #fbbf24;' +
+            'border-radius:10px;font-size:12.5px;font-weight:600;color:#92400e;';
+        hint.innerHTML =
+            '<i class="fa fa-triangle-exclamation" style="margin-right:6px;color:#f59e0b;"></i>' +
+            '<strong>Premium Deviation ' + deviationPercent.toFixed(1) + '%</strong> - ' +
+            'Expected annual premium per LIC table: <strong>₹\u202f' +
+            expectedPremium.toLocaleString('en-IN') + '</strong>';
+
+        if ($annualPremium) {
+            var wrapper = $annualPremium.closest('.field-money') || $annualPremium.closest('.form-group') || $annualPremium.parentNode;
+            wrapper.insertAdjacentElement('afterend', hint);
+        }
+    }
+
+    function checkPremiumAgainstTable() {
+        if (premiumCheckTimer) clearTimeout(premiumCheckTimer);
+
+        premiumCheckTimer = setTimeout(function () {
+            var planId = $plan ? $plan.value : '';
+            var entryAge = computeEntryAge();
+            var policyTerm = $policyTerm ? parseInt($policyTerm.value) : 0;
+            var sumAssured = $sumAssured ? parseFloat($sumAssured.value) : 0;
+            var annualPremium = $annualPremium ? parseFloat($annualPremium.value) : 0;
+
+            // All five values must be present
+            if (!planId || !entryAge || !policyTerm || !sumAssured || !annualPremium) {
+                removePremiumWarning();
+                return;
+            }
+
+            var url = '/admin/api/premium-check' +
+                '?planId=' + encodeURIComponent(planId) +
+                '&entryAge=' + encodeURIComponent(entryAge) +
+                '&policyTerm=' + encodeURIComponent(policyTerm) +
+                '&sumAssured=' + encodeURIComponent(sumAssured) +
+                '&annualPremium=' + encodeURIComponent(annualPremium);
+
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.found && data.isWarning) {
+                        showPremiumWarning(data.deviationPercent, data.expectedPremium);
+                    } else {
+                        removePremiumWarning();
+                    }
+                })
+                .catch(function () {
+                    removePremiumWarning();
+                });
+        }, 500);
+    }
+
+    // 7. PLAN CHANGE HANDLER
 
     function onPlanChange() {
         // EasyAdmin 4 renders Association fields as a Tom-Select / Symfony autocomplete
@@ -341,6 +432,9 @@
         $mode = resolveField('[id$="_premiumMode"]');
         $nextDue = resolveField('[id$="_nextDueDate"]');
         $plan = resolveField('[id$="_licPlan"]');
+        $lifeAssuredDob = resolveField('[id$="_lifeAssuredDob"]');
+        $policyTerm = resolveField('[id$="_policyTerm"]');
+        $sumAssured = resolveField('[id$="_sumAssured"]');
     }
 
     // 8. BOOT
@@ -357,6 +451,8 @@
         if ($annualPremium) {
             $annualPremium.addEventListener('input', recalculateModalPremium);
             $annualPremium.addEventListener('change', recalculateModalPremium);
+            $annualPremium.addEventListener('input', checkPremiumAgainstTable);
+            $annualPremium.addEventListener('change', checkPremiumAgainstTable);
         }
 
         if ($basicPremium) {
@@ -368,7 +464,21 @@
             $doc.addEventListener('change', function () {
                 recalculateGst();
                 recalculateNextDue();
+                checkPremiumAgainstTable();
             });
+        }
+
+        // Premium table validation: also re-check when DOB, term, or SA change
+        if ($lifeAssuredDob) {
+            $lifeAssuredDob.addEventListener('change', checkPremiumAgainstTable);
+        }
+        if ($policyTerm) {
+            $policyTerm.addEventListener('input', checkPremiumAgainstTable);
+            $policyTerm.addEventListener('change', checkPremiumAgainstTable);
+        }
+        if ($sumAssured) {
+            $sumAssured.addEventListener('input', checkPremiumAgainstTable);
+            $sumAssured.addEventListener('change', checkPremiumAgainstTable);
         }
 
         if ($mode) {

@@ -1197,6 +1197,67 @@ function calcModalPremium() {
     }
 }
 
+/* PREMIUM TABLE VALIDATION */
+var qwPremiumCheckTimer = null;
+
+function qwCheckPremiumTable() {
+    if (qwPremiumCheckTimer) clearTimeout(qwPremiumCheckTimer);
+
+    qwPremiumCheckTimer = setTimeout(function () {
+        var planEl = $id('quick_policy_licPlan');
+        var planId = planEl ? planEl.value : '';
+        var c = calcAutoFields();
+        var entryAge = c.entryAge;
+        var policyTerm = parseInt(getVal('quick_policy_policyTerm'), 10);
+        var sumAssured = parseFloat(getVal('quick_policy_sumAssured').replace(/,/g, ''));
+        var annualPremium = parseFloat(getVal('quick_policy_annualPremium').replace(/,/g, ''));
+
+        // Remove existing warning
+        var oldWarn = $id('qw-premium-table-warning');
+        if (oldWarn) oldWarn.parentNode.removeChild(oldWarn);
+
+        // All five values must be present
+        if (!planId || !entryAge || !policyTerm || isNaN(sumAssured) || sumAssured <= 0 || isNaN(annualPremium) || annualPremium <= 0) {
+            return;
+        }
+
+        var url = '/admin/api/premium-check' +
+            '?planId=' + encodeURIComponent(planId) +
+            '&entryAge=' + encodeURIComponent(entryAge) +
+            '&policyTerm=' + encodeURIComponent(policyTerm) +
+            '&sumAssured=' + encodeURIComponent(sumAssured) +
+            '&annualPremium=' + encodeURIComponent(annualPremium);
+
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                // Remove again in case of rapid changes
+                var old2 = $id('qw-premium-table-warning');
+                if (old2) old2.parentNode.removeChild(old2);
+
+                if (data.found && data.isWarning) {
+                    var target = $id('quick_policy_annualPremium');
+                    if (!target) return;
+                    var wrapper = target.closest('.qw-field') || target.parentNode;
+
+                    var warn = document.createElement('div');
+                    warn.id = 'qw-premium-table-warning';
+                    warn.style.cssText = 'margin-top:8px;padding:9px 13px;background:#fff8e1;border:1.5px solid #fbbf24;border-radius:10px;font-size:12px;font-weight:600;color:#92400e;';
+                    warn.innerHTML =
+                        '<i class="fas fa-triangle-exclamation" style="margin-right:6px;color:#f59e0b;"></i>' +
+                        '<strong>Premium Deviation ' + data.deviationPercent.toFixed(1) + '%</strong> \u2014 ' +
+                        'Expected annual premium per LIC table: <strong>\u20b9\u202f' +
+                        data.expectedPremium.toLocaleString('en-IN') + '</strong>';
+
+                    wrapper.insertAdjacentElement('afterend', warn);
+                }
+            })
+            .catch(function () {
+                // Silently ignore errors
+            });
+    }, 500);
+}
+
 /* ─── boot ─── */
 document.addEventListener('DOMContentLoaded', function(){
     updateStepper();
@@ -1222,9 +1283,22 @@ document.addEventListener('DOMContentLoaded', function(){
     // Modal premium auto-calc: recalculate when annual premium or mode changes
     var annualInput = $id('quick_policy_annualPremium');
     var modeInput   = $id('quick_policy_premiumMode');
-    if (annualInput) annualInput.addEventListener('input', calcModalPremium);
+    if (annualInput) {
+        annualInput.addEventListener('input', calcModalPremium);
+        annualInput.addEventListener('input', qwCheckPremiumTable);
+        annualInput.addEventListener('change', qwCheckPremiumTable);
+    }
     if (modeInput)   modeInput.addEventListener('change', calcModalPremium);
     calcModalPremium(); // initial calc on page load
+
+    // Premium table validation: also re-check when plan, DOB, DOC, term, or SA changes
+    if (planInput) planInput.addEventListener('change', qwCheckPremiumTable);
+    if (dobInput)  dobInput.addEventListener('change', qwCheckPremiumTable);
+    if (docInput)  docInput.addEventListener('change', qwCheckPremiumTable);
+    var termInput = $id('quick_policy_policyTerm');
+    var saInput   = $id('quick_policy_sumAssured');
+    if (termInput) { termInput.addEventListener('input', qwCheckPremiumTable); termInput.addEventListener('change', qwCheckPremiumTable); }
+    if (saInput)   { saInput.addEventListener('input', qwCheckPremiumTable);   saInput.addEventListener('change', qwCheckPremiumTable); }
 
     // Automatically remove validation error borders and messages when user starts typing/changing
     ['input', 'change'].forEach(function(evt) {
