@@ -6,6 +6,7 @@ use App\Entity\LicPlan;
 use App\Entity\Policy;
 use App\Entity\User;
 use App\Service\MaturityProjectionService;
+use App\Service\PremiumValidationService;
 use App\Service\PermissionCheckerService;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
@@ -31,6 +32,7 @@ class PolicyCrudController extends BaseCrudController
     public function __construct(
         private EntityManagerInterface $entityManager,
         private MaturityProjectionService $maturityProjectionService,
+        private PremiumValidationService $premiumValidationService,
         PermissionCheckerService $permissionChecker
     ) {
         parent::__construct($permissionChecker);
@@ -353,5 +355,39 @@ class PolicyCrudController extends BaseCrudController
             'isLimitedPremium' => $plan->isLimitedPremium(),
             'planTypeName'     => $plan->getPlanType()?->getName() ?? '',
         ]);
+    }
+
+    // AJAX: Cross-check entered premium against LIC premium table
+    #[Route('/admin/api/premium-check', name: 'app_admin_premium_check', methods: ['GET'])]
+    public function premiumCheck(Request $request): JsonResponse
+    {
+        $planId        = (int) $request->query->get('planId', 0);
+        $entryAge      = (int) $request->query->get('entryAge', 0);
+        $policyTerm    = (int) $request->query->get('policyTerm', 0);
+        $sumAssured    = (float) $request->query->get('sumAssured', 0);
+        $annualPremium = (float) $request->query->get('annualPremium', 0);
+
+        if ($planId <= 0 || $entryAge <= 0 || $policyTerm <= 0 || $sumAssured <= 0 || $annualPremium <= 0) {
+            return $this->json(['found' => false]);
+        }
+
+        $plan = $this->entityManager->getRepository(LicPlan::class)->find($planId);
+        if (!$plan) {
+            return $this->json(['found' => false]);
+        }
+
+        $result = $this->premiumValidationService->validatePremium(
+            $plan,
+            $entryAge,
+            $policyTerm,
+            $sumAssured,
+            $annualPremium
+        );
+
+        if ($result === null) {
+            return $this->json(['found' => false]);
+        }
+
+        return $this->json($result);
     }
 }
