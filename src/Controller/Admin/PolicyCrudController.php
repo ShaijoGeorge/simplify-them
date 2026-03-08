@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\Entity\LicPlan;
 use App\Entity\Policy;
 use App\Entity\User;
+use App\Repository\SaRebateRepository;
 use App\Service\MaturityProjectionService;
 use App\Service\PremiumValidationService;
 use App\Service\PermissionCheckerService;
@@ -33,6 +34,7 @@ class PolicyCrudController extends BaseCrudController
         private EntityManagerInterface $entityManager,
         private MaturityProjectionService $maturityProjectionService,
         private PremiumValidationService $premiumValidationService,
+        private SaRebateRepository $saRebateRepository,
         PermissionCheckerService $permissionChecker
     ) {
         parent::__construct($permissionChecker);
@@ -171,6 +173,14 @@ class PolicyCrudController extends BaseCrudController
             ->setNumDecimals(4)
             ->setHelp('HLY=0.51, QLY=0.26, MLY=0.0875');
 
+        yield MoneyField::new('saRebateAmount', 'SA Rebate')
+            ->setCurrency('INR')
+            ->setColumns(4)
+            ->setDisabled(true)
+            ->hideOnIndex()
+            ->setStoredAsCents(false)
+            ->setHelp('Auto-calculated: High SA rebate deducted from modal premium');
+
         yield MoneyField::new('gst', 'GST')
             ->setCurrency('INR')
             ->setColumns(4)
@@ -286,6 +296,9 @@ class PolicyCrudController extends BaseCrudController
                 $entityInstance->setAgency($user->getAgency());
             }
 
+            // Auto-calculate SA rebate
+            $this->applySaRebate($entityInstance);
+
             // Auto-calculate Paid-Up SA when status is set to PAID_UP
             if ($entityInstance->getStatus() === 'PAID_UP') {
                 $entityInstance->calculatePaidUpSumAssured();
@@ -303,6 +316,9 @@ class PolicyCrudController extends BaseCrudController
                 $entityInstance->setAgency($user->getAgency());
             }
 
+            // Auto-calculate SA rebate
+            $this->applySaRebate($entityInstance);
+
             // Auto-calculate Paid-Up SA when status is set to PAID_UP
             if ($entityInstance->getStatus() === 'PAID_UP') {
                 $entityInstance->calculatePaidUpSumAssured();
@@ -313,6 +329,28 @@ class PolicyCrudController extends BaseCrudController
         }
 
         parent::updateEntity($entityManager, $entityInstance);
+    }
+
+    /**
+     * Look up the SA rebate band and set saRebateAmount on the policy.
+     */
+    private function applySaRebate(Policy $policy): void
+    {
+        $sa = (float) $policy->getSumAssured();
+        if ($sa <= 0) {
+            $policy->setSaRebateAmount(null);
+            return;
+        }
+
+        $band = $this->saRebateRepository->findRebateForSumAssured($sa);
+        if (!$band) {
+            $policy->setSaRebateAmount(null);
+            return;
+        }
+
+        $rebatePerThousand = (float) $band->getRebatePerThousand();
+        $rebateAmount = round(($sa / 1000) * $rebatePerThousand, 2);
+        $policy->setSaRebateAmount((string) $rebateAmount);
     }
 
     public function configureResponseParameters(KeyValueStore $responseParameters): KeyValueStore
@@ -389,5 +427,30 @@ class PolicyCrudController extends BaseCrudController
         }
 
         return $this->json($result);
+    }
+
+    // AJAX: Return SA rebate for a given Sum Assured value
+    #[Route('/admin/api/sa-rebate', name: 'app_admin_sa_rebate', methods: ['GET'])]
+    public function getSaRebate(Request $request): JsonResponse
+    {
+        $sumAssured = (float) $request->query->get('sumAssured', 0);
+
+        if ($sumAssured <= 0) {
+            return $this->json(['rebatePerThousand' => 0, 'rebateAmount' => 0]);
+        }
+
+        $band = $this->saRebateRepository->findRebateForSumAssured($sumAssured);
+
+        if (!$band) {
+            return $this->json(['rebatePerThousand' => 0, 'rebateAmount' => 0]);
+        }
+
+        $rebatePerThousand = (float) $band->getRebatePerThousand();
+        $rebateAmount = round(($sumAssured / 1000) * $rebatePerThousand, 2);
+
+        return $this->json([
+            'rebatePerThousand' => $rebatePerThousand,
+            'rebateAmount' => $rebateAmount,
+        ]);
     }
 }

@@ -42,6 +42,7 @@ class InsertModulesCommand extends Command
             ['name' => 'Premium Collection', 'key' => 'premium_collection'],
             ['name' => 'Premium Tables', 'key' => 'premium_tables'],
             ['name' => 'Roles', 'key' => 'roles'],
+            ['name' => 'SA Rebates', 'key' => 'sa_rebates'],
             ['name' => 'Survival Benefits', 'key' => 'survival_benefit'],
             ['name' => 'Users', 'key' => 'users'],
         ];

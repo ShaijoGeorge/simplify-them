@@ -232,6 +232,10 @@
                             <i class="fas fa-calculator" style="margin-right:5px;color:#6366f1;"></i>
                             <span id="qw-modal-formula"></span>
                         </div>
+                        <div id="qw-sa-rebate-hint" class="qw-modal-hint" style="display:none;margin-top:6px;padding:7px 12px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:9px;font-size:11.5px;font-weight:600;color:#15803d;">
+                            <i class="fas fa-gift" style="margin-right:5px;color:#22c55e;"></i>
+                            SA Rebate Applied
+                        </div>
                     </div>
                 </div>
 
@@ -1167,6 +1171,25 @@ function initPolicyNumberCheck(){
 }
 
 /* ─── MODAL PREMIUM AUTO-CALC ─── */
+/**
+ * Fetch SA rebate amount via AJAX.
+ */
+function fetchSaRebate(sumAssured, callback) {
+    if (!sumAssured || sumAssured <= 0) {
+        callback(0);
+        return;
+    }
+
+    fetch('/admin/api/sa-rebate?sumAssured=' + sumAssured)
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            callback(data.rebateAmount || 0);
+        })
+        .catch(function() {
+            callback(0);
+        });
+}
+
 function calcModalPremium() {
     var annualStr = getVal('quick_policy_annualPremium').replace(/,/g, '');
     var annual    = parseFloat(annualStr);
@@ -1175,26 +1198,47 @@ function calcModalPremium() {
     var basicEl   = $id('quick_policy_basicPremium');
     var hintEl    = $id('qw-modal-rebate-hint');
     var formulaEl = $id('qw-modal-formula');
+    var saRebateHintEl = $id('qw-sa-rebate-hint');
 
     if (isNaN(annual) || annual <= 0 || !mode || !MODAL_FACTORS[mode]) {
         if (basicEl) basicEl.value = '';
         if (hintEl) hintEl.style.display = 'none';
+        if (saRebateHintEl) saRebateHintEl.style.display = 'none';
         return;
     }
 
     var factor = MODAL_FACTORS[mode];
-    var modal  = Math.round(annual * factor * 100) / 100;  // round to 2 dp
+    var modalBase = Math.round(annual * factor * 100) / 100;
 
-    if (basicEl) basicEl.value = modal;
+    // Fetch SA rebate
+    var saVal = parseFloat(getVal('quick_policy_sumAssured').replace(/,/g, '')) || 0;
+    fetchSaRebate(saVal, function(rebateAmount) {
+        var finalModal = Math.max(0, modalBase - rebateAmount);
+        if (basicEl) basicEl.value = finalModal.toFixed(2);
 
-    if (hintEl && formulaEl) {
-        if (factor < 1.0) {
-            formulaEl.textContent = '= ₹' + annual.toLocaleString('en-IN') + ' × ' + factor + ' (' + (modeMap[mode]||mode) + ')';
-            hintEl.style.display = '';
-        } else {
-            hintEl.style.display = 'none';
+        // Update Modal factor hint
+        if (hintEl && formulaEl) {
+            if (factor < 1.0) {
+                formulaEl.textContent = '= ₹' + annual.toLocaleString('en-IN') + ' × ' + factor + ' (' + (modeMap[mode]||mode) + ')';
+                hintEl.style.display = '';
+            } else {
+                hintEl.style.display = 'none';
+            }
         }
-    }
+
+        // Update SA Rebate hint
+        if (saRebateHintEl) {
+            if (rebateAmount > 0) {
+                saRebateHintEl.innerHTML = '<i class="fas fa-gift me-1"></i> SA Rebate: <strong>- ₹' + rebateAmount.toLocaleString('en-IN') + '</strong>';
+                saRebateHintEl.style.display = 'block';
+            } else {
+                saRebateHintEl.style.display = 'none';
+            }
+        }
+
+        // Chain to GST
+        calcTotals();
+    });
 }
 
 /* PREMIUM TABLE VALIDATION */
