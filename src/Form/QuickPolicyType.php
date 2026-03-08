@@ -46,6 +46,7 @@ class QuickPolicyType extends AbstractType
             ])
             ->add('dob', DateType::class, [
                 'label' => 'Date of Birth',
+                'required' => false,
                 'widget' => 'single_text',
                 'attr' => ['max' => date('Y-m-d')],
                 'constraints' => [
