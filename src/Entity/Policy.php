@@ -183,7 +183,7 @@ class Policy
     #[ORM\PreUpdate]
     public function calculateModalPremium(): void
     {
-        if (!$this->annualPremium || !$this->premiumMode) {
+        if (!$this->premiumMode) {
             return;
         }
 
@@ -194,12 +194,33 @@ class Policy
             default                  => 1.0,   // YLY, SINGLE, etc.
         };
 
-        $this->modalRebate  = (string) $factor;
-        $modal = round((float) $this->annualPremium * $factor, 2);
-
-        // Deduct SA rebate (set by controller before persist/update)
         $rebate = (float) ($this->saRebateAmount ?? 0);
-        $this->basicPremium = (string) max(round($modal - $rebate, 2), 0);
+        $annual = ($this->annualPremium !== null && $this->annualPremium !== '') ? (float) $this->annualPremium : null;
+        $basic = ($this->basicPremium !== null && $this->basicPremium !== '') ? (float) $this->basicPremium : null;
+
+        $this->modalRebate = (string) $factor;
+
+        // If annual premium is entered, derive modal (net of SA rebate).
+        if (($basic === null || $basic <= 0) && $annual !== null && $annual > 0) {
+            $modal = round($annual * $factor, 2);
+            $this->basicPremium = (string) max(round($modal - $rebate, 2), 0);
+            return;
+        }
+
+        // If modal premium is entered, derive annual so premium checks and reports still work.
+        if (($annual === null || $annual <= 0) && $basic !== null && $basic > 0) {
+            $grossModal = max(round($basic + $rebate, 2), 0);
+            $this->annualPremium = (string) round($grossModal / $factor, 2);
+            $this->basicPremium = (string) round($basic, 2);
+            return;
+        }
+
+        // If both are present, keep modal as source of truth and keep annual synchronized.
+        if ($annual !== null && $annual > 0 && $basic !== null && $basic > 0) {
+            $grossModal = max(round($basic + $rebate, 2), 0);
+            $this->annualPremium = (string) round($grossModal / $factor, 2);
+            $this->basicPremium = (string) round($basic, 2);
+        }
     }
 
     // Calculate entry age from Life Assured DOB vs DOC.

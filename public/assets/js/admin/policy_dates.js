@@ -47,6 +47,7 @@
 
     // Premium validation debounce timer
     var premiumCheckTimer = null;
+    var premiumInputSource = 'annual';
 
     // 1. PLAN FLAGS - fetch from AJAX endpoint
 
@@ -99,17 +100,17 @@
             });
     }
 
-    /**
-     * Live-calculate basicPremium = (annualPremium × modal factor) - SA rebate.
-     * Mirrors Policy.php calculateModalPremium().
-     */
-    function recalculateModalPremium() {
+    function recalculateModalFromAnnual() {
         if (!$annualPremium || !$basicPremium) return;
 
         var annual = parseFloat($annualPremium.value) || 0;
         var mode = $mode ? $mode.value : '';
 
-        if (annual <= 0 || !mode) return;
+        if (annual <= 0 || !mode) {
+            $basicPremium.value = '';
+            recalculateGst();
+            return;
+        }
 
         var factor = MODAL_FACTORS[mode];
         if (factor === undefined) factor = 1.0;
@@ -133,6 +134,62 @@
             // Chain: recalculate GST with the new basic premium
             recalculateGst();
         });
+    }
+
+    function recalculateAnnualFromModal() {
+        if (!$annualPremium || !$basicPremium) return;
+
+        var basic = parseFloat($basicPremium.value) || 0;
+        var mode = $mode ? $mode.value : '';
+
+        if (basic <= 0 || !mode) {
+            $annualPremium.value = '';
+            recalculateGst();
+            removePremiumWarning();
+            return;
+        }
+
+        var factor = MODAL_FACTORS[mode];
+        if (factor === undefined) factor = 1.0;
+
+        var saVal = $sumAssured ? parseFloat($sumAssured.value) || 0 : 0;
+        fetchSaRebate(saVal, function (rebateAmount) {
+            var grossModal = Math.max(0, basic + rebateAmount);
+            var annual = Math.round((grossModal / factor) * 100) / 100;
+
+            $annualPremium.value = annual.toFixed(2);
+
+            if ($saRebateAmount) {
+                $saRebateAmount.value = rebateAmount.toFixed(2);
+            }
+
+            if ($modalRebate) {
+                $modalRebate.value = factor.toFixed(4);
+            }
+
+            recalculateGst();
+            checkPremiumAgainstTable();
+        });
+    }
+
+    function syncPremiumFieldsFromSource() {
+        if (premiumInputSource === 'modal') {
+            recalculateAnnualFromModal();
+            return;
+        }
+        recalculateModalFromAnnual();
+    }
+
+    function detectPremiumInputSource() {
+        var annual = $annualPremium ? (parseFloat($annualPremium.value) || 0) : 0;
+        var basic = $basicPremium ? (parseFloat($basicPremium.value) || 0) : 0;
+
+        if (annual <= 0 && basic > 0) {
+            premiumInputSource = 'modal';
+            return;
+        }
+
+        premiumInputSource = 'annual';
     }
 
     // 3. GST CALCULATION
@@ -304,7 +361,7 @@
 
         // Recalculate everything with updated flags
         recalculateNextDue();
-        recalculateGst();
+        syncPremiumFieldsFromSource();
         checkPremiumAgainstTable();
     }
 
@@ -470,6 +527,7 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         resolveFields();
+        detectPremiumInputSource();
 
         if (!$basicPremium && !$doc) {
             // Not a Policy form — bail out early
@@ -478,15 +536,27 @@
 
         // Attach listeners
         if ($annualPremium) {
-            $annualPremium.addEventListener('input', recalculateModalPremium);
-            $annualPremium.addEventListener('change', recalculateModalPremium);
+            $annualPremium.addEventListener('input', function () {
+                premiumInputSource = 'annual';
+                recalculateModalFromAnnual();
+            });
+            $annualPremium.addEventListener('change', function () {
+                premiumInputSource = 'annual';
+                recalculateModalFromAnnual();
+            });
             $annualPremium.addEventListener('input', checkPremiumAgainstTable);
             $annualPremium.addEventListener('change', checkPremiumAgainstTable);
         }
 
         if ($basicPremium) {
-            $basicPremium.addEventListener('input', recalculateGst);
-            $basicPremium.addEventListener('change', recalculateGst);
+            $basicPremium.addEventListener('input', function () {
+                premiumInputSource = 'modal';
+                recalculateAnnualFromModal();
+            });
+            $basicPremium.addEventListener('change', function () {
+                premiumInputSource = 'modal';
+                recalculateAnnualFromModal();
+            });
         }
 
         if ($doc) {
@@ -506,16 +576,15 @@
             $policyTerm.addEventListener('change', checkPremiumAgainstTable);
         }
         if ($sumAssured) {
-            $sumAssured.addEventListener('input', recalculateModalPremium);
-            $sumAssured.addEventListener('change', recalculateModalPremium);
+            $sumAssured.addEventListener('input', syncPremiumFieldsFromSource);
+            $sumAssured.addEventListener('change', syncPremiumFieldsFromSource);
             $sumAssured.addEventListener('input', checkPremiumAgainstTable);
             $sumAssured.addEventListener('change', checkPremiumAgainstTable);
         }
 
         if ($mode) {
             $mode.addEventListener('change', function () {
-                recalculateModalPremium();
-                recalculateGst();
+                syncPremiumFieldsFromSource();
                 recalculateNextDue();
             });
         }
@@ -534,8 +603,7 @@
             onPlanChange();
         } else {
             // Still run initial calc in case values are pre-filled
-            recalculateModalPremium();
-            recalculateGst();
+            syncPremiumFieldsFromSource();
             recalculateNextDue();
         }
     });

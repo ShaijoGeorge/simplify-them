@@ -150,19 +150,19 @@ class PolicyCrudController extends BaseCrudController
             ->hideOnIndex()
             ->setStoredAsCents(false);
 
-        // Annual (tabular) premium — the primary input
+        // Annual premium (can be entered directly or auto-derived from modal premium)
         yield MoneyField::new('annualPremium', 'Annual Premium')
             ->setCurrency('INR')
             ->setColumns(4)
-            ->setHelp('Tabular annual premium from LIC plan table')
+            ->setHelp('Enter annual premium or let it auto-calculate from modal premium')
             ->hideOnIndex()
             ->setStoredAsCents(false);
 
-        // Group premiums visually
+        // Modal premium (can be entered directly or auto-derived from annual premium)
         yield MoneyField::new('basicPremium', 'Modal Premium')
             ->setCurrency('INR')
             ->setColumns(4)
-            ->setHelp('Auto-calculated: Annual × rebate factor')
+            ->setHelp('Enter modal premium or let it auto-calculate from annual premium')
             ->hideOnIndex()
             ->setStoredAsCents(false);
 

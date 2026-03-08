@@ -147,13 +147,31 @@ class QuickPolicyType extends AbstractType
             ])
             ->add('annualPremium', TextType::class, [
                 'label' => 'Annual Premium (Tabular)',
+                'required' => false,
                 'constraints' => [
-                    new Assert\NotBlank(message: 'Annual Premium is required.'),
                     new Assert\Regex(
-                        pattern: '/^\d+(\.\d+)?$/',
+                        pattern: '/^$|^\d+(\.\d+)?$/',
                         message: 'Annual Premium must be a valid number.',
                     ),
-                    new Assert\Positive(message: 'Annual Premium must be a positive number.'),
+                    new Assert\Callback(function ($value, ExecutionContextInterface $context) {
+                        $rootData = $context->getRoot()->getData();
+                        $basic = $rootData['basicPremium'] ?? null;
+
+                        if (($value === null || $value === '') && ($basic === null || $basic === '')) {
+                            $context->buildViolation('Enter either Annual Premium or Modal Premium.')
+                                ->addViolation();
+                            return;
+                        }
+
+                        if ($value === null || $value === '') {
+                            return;
+                        }
+
+                        if ((float) $value <= 0) {
+                            $context->buildViolation('Annual Premium must be a positive number.')
+                                ->addViolation();
+                        }
+                    }),
                 ],
             ])
             ->add('basicPremium', TextType::class, [

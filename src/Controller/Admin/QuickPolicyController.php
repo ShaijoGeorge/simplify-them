@@ -62,8 +62,14 @@ class QuickPolicyController extends AbstractController
                 $policy->setPolicyTerm($data['policyTerm']);
                 $policy->setPremiumPayingTerm($data['premiumPayingTerm']);
                 $policy->setPremiumMode($data['premiumMode']);
-                $policy->setAnnualPremium($data['annualPremium']);
-                $policy->setBasicPremium($data['basicPremium']);
+                $annualPremium = isset($data['annualPremium']) ? trim((string) $data['annualPremium']) : '';
+                $modalPremium = isset($data['basicPremium']) ? trim((string) $data['basicPremium']) : '';
+                if ($annualPremium !== '') {
+                    $policy->setAnnualPremium($annualPremium);
+                }
+                if ($modalPremium !== '') {
+                    $policy->setBasicPremium($modalPremium);
+                }
                 $policy->setStatus('IN_FORCE');
 
                 // Set Life Assured DOB from client DOB (triggers entryAge calculation via lifecycle hook)
