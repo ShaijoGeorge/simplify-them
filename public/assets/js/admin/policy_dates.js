@@ -48,6 +48,8 @@
     // Premium validation debounce timer
     var premiumCheckTimer = null;
     var premiumInputSource = 'annual';
+    var hasPremiumUserInteraction = false;
+    var preserveLoadedComputedValues = false;
 
     // 1. PLAN FLAGS - fetch from AJAX endpoint
 
@@ -172,7 +174,11 @@
         });
     }
 
-    function syncPremiumFieldsFromSource() {
+    function syncPremiumFieldsFromSource(force) {
+        if (!force && preserveLoadedComputedValues && !hasPremiumUserInteraction) {
+            return;
+        }
+
         if (premiumInputSource === 'modal') {
             recalculateAnnualFromModal();
             return;
@@ -190,6 +196,16 @@
         }
 
         premiumInputSource = 'annual';
+    }
+
+    function detectLoadedComputedValues() {
+        var annual = $annualPremium ? (parseFloat($annualPremium.value) || 0) : 0;
+        var basic = $basicPremium ? (parseFloat($basicPremium.value) || 0) : 0;
+        var hasGst = $gst && $gst.value !== '';
+        var hasTotal = $totalPremium && $totalPremium.value !== '';
+        var hasNextDue = $nextDue && $nextDue.value !== '';
+
+        preserveLoadedComputedValues = (annual > 0 && basic > 0) || hasGst || hasTotal || hasNextDue;
     }
 
     // 3. GST CALCULATION
@@ -528,6 +544,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         resolveFields();
         detectPremiumInputSource();
+        detectLoadedComputedValues();
 
         if (!$basicPremium && !$doc) {
             // Not a Policy form — bail out early
@@ -537,10 +554,12 @@
         // Attach listeners
         if ($annualPremium) {
             $annualPremium.addEventListener('input', function () {
+                hasPremiumUserInteraction = true;
                 premiumInputSource = 'annual';
                 recalculateModalFromAnnual();
             });
             $annualPremium.addEventListener('change', function () {
+                hasPremiumUserInteraction = true;
                 premiumInputSource = 'annual';
                 recalculateModalFromAnnual();
             });
@@ -550,10 +569,12 @@
 
         if ($basicPremium) {
             $basicPremium.addEventListener('input', function () {
+                hasPremiumUserInteraction = true;
                 premiumInputSource = 'modal';
                 recalculateAnnualFromModal();
             });
             $basicPremium.addEventListener('change', function () {
+                hasPremiumUserInteraction = true;
                 premiumInputSource = 'modal';
                 recalculateAnnualFromModal();
             });
@@ -561,6 +582,7 @@
 
         if ($doc) {
             $doc.addEventListener('change', function () {
+                hasPremiumUserInteraction = true;
                 recalculateGst();
                 recalculateNextDue();
                 checkPremiumAgainstTable();
@@ -576,22 +598,32 @@
             $policyTerm.addEventListener('change', checkPremiumAgainstTable);
         }
         if ($sumAssured) {
-            $sumAssured.addEventListener('input', syncPremiumFieldsFromSource);
-            $sumAssured.addEventListener('change', syncPremiumFieldsFromSource);
+            $sumAssured.addEventListener('input', function () {
+                hasPremiumUserInteraction = true;
+                syncPremiumFieldsFromSource(true);
+            });
+            $sumAssured.addEventListener('change', function () {
+                hasPremiumUserInteraction = true;
+                syncPremiumFieldsFromSource(true);
+            });
             $sumAssured.addEventListener('input', checkPremiumAgainstTable);
             $sumAssured.addEventListener('change', checkPremiumAgainstTable);
         }
 
         if ($mode) {
             $mode.addEventListener('change', function () {
-                syncPremiumFieldsFromSource();
+                hasPremiumUserInteraction = true;
+                syncPremiumFieldsFromSource(true);
                 recalculateNextDue();
             });
         }
 
         // Plan field — listen for both native change and Tom-Select's custom event
         if ($plan) {
-            $plan.addEventListener('change', onPlanChange);
+            $plan.addEventListener('change', function () {
+                hasPremiumUserInteraction = true;
+                onPlanChange();
+            });
 
             // Tom-Select fires a custom 'change' that bubbles, but also listen
             // for the EA autocomplete item-add event just in case
@@ -603,7 +635,7 @@
             onPlanChange();
         } else {
             // Still run initial calc in case values are pre-filled
-            syncPremiumFieldsFromSource();
+            syncPremiumFieldsFromSource(false);
             recalculateNextDue();
         }
     });
