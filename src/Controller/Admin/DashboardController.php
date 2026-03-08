@@ -16,6 +16,7 @@ use App\Entity\PolicyRider;
 use App\Entity\PremiumReceipt;
 use App\Entity\PremiumTable;
 use App\Entity\Role;
+use App\Entity\SaRebate;
 use App\Entity\SurvivalBenefit;
 use App\Entity\User;
 use App\Repository\ClientRepository;
@@ -115,6 +116,7 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToCrud('Commission Rules', 'fa fa-percentage', CommissionRule::class);
         yield MenuItem::linkToCrud('Bonus Rates', 'fa fa-chart-line', BonusRate::class);
         yield MenuItem::linkToCrud('Premium Tables', 'fa fa-table', PremiumTable::class);
+        yield MenuItem::linkToCrud('SA Rebates', 'fa fa-sliders', SaRebate::class);
         yield MenuItem::linkToCrud('Plan Types', 'fa fa-tags', LicPlanType::class);
     
         // AGENT TOOLS
