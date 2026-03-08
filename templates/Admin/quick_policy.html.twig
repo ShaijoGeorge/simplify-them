@@ -911,19 +911,32 @@ function calcAutoFields(){
     }
 
     /* ── GST logic: mirrors calculateTotals() in Policy.php ──
-       Reform date: 22 Sept 2025  (new regime = 0%)
-       Before reform:
+       Pre-2014 (before service tax start): 0%
+       Old regime (Jan-2014 to 21-Sep-2025):
          Single Premium (plan flag OR mode=SINGLE) → 1.25%
          Term plan                                  → 18%
-         Traditional / others                       → 4.5%
+         Traditional / others                       → 4.5% (year 1), 2.25% (year 2+)
+       New regime (22-Sep-2025 onward): 0%
     */
     var GST_REFORM = new Date('2025-09-22');
+    var SERVICE_TAX_START = new Date('2014-01-01');
     var gstRate  = 0;
     var regime   = '';
     if (doc && !isNaN(doc)) {
-        if (doc < GST_REFORM) {
+        if (doc < SERVICE_TAX_START) {
+            gstRate = 0;
+            regime  = 'Pre-2014 policy: 0% GST (service tax absorbed by LIC in legacy regime).';
+        } else if (doc < GST_REFORM) {
             var isSingle = (mode === 'SINGLE') || !!(qwPlanFlags && qwPlanFlags.isSinglePremium);
             var isTerm   = !!(qwPlanFlags && qwPlanFlags.planTypeName && qwPlanFlags.planTypeName.toUpperCase().indexOf('TERM') !== -1);
+            var policyYear = 1;
+            var today = new Date();
+            today.setHours(0, 0, 0, 0);
+            policyYear = Math.max(1, (today.getFullYear() - doc.getFullYear()) + 1);
+            var m = today.getMonth() - doc.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < doc.getDate())) {
+                policyYear = Math.max(1, policyYear - 1);
+            }
             if (isSingle) {
                 gstRate = 1.25;
                 regime  = '⚠\uFE0F Old regime (pre Sep-2025): 1.25% GST — Single Premium plan.';
@@ -931,8 +944,10 @@ function calcAutoFields(){
                 gstRate = 18;
                 regime  = '⚠\uFE0F Old regime (pre Sep-2025): 18% GST — Term plan.';
             } else {
-                gstRate = 4.5;
-                regime  = '⚠\uFE0F Old regime (pre Sep-2025): 4.5% GST applied.';
+                gstRate = (policyYear === 1) ? 4.5 : 2.25;
+                regime  = (policyYear === 1)
+                    ? '⚠\uFE0F Old regime (pre Sep-2025): 4.5% GST (policy year 1).'
+                    : '⚠\uFE0F Old regime (pre Sep-2025): 2.25% GST (policy year 2+).';
             }
         } else {
             gstRate = 0;
