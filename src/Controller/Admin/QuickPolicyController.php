@@ -6,6 +6,7 @@ use App\Entity\Client;
 use App\Entity\Nominee;
 use App\Entity\Policy;
 use App\Form\QuickPolicyType;
+use App\Repository\SaRebateRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -18,7 +19,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class QuickPolicyController extends AbstractController
 {
     #[Route('/admin/quick-policy', name: 'app_quick_policy')]
-    public function index(Request $request, EntityManagerInterface $em, AdminUrlGenerator $adminUrlGenerator): Response
+    public function index(Request $request, EntityManagerInterface $em, AdminUrlGenerator $adminUrlGenerator, SaRebateRepository $saRebateRepository): Response
     {
         // Check agency context
         $user = $this->getUser();
@@ -77,6 +78,14 @@ class QuickPolicyController extends AbstractController
 
                 if ($agency) {
                     $policy->setAgency($agency);
+                }
+
+                // Apply SA Rebate
+                $sa = (float) $policy->getSumAssured();
+                $band = $saRebateRepository->findRebateForSumAssured($sa);
+                if ($band) {
+                    $rebateAmount = round(($sa / 1000) * (float) $band->getRebatePerThousand(), 2);
+                    $policy->setSaRebateAmount((string) $rebateAmount);
                 }
                 
                 // The prePersist lifecycle hooks in Policy.php will automatically 

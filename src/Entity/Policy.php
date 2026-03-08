@@ -142,6 +142,10 @@ class Policy
     #[ORM\Column(nullable: true)]
     private ?int $gstPolicyYear = null;
 
+    // The SA rebate amount deducted from modal premium (per-thousand × SA/1000).
+    #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 2, nullable: true)]
+    private ?string $saRebateAmount = null;
+
     public function __construct()
     {
         $this->premiumReceipts = new ArrayCollection();
@@ -191,7 +195,11 @@ class Policy
         };
 
         $this->modalRebate  = (string) $factor;
-        $this->basicPremium = (string) round((float) $this->annualPremium * $factor, 2);
+        $modal = round((float) $this->annualPremium * $factor, 2);
+
+        // Deduct SA rebate (set by controller before persist/update)
+        $rebate = (float) ($this->saRebateAmount ?? 0);
+        $this->basicPremium = (string) max(round($modal - $rebate, 2), 0);
     }
 
     // Calculate entry age from Life Assured DOB vs DOC.
@@ -693,6 +701,17 @@ class Policy
     public function setGstPolicyYear(?int $gstPolicyYear): static
     {
         $this->gstPolicyYear = $gstPolicyYear;
+        return $this;
+    }
+
+    public function getSaRebateAmount(): ?string
+    {
+        return $this->saRebateAmount;
+    }
+
+    public function setSaRebateAmount(?string $saRebateAmount): static
+    {
+        $this->saRebateAmount = $saRebateAmount;
         return $this;
     }
 
