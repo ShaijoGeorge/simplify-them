@@ -42,7 +42,7 @@
     };
 
     // DOM field references (resolved once on DOMContentLoaded) ─────────────
-    var $annualPremium, $basicPremium, $modalRebate, $gst, $totalPremium, $doc, $mode, $nextDue, $plan;
+    var $annualPremium, $basicPremium, $modalRebate, $saRebateAmount, $gst, $totalPremium, $doc, $mode, $nextDue, $plan;
     var $lifeAssuredDob, $policyTerm, $sumAssured;
 
     // Premium validation debounce timer
@@ -81,7 +81,26 @@
     // 2. MODAL PREMIUM CALCULATION
 
     /**
-     * Live-calculate basicPremium = annualPremium × modal factor.
+     * Fetch SA rebate amount via AJAX.
+     */
+    function fetchSaRebate(sumAssured, callback) {
+        if (!sumAssured || sumAssured <= 0) {
+            callback(0);
+            return;
+        }
+
+        fetch('/admin/api/sa-rebate?sumAssured=' + sumAssured)
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                callback(data.rebateAmount || 0);
+            })
+            .catch(function () {
+                callback(0);
+            });
+    }
+
+    /**
+     * Live-calculate basicPremium = (annualPremium × modal factor) - SA rebate.
      * Mirrors Policy.php calculateModalPremium().
      */
     function recalculateModalPremium() {
@@ -95,16 +114,25 @@
         var factor = MODAL_FACTORS[mode];
         if (factor === undefined) factor = 1.0;
 
-        var modal = Math.round(annual * factor * 100) / 100;  // round to 2 dp
-        $basicPremium.value = modal.toFixed(2);
+        var modalBase = Math.round(annual * factor * 100) / 100;
 
-        // Update Rebate Factor display
-        if ($modalRebate) {
-            $modalRebate.value = factor.toFixed(4);
-        }
+        // Fetch SA rebate
+        var saVal = $sumAssured ? parseFloat($sumAssured.value) || 0 : 0;
+        fetchSaRebate(saVal, function (rebateAmount) {
+            var finalModal = Math.max(0, modalBase - rebateAmount);
+            $basicPremium.value = finalModal.toFixed(2);
 
-        // Chain: recalculate GST with the new basic premium
-        recalculateGst();
+            if ($saRebateAmount) {
+                $saRebateAmount.value = rebateAmount.toFixed(2);
+            }
+
+            if ($modalRebate) {
+                $modalRebate.value = factor.toFixed(4);
+            }
+
+            // Chain: recalculate GST with the new basic premium
+            recalculateGst();
+        });
     }
 
     // 3. GST CALCULATION
@@ -426,6 +454,7 @@
         $annualPremium = resolveField('[id$="_annualPremium"]');
         $basicPremium = resolveField('[id$="_basicPremium"]');
         $modalRebate = resolveField('[id$="_modalRebate"]');
+        $saRebateAmount = resolveField('[id$="_saRebateAmount"]');
         $gst = resolveField('[id$="_gst"]');
         $totalPremium = resolveField('[id$="_totalPremium"]');
         $doc = resolveField('[id$="_commencementDate"]');
@@ -477,6 +506,8 @@
             $policyTerm.addEventListener('change', checkPremiumAgainstTable);
         }
         if ($sumAssured) {
+            $sumAssured.addEventListener('input', recalculateModalPremium);
+            $sumAssured.addEventListener('change', recalculateModalPremium);
             $sumAssured.addEventListener('input', checkPremiumAgainstTable);
             $sumAssured.addEventListener('change', checkPremiumAgainstTable);
         }
