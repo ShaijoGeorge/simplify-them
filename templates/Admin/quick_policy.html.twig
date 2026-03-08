@@ -636,7 +636,15 @@ function onPlanChange() {
 }
 
 /* ─── helpers ─── */
-function $id(id){ return document.getElementById(id); }
+function $id(id){
+    var el = document.getElementById(id);
+    if (el) return el;
+    // Backward compatibility: template uses qf_* ids while JS expects quick_policy_* ids.
+    if (id.indexOf('quick_policy_') === 0) {
+        return document.getElementById('qf_' + id.substring('quick_policy_'.length));
+    }
+    return null;
+}
 function getVal(id){ var el=$id(id); return el ? el.value.trim() : ''; }
 function getSelText(id){ var el=$id(id); return (el && el.selectedIndex > 0) ? el.options[el.selectedIndex].text : ''; }
 function fmtINR(s){ var n=parseFloat(String(s).replace(/,/g,'')); return isNaN(n) ? '' : '₹\u202f'+n.toLocaleString('en-IN'); }

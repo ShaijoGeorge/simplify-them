@@ -160,11 +160,20 @@ class QuickPolicyType extends AbstractType
                 'label' => 'Modal Premium Amount',
                 'required' => false,
                 'constraints' => [
-                    new Assert\Regex(
-                        pattern: '/^\d+(\.\d+)?$/',
-                        message: 'Modal Premium must be a valid number.',
-                    ),
-                    new Assert\Positive(message: 'Modal Premium must be a positive number.'),
+                    new Assert\Callback(function ($value, ExecutionContextInterface $context) {
+                        if ($value === null || $value === '') {
+                            return; // optional; auto-calculated in entity lifecycle hooks
+                        }
+                        if (!preg_match('/^\d+(\.\d+)?$/', (string) $value)) {
+                            $context->buildViolation('Modal Premium must be a valid number.')
+                                ->addViolation();
+                            return;
+                        }
+                        if ((float) $value <= 0) {
+                            $context->buildViolation('Modal Premium must be a positive number.')
+                                ->addViolation();
+                        }
+                    }),
                 ],
             ])
 
