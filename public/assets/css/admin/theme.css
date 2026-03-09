@@ -5,7 +5,15 @@
 
 /* ── Light Mode ── */
 :root {
+    /* Fonts */
+    --font-brand: 'Sora', sans-serif;
+    --font-ui: 'IBM Plex Sans', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+
+    /* Colors */
     --color-primary: #003580;
+    --color-secondary: #0A7EA4;
+    --color-accent: #D4890A;
     --color-success: #1A7A4A;
     --color-info: #0A7EA4;
     --color-warning: #C97B00;
@@ -83,9 +91,15 @@
     --highlight-bg: #FDF3DC;
 }
 
+body {
+    font-family: var(--font-ui);
+}
+
 /* ── Dark Mode ── */
 .ea-dark-scheme {
     --color-primary: #4A8FE8;
+    --color-secondary: #26A5D0;
+    --color-accent: #F0A830;
     --color-success: #2ECC82;
     --color-info: #26A5D0;
     --color-warning: #F0A830;
@@ -96,7 +110,7 @@
     --text-color-rgb: 224, 234, 248;
     --text-color-dark: #E0EAF8;
     --text-color-light: #4A6A90;
-    --text-muted: #5A7AAA;
+    --text-muted: #7A9CC0;
     --text-on-primary: #FFFFFF;
 
     --body-bg: #090F1E;

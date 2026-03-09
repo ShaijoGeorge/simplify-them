@@ -6,20 +6,24 @@
     {{ parent() }}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-deep: #0b1220;
-            --bg-ink: #121f3b;
-            --bg-surface: #f6f8fc;
-            --line: #d8dfef;
-            --line-strong: #a9b8da;
-            --text-strong: #101a31;
-            --text-muted: #4f5f85;
-            --brand: #0066ff;
-            --brand-2: #13a0ff;
-            --brand-3: #4fc3ff;
-            --danger: #b72222;
+            --bg-deep: #090F1E;
+            --bg-ink: #060C18;
+            --bg-surface: #F4F7FB;
+            --line: #D0DDF0;
+            --line-strong: #A8C4E0;
+            --text-strong: #0F1B30;
+            --text-muted: #4A6080;
+            --brand: #003580;
+            --brand-2: #0A7EA4;
+            --brand-3: #D4890A;
+            --danger: #C0392B;
+            
+            --font-brand: 'Sora', sans-serif;
+            --font-ui: 'IBM Plex Sans', sans-serif;
+            --font-mono: 'IBM Plex Mono', monospace;
         }
 
         * {
@@ -29,7 +33,7 @@
         body {
             margin: 0;
             min-height: 100vh;
-            font-family: 'Sora', 'Segoe UI', sans-serif;
+            font-family: var(--font-ui);
             color: var(--text-strong);
             background:
                 radial-gradient(circle at 12% 10%, #2a4fa3 0%, transparent 37%),
@@ -112,11 +116,12 @@
             font-size: 0.78rem;
             letter-spacing: 0.06em;
             text-transform: uppercase;
-            font-family: 'IBM Plex Mono', monospace;
+            font-family: var(--font-mono);
         }
 
         .hero-title {
             margin: 1.25rem 0 0.8rem;
+            font-family: var(--font-brand);
             font-size: clamp(2rem, 2.4vw + 1rem, 3.1rem);
             line-height: 1.02;
             font-weight: 700;
@@ -167,6 +172,7 @@
 
         .login-panel h1 {
             margin: 0;
+            font-family: var(--font-brand);
             font-size: clamp(1.55rem, 1.9vw + 0.8rem, 2.25rem);
             letter-spacing: -0.025em;
         }
@@ -203,7 +209,7 @@
             letter-spacing: 0.06em;
             text-transform: uppercase;
             color: #41506f;
-            font-family: 'IBM Plex Mono', monospace;
+            font-family: var(--font-mono);
         }
 
         .input {
