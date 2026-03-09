@@ -54,12 +54,33 @@ class DashboardController extends AbstractDashboardController
         $lapsedCount = $this->policyRepository->countRevivalOpportunities($agencyId);
         $survivalBenefits = $this->survivalBenefitRepository->findPendingDueThisMonth($agencyId);
 
+        // New metrics
+        $activePolicies = $this->policyRepository->countActivePolicies($agencyId);
+        $totalClients = $this->clientRepository->countByAgency($agencyId);
+        $collectedThisMonth = $this->receiptRepository->getCollectedThisMonth($agencyId);
+
+        // Time-of-day greeting
+        $hour = (int) date('G');
+        if ($hour < 12) {
+            $greeting = 'Good morning';
+        } elseif ($hour < 17) {
+            $greeting = 'Good afternoon';
+        } else {
+            $greeting = 'Good evening';
+        }
+
         return $this->render('Admin/dashboard.html.twig', [
             'due_amount' => $dueAmount,
             'birthdays' => $birthdays,
             'lapsed_count' => $lapsedCount,
             'survival_benefits' => $survivalBenefits,
             'current_month' => date('F'),
+            'active_policies' => $activePolicies,
+            'total_clients' => $totalClients,
+            'collected_this_month' => $collectedThisMonth,
+            'greeting' => $greeting,
+            'user_name' => $user->getFullName() ?? $user->getUserIdentifier(),
+            'today_date' => date('l, d F Y'),
         ]);
     }
 
@@ -102,8 +123,10 @@ class DashboardController extends AbstractDashboardController
     public function configureAssets(): \EasyCorp\Bundle\EasyAdminBundle\Config\Assets
     {
         return parent::configureAssets()
-            ->addCssFile('assets/css/admin/theme.css');
+            ->addCssFile('assets/css/admin/theme.css')
+            ->addCssFile('assets/css/admin/dashboard.css');
     }
+
 
     public function configureDashboard(): Dashboard
     {

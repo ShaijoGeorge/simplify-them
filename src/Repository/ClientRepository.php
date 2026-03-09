@@ -69,4 +69,14 @@ class ClientRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+
+    public function countByAgency(int $agencyId): int
+    {
+        return (int) $this->createQueryBuilder('c')
+            ->select('count(c.id)')
+            ->andWhere('c.agency = :agencyId')
+            ->setParameter('agencyId', $agencyId)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }

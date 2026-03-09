@@ -1,278 +1,219 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
 
-{% block content_title %}
-    <div class="d-flex align-items-center justify-content-between">
-        <div>
-            <h2 class="mb-0">Overview</h2>
-            <small class="text-muted">{{ current_month }} snapshot</small>
-        </div>
-    </div>
-{% endblock %}
+{% block content_title %}{% endblock %}
 
 {% block main %}
-    <div class="container-fluid dashboard-wrap">
+<div class="db">
 
-    <div class="row g-4">
-        <div class="col-xl-7">
-            <div class="card hero-card shadow-sm">
-                <div class="card-body p-4">
-                    <div class="d-flex align-items-center">
-                        <div>
-                            <h6 class="text-uppercase text-muted mb-2">Premiums Due</h6>
-                            <h1 class="fw-bold mb-1">₹ {{ (due_amount/100)|number_format(2) }}</h1>
-                            <p class="text-muted mb-0">Expected collections for {{ current_month }}</p>
-                        </div>
-                        <div class="ms-auto">
-                            <div class="hero-icon">
-                                <i class="fas fa-wallet"></i>
-                            </div>
-                        </div>
-                    </div>
+    {# ── Greeting ── #}
+    <header class="db-header">
+        <div>
+            <p class="db-greeting">{{ greeting }},</p>
+            <h1 class="db-name">{{ user_name }}</h1>
+        </div>
+        <div class="db-date">
+            <i class="fas fa-calendar-alt"></i>
+            <span>{{ today_date }}</span>
+        </div>
+    </header>
+
+    {# ── Metric Cards ── #}
+    <div class="db-metrics">
+        <div class="db-card db-card--gold">
+            <div class="db-card__body">
+                <div class="db-card__info">
+                    <span class="db-card__label">Premiums Due</span>
+                    <span class="db-card__value">₹{{ (due_amount/100)|number_format(2) }}</span>
+                    <span class="db-card__sub">Expected for {{ current_month }}</span>
+                </div>
+                <div class="db-card__icon db-card__icon--gold">
+                    <i class="fas fa-wallet"></i>
                 </div>
             </div>
         </div>
 
-        <div class="col-xl-5">
-            <a href="{{ ea_url()
-                .setController('App\\Controller\\Admin\\PolicyCrudController')
-                .setAction('index')
-                .set('filters[status][comparison]', '=')
-                .set('filters[status][value]', 'LAPSED') }}" 
-               class="text-decoration-none">
-                
-                <div class="card alert-card shadow-sm h-100">
-                    <div class="card-body p-4">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div>
-                                <h6 class="text-uppercase text-muted mb-2">Revival Opportunities</h6>
-                                <h2 class="fw-bold mb-1">{{ lapsed_count }}</h2>
-                                <p class="text-muted mb-0">Policies inactive for over 6 months</p>
-                            </div>
-                            <div class="alert-icon">
-                                <i class="fas fa-bell"></i>
-                            </div>
-                        </div>
-                    </div>
+        <div class="db-card db-card--blue">
+            <div class="db-card__body">
+                <div class="db-card__info">
+                    <span class="db-card__label">Active Policies</span>
+                    <span class="db-card__value">{{ active_policies }}</span>
+                    <span class="db-card__sub">In-force policies</span>
                 </div>
-            </a>
+                <div class="db-card__icon db-card__icon--blue">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+            </div>
         </div>
-    </div>
 
-    {# Survival Benefits Due This Month  #}
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card shadow-sm survival-card">
-                <div class="card-body p-4">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="sb-icon me-3">
-                            <i class="fas fa-hand-holding-dollar"></i>
-                        </div>
-                        <div>
-                            <h6 class="text-uppercase text-muted mb-0">Survival Benefits Due</h6>
-                            <small class="text-muted">Pending payouts this month &amp; overdue</small>
-                        </div>
-                        <span class="badge bg-warning text-dark ms-auto fs-6">{{ survival_benefits|length }}</span>
-                    </div>
+        <div class="db-card db-card--teal">
+            <div class="db-card__body">
+                <div class="db-card__info">
+                    <span class="db-card__label">Total Clients</span>
+                    <span class="db-card__value">{{ total_clients }}</span>
+                    <span class="db-card__sub">Registered clients</span>
+                </div>
+                <div class="db-card__icon db-card__icon--teal">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+        </div>
 
-                    {% if survival_benefits|length > 0 %}
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Client</th>
-                                        <th>Policy No</th>
-                                        <th>Due Date</th>
-                                        <th class="text-end">Amount</th>
-                                        <th class="text-center">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for sb in survival_benefits %}
-                                        {% set is_overdue = sb.dueDate < date() %}
-                                        <tr>
-                                            <td>{{ sb.policy.client ?? '—' }}</td>
-                                            <td>
-                                                <span class="fw-semibold">{{ sb.policy.policyNumber ?? '—' }}</span>
-                                            </td>
-                                            <td>
-                                                <span class="{{ is_overdue ? 'text-danger fw-bold' : '' }}">
-                                                    {{ sb.dueDate|date('d-M-Y') }}
-                                                    {% if is_overdue %}
-                                                        <i class="fas fa-exclamation-circle ms-1"></i>
-                                                    {% endif %}
-                                                </span>
-                                            </td>
-                                            <td class="text-end fw-semibold">₹{{ sb.amount|number_format(2) }}</td>
-                                            <td class="text-center">
-                                                <a href="{{ ea_url()
-                                                    .setController('App\\Controller\\Admin\\SurvivalBenefitCrudController')
-                                                    .setAction('markCollected')
-                                                    .setEntityId(sb.id) }}"
-                                                   class="btn btn-sm btn-success"
-                                                   title="Mark as Collected">
-                                                    <i class="fas fa-check me-1"></i>Collected
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="text-center text-muted py-3">
-                            <i class="fas fa-check-circle fa-2x mb-2 d-block" style="opacity:.4"></i>
-                            No survival benefits due this month 🎉
-                        </div>
-                    {% endif %}
+        <div class="db-card db-card--green">
+            <div class="db-card__body">
+                <div class="db-card__info">
+                    <span class="db-card__label">{{ current_month }} Collection</span>
+                    <span class="db-card__value">₹{{ collected_this_month|number_format(2) }}</span>
+                    <span class="db-card__sub">Premiums collected</span>
+                </div>
+                <div class="db-card__icon db-card__icon--green">
+                    <i class="fas fa-indian-rupee-sign"></i>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row mt-5">
-        <div class="col-12 mb-3">
-            <h5 class="fw-semibold">Quick Actions</h5>
+    {# ── Middle Row: Revival + Birthdays ── #}
+    <div class="db-middle">
+
+        {# Revival Opportunities #}
+        <a href="{{ ea_url()
+            .setController('App\\Controller\\Admin\\PolicyCrudController')
+            .setAction('index')
+            .set('filters[status][comparison]', '=')
+            .set('filters[status][value]', 'LAPSED') }}"
+           class="db-revival text-decoration-none">
+            <div class="db-revival__head">
+                <div>
+                    <h6 class="db-section-label">Revival Opportunities</h6>
+                    <small class="db-section-sub">Lapsed over 6 months</small>
+                </div>
+                {% if lapsed_count > 0 %}
+                    <span class="db-pulse"></span>
+                {% endif %}
+            </div>
+            <div class="db-revival__count">{{ lapsed_count }}</div>
+            <span class="db-revival__cta">View all <i class="fas fa-arrow-right"></i></span>
+        </a>
+
+        {# Birthdays This Month #}
+        <div class="db-birthdays">
+            <div class="db-birthdays__head">
+                <h6 class="db-section-label">Birthdays This Month 🎂</h6>
+                <span class="db-badge">{{ birthdays|length }}</span>
+            </div>
+            {% if birthdays|length > 0 %}
+                <ul class="db-birthdays__list">
+                    {% for b in birthdays[:8] %}
+                        <li class="db-birthdays__item">
+                            <div class="db-birthdays__avatar">
+                                {{ b.name|slice(0,1)|upper }}
+                            </div>
+                            <div class="db-birthdays__detail">
+                                <span class="db-birthdays__name">{{ b.name }}</span>
+                                {% if b.dob %}
+                                    <span class="db-birthdays__date">{{ b.dob|date('d M') }}</span>
+                                {% endif %}
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+                {% if birthdays|length > 8 %}
+                    <div class="db-birthdays__more">+ {{ birthdays|length - 8 }} more</div>
+                {% endif %}
+            {% else %}
+                <div class="db-empty">
+                    <i class="fas fa-gift"></i>
+                    <span>No birthdays this month</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ── Survival Benefits ── #}
+    <div class="db-panel db-survival">
+        <div class="db-panel__head">
+            <div class="db-panel__icon db-panel__icon--amber">
+                <i class="fas fa-hand-holding-dollar"></i>
+            </div>
+            <div>
+                <h6 class="db-section-label">Survival Benefits Due</h6>
+                <small class="db-section-sub">Pending payouts this month &amp; overdue</small>
+            </div>
+            <span class="db-badge db-badge--amber ms-auto">{{ survival_benefits|length }}</span>
         </div>
 
-        <div class="col-lg-4 col-md-6 mb-4">
-            <a href="{{ ea_url().setController('App\\Controller\\Admin\\ClientCrudController').setAction('new') }}" class="text-decoration-none">
-                <div class="card quick-card shadow-sm h-100">
-                    <div class="card-body p-4">
-                        <div class="d-flex align-items-center">
-                            <div class="qc-icon bg-info">
-                                <i class="fas fa-user-plus"></i>
-                            </div>
-                            <div class="ms-3">
-                                <h6 class="mb-1">Add New Client</h6>
-                                <small class="text-muted">Register a new customer</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        {% if survival_benefits|length > 0 %}
+            <div class="table-responsive">
+                <table class="db-table">
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>Policy No</th>
+                            <th>Due Date</th>
+                            <th class="text-end">Amount</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sb in survival_benefits %}
+                            {% set is_overdue = sb.dueDate < date() %}
+                            <tr>
+                                <td class="fw-medium">{{ sb.policy.client ?? '—' }}</td>
+                                <td><code>{{ sb.policy.policyNumber ?? '—' }}</code></td>
+                                <td>
+                                    <span class="{{ is_overdue ? 'db-overdue' : '' }}">
+                                        {{ sb.dueDate|date('d-M-Y') }}
+                                        {% if is_overdue %}
+                                            <i class="fas fa-exclamation-circle ms-1"></i>
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td class="text-end fw-semibold">₹{{ sb.amount|number_format(2) }}</td>
+                                <td class="text-center">
+                                    <a href="{{ ea_url()
+                                        .setController('App\\Controller\\Admin\\SurvivalBenefitCrudController')
+                                        .setAction('markCollected')
+                                        .setEntityId(sb.id) }}"
+                                       class="db-btn db-btn--success"
+                                       title="Mark as Collected">
+                                        <i class="fas fa-check me-1"></i>Collected
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="db-empty db-empty--lg">
+                <i class="fas fa-check-circle"></i>
+                <span>No survival benefits due this month 🎉</span>
+            </div>
+        {% endif %}
+    </div>
+
+    {# ── Quick Actions ── #}
+    <div class="db-actions">
+        <h6 class="db-section-label mb-3">Quick Actions</h6>
+        <div class="db-actions__grid">
+            <a href="{{ ea_url().setController('App\\Controller\\Admin\\ClientCrudController').setAction('new') }}" class="db-action">
+                <div class="db-action__icon db-action__icon--teal"><i class="fas fa-user-plus"></i></div>
+                <div><strong>Add Client</strong><small>Register a customer</small></div>
             </a>
-        </div>
-
-        <div class="col-lg-4 col-md-6 mb-4">
-            <a href="{{ ea_url().setController('App\\Controller\\Admin\\PolicyCrudController').setAction('new') }}" class="text-decoration-none">
-                <div class="card quick-card shadow-sm h-100">
-                    <div class="card-body p-4">
-                        <div class="d-flex align-items-center">
-                            <div class="qc-icon bg-secondary">
-                                <i class="fas fa-file-signature"></i>
-                            </div>
-                            <div class="ms-3">
-                                <h6 class="mb-1">Create Policy</h6>
-                                <small class="text-muted">Term, Endowment & more</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <a href="{{ ea_url().setController('App\\Controller\\Admin\\PolicyCrudController').setAction('new') }}" class="db-action">
+                <div class="db-action__icon db-action__icon--blue"><i class="fas fa-file-signature"></i></div>
+                <div><strong>Create Policy</strong><small>Term, Endowment & more</small></div>
             </a>
-        </div>
-
-        <div class="col-lg-4 col-md-6 mb-4">
-            <a href="{{ ea_url().setController('App\\Controller\\Admin\\PremiumReceiptCrudController').setAction('new') }}" class="text-decoration-none">
-                <div class="card quick-card shadow-sm h-100">
-                    <div class="card-body p-4">
-                        <div class="d-flex align-items-center">
-                            <div class="qc-icon bg-success">
-                                <i class="fas fa-coins"></i>
-                            </div>
-                            <div class="ms-3">
-                                <h6 class="mb-1">Collect Premium</h6>
-                                <small class="text-muted">Payment & receipt entry</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <a href="{{ path('app_quick_policy') }}" class="db-action">
+                <div class="db-action__icon db-action__icon--gold"><i class="fas fa-bolt"></i></div>
+                <div><strong>Quick Entry</strong><small>Fast policy capture</small></div>
+            </a>
+            <a href="{{ ea_url().setController('App\\Controller\\Admin\\PremiumReceiptCrudController').setAction('new') }}" class="db-action">
+                <div class="db-action__icon db-action__icon--green"><i class="fas fa-coins"></i></div>
+                <div><strong>Collect Premium</strong><small>Payment & receipt</small></div>
             </a>
         </div>
     </div>
+
 </div>
-
-<style>
-    .dashboard-wrap h1 { font-size: 2.4rem; }
-
-    .hero-card {
-        background: linear-gradient(135deg, #003580, #002257);
-        color: #fff;
-    }
-    .hero-card .text-muted { color: rgba(255,255,255,0.75) !important; }
-    .hero-icon {
-        width: 90px;
-        height: 90px;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.15);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 36px;
-    }
-
-    /* Added Transition for Alert Card */
-    .alert-card {
-        background: linear-gradient(135deg, #fff5f5, #ffe3e3);
-        transition: all 0.25s ease;
-        border: none;
-    }
-    /* Hover Effect for Alert Card */
-    .alert-card:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 12px 30px rgba(0,0,0,0.08);
-        cursor: pointer;
-    }
-
-    .alert-icon {
-        width: 64px;
-        height: 64px;
-        border-radius: 50%;
-        background: #C0392B;
-        color: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-    }
-
-    .quick-card {
-        transition: all 0.25s ease;
-        border: none;
-    }
-    .quick-card:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 12px 30px rgba(0,0,0,0.08);
-    }
-
-    .qc-icon {
-        width: 52px;
-        height: 52px;
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        font-size: 20px;
-    }
-    .bg-info { background: #0A7EA4 !important; }
-    .bg-success { background: #1A7A4A !important; }
-    .bg-secondary { background: #4A6080 !important; }
-
-    /* Survival Benefits Card */
-    .survival-card {
-        border: none;
-        border-left: 4px solid #D4890A;
-    }
-    .sb-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #D4890A, #C97B00);
-        color: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-    }
-
-</style>
 {% endblock %}

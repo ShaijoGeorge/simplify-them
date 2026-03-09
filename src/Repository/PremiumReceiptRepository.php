@@ -55,4 +55,22 @@ class PremiumReceiptRepository extends ServiceEntityRepository
             'receipts' => $receipts,
         ];
     }
+
+    public function getCollectedThisMonth(int $agencyId): float
+    {
+        $start = new \DateTime('first day of this month 00:00:00');
+        $end   = new \DateTime('last day of this month 23:59:59');
+
+        $result = $this->createQueryBuilder('r')
+            ->select('SUM(r.amount) as total')
+            ->andWhere('r.agency = :agency')
+            ->andWhere('r.paymentDate BETWEEN :start AND :end')
+            ->setParameter('agency', $agencyId)
+            ->setParameter('start', $start)
+            ->setParameter('end', $end)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return (float) $result;
+    }
 }

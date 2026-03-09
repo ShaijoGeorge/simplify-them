@@ -74,4 +74,16 @@ class PolicyRepository extends ServiceEntityRepository
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    public function countActivePolicies(int $agencyId): int
+    {
+        return (int) $this->createQueryBuilder('p')
+            ->select('count(p.id)')
+            ->andWhere('p.agency = :agencyId')
+            ->andWhere('p.status = :status')
+            ->setParameter('agencyId', $agencyId)
+            ->setParameter('status', 'IN_FORCE')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }
