@@ -1,34 +1,436 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Log in!{% endblock %}
+{% block title %}SimplifyThem | Login{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #0b1220;
+            --bg-ink: #121f3b;
+            --bg-surface: #f6f8fc;
+            --line: #d8dfef;
+            --line-strong: #a9b8da;
+            --text-strong: #101a31;
+            --text-muted: #4f5f85;
+            --brand: #0066ff;
+            --brand-2: #13a0ff;
+            --brand-3: #4fc3ff;
+            --danger: #b72222;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Sora', 'Segoe UI', sans-serif;
+            color: var(--text-strong);
+            background:
+                radial-gradient(circle at 12% 10%, #2a4fa3 0%, transparent 37%),
+                radial-gradient(circle at 88% 18%, #1b6f86 0%, transparent 41%),
+                linear-gradient(145deg, var(--bg-deep) 0%, var(--bg-ink) 60%, #111936 100%);
+            display: grid;
+            place-items: center;
+            padding: 1.25rem;
+        }
+
+        .login-shell {
+            width: min(1040px, 100%);
+            min-height: min(720px, calc(100vh - 2.5rem));
+            background: var(--bg-surface);
+            border-radius: 28px;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            box-shadow: 0 30px 65px rgba(7, 15, 35, 0.45);
+            border: 1px solid rgba(173, 194, 236, 0.24);
+            animation: shell-in 420ms ease-out;
+        }
+
+        @keyframes shell-in {
+            from {
+                opacity: 0;
+                transform: translateY(14px) scale(0.99);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .login-hero {
+            position: relative;
+            padding: 3.3rem;
+            color: #e9efff;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)),
+                linear-gradient(155deg, #112248, #0d1938 58%, #101731);
+            isolation: isolate;
+            display: grid;
+            align-content: space-between;
+            gap: 1.5rem;
+        }
+
+        .login-hero::before,
+        .login-hero::after {
+            content: '';
+            position: absolute;
+            border-radius: 999px;
+            z-index: -1;
+        }
+
+        .login-hero::before {
+            width: 330px;
+            height: 330px;
+            background: radial-gradient(circle, rgba(30, 107, 214, 0.5), transparent 65%);
+            top: -90px;
+            right: -70px;
+        }
+
+        .login-hero::after {
+            width: 280px;
+            height: 280px;
+            background: radial-gradient(circle, rgba(15, 169, 255, 0.34), transparent 68%);
+            left: -70px;
+            bottom: -95px;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.42rem 0.75rem;
+            border-radius: 999px;
+            border: 1px solid rgba(188, 209, 255, 0.35);
+            background: rgba(121, 162, 255, 0.11);
+            font-size: 0.78rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .hero-title {
+            margin: 1.25rem 0 0.8rem;
+            font-size: clamp(2rem, 2.4vw + 1rem, 3.1rem);
+            line-height: 1.02;
+            font-weight: 700;
+            max-width: 12ch;
+            letter-spacing: -0.02em;
+        }
+
+        .hero-text {
+            margin: 0;
+            max-width: 35ch;
+            color: rgba(227, 236, 255, 0.82);
+            line-height: 1.68;
+            font-size: 0.98rem;
+        }
+
+        .hero-points {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: grid;
+            gap: 0.85rem;
+        }
+
+        .hero-points li {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            font-size: 0.88rem;
+            color: rgba(224, 235, 255, 0.92);
+        }
+
+        .hero-points li::before {
+            content: '';
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: linear-gradient(140deg, var(--brand), var(--brand-2));
+            box-shadow: 0 0 0 3px rgba(64, 137, 255, 0.25);
+        }
+
+        .login-panel {
+            padding: clamp(1.9rem, 3.7vw, 3rem);
+            display: grid;
+            align-content: center;
+            gap: 1rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f7f9ff 100%);
+        }
+
+        .login-panel h1 {
+            margin: 0;
+            font-size: clamp(1.55rem, 1.9vw + 0.8rem, 2.25rem);
+            letter-spacing: -0.025em;
+        }
+
+        .subtitle {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 0.94rem;
+            line-height: 1.6;
+            max-width: 34ch;
+        }
+
+        .alert {
+            border-radius: 11px;
+            padding: 0.75rem 0.95rem;
+            font-size: 0.86rem;
+            border: 1px solid rgba(183, 34, 34, 0.32);
+            background: #fff3f3;
+            color: var(--danger);
+        }
+
+        form {
+            display: grid;
+            gap: 0.85rem;
+        }
+
+        .field {
+            display: grid;
+            gap: 0.42rem;
+        }
+
+        label {
+            font-size: 0.78rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #41506f;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .input {
+            width: 100%;
+            height: 3rem;
+            border-radius: 13px;
+            border: 1px solid var(--line);
+            background: #fff;
+            font: inherit;
+            font-size: 0.95rem;
+            color: var(--text-strong);
+            padding: 0 0.92rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        }
+
+        .input::placeholder {
+            color: #8392b3;
+        }
+
+        .input:hover {
+            border-color: var(--line-strong);
+        }
+
+        .input:focus-visible {
+            outline: none;
+            border-color: #4f8dff;
+            box-shadow: 0 0 0 4px rgba(51, 123, 255, 0.17);
+            background: #fbfdff;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.85rem;
+            flex-wrap: wrap;
+        }
+
+        .remember {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.82rem;
+            color: #49597f;
+        }
+
+        .remember input {
+            width: 1rem;
+            height: 1rem;
+            accent-color: #2d76ff;
+        }
+
+        .submit {
+            border: 0;
+            border-radius: 13px;
+            height: 3.05rem;
+            font: inherit;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #fff;
+            cursor: pointer;
+            background: linear-gradient(140deg, #005eff, #1598ff 52%, var(--brand-3));
+            box-shadow: 0 14px 28px rgba(0, 94, 255, 0.34);
+            transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+        }
+
+        .submit:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 32px rgba(0, 94, 255, 0.4);
+            filter: saturate(1.05);
+        }
+
+        .submit:active {
+            transform: translateY(0);
+            box-shadow: 0 10px 20px rgba(0, 94, 255, 0.3);
+        }
+
+        .auth-note {
+            margin: 0;
+            font-size: 0.78rem;
+            color: #6f7e9f;
+        }
+
+        .auth-note a {
+            color: #1c6bff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .auth-note a:hover {
+            text-decoration: underline;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .login-shell,
+            .submit {
+                animation: none;
+                transition: none;
+            }
+        }
+
+        @media (max-width: 980px) {
+            .login-shell {
+                grid-template-columns: 1fr;
+                min-height: auto;
+            }
+
+            .login-hero {
+                min-height: 290px;
+                padding: 2rem;
+            }
+
+            .hero-title {
+                margin-top: 0.9rem;
+                max-width: 20ch;
+                font-size: clamp(1.65rem, 7vw, 2.35rem);
+            }
+
+            .hero-points {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.6rem 1rem;
+            }
+
+            .hero-points li {
+                font-size: 0.8rem;
+            }
+
+            .login-panel {
+                padding: 1.5rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 0;
+                display: block;
+            }
+
+            .login-shell {
+                width: 100%;
+                min-height: 100vh;
+                border-radius: 0;
+            }
+
+            .login-hero {
+                min-height: 250px;
+            }
+
+            .hero-points {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
 
 {% block body %}
-<form method="post">
-    {% if error %}
-        <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
-    {% endif %}
+    <main class="login-shell" aria-label="Authentication">
+        <section class="login-hero" aria-hidden="true">
+            <div>
+                <span class="eyebrow">SimplifyThem Platform</span>
+                <h2 class="hero-title">Policy operations, without the chaos.</h2>
+                <p class="hero-text">
+                    Secure access to your admin workspace. Review updates, track key deadlines, and manage decisions in one focused environment.
+                </p>
+            </div>
+            <ul class="hero-points">
+                <li>Unified policy dashboard</li>
+                <li>Role-based access controls</li>
+                <li>Time-sensitive workflow tracking</li>
+            </ul>
+        </section>
 
-    {% if app.user %}
-        <div class="mb-3">
-            You are logged in as {{ app.user.userIdentifier }}, <a href="{{ logout_path() }}">Logout</a>
-        </div>
-    {% endif %}
+        <section class="login-panel">
+            <h1>Welcome back</h1>
+            <p class="subtitle">Use your SimplifyThem credentials to continue.</p>
 
-    <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
-    <label for="inputEmail">Email</label>
-    <input type="email" value="{{ last_username }}" name="email" id="inputEmail" class="form-control" autocomplete="email" required autofocus>
-    <label for="inputPassword">Password</label>
-    <input type="password" name="password" id="inputPassword" class="form-control" autocomplete="current-password" required>
-    <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('authenticate') }}">
+            {% if error %}
+                <div class="alert" role="alert">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+            {% endif %}
 
-    <div class="checkbox mb-3">
-        <label>
-            <input type="checkbox" name="_remember_me"> Remember me
-        </label>
-    </div>
+            {% if app.user %}
+                <p class="auth-note">
+                    Logged in as {{ app.user.userIdentifier }}.
+                    <a href="{{ path('app_logout') }}">Log out</a>
+                </p>
+            {% endif %}
 
-    <button class="btn btn-lg btn-primary" type="submit">
-        Sign in
-    </button>
-</form>
+            <form method="post" novalidate>
+                <div class="field">
+                    <label for="inputEmail">Email</label>
+                    <input
+                        id="inputEmail"
+                        class="input"
+                        type="email"
+                        name="email"
+                        value="{{ last_username }}"
+                        autocomplete="email"
+                        placeholder="name@company.com"
+                        required
+                        autofocus
+                    >
+                </div>
+
+                <div class="field">
+                    <label for="inputPassword">Password</label>
+                    <input
+                        id="inputPassword"
+                        class="input"
+                        type="password"
+                        name="password"
+                        autocomplete="current-password"
+                        placeholder="Enter your password"
+                        required
+                    >
+                </div>
+
+                <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('authenticate') }}">
+
+                <div class="row">
+                    <label class="remember" for="remember_me">
+                        <input id="remember_me" type="checkbox" name="_remember_me">
+                        Keep me signed in
+                    </label>
+                </div>
+
+                <button class="submit" type="submit">Log in to dashboard</button>
+            </form>
+        </section>
+    </main>
 {% endblock %}
