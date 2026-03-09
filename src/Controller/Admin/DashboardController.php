@@ -99,6 +99,12 @@ class DashboardController extends AbstractDashboardController
         ]);
     }
 
+    public function configureAssets(): \EasyCorp\Bundle\EasyAdminBundle\Config\Assets
+    {
+        return parent::configureAssets()
+            ->addCssFile('assets/css/admin/theme.css');
+    }
+
     public function configureDashboard(): Dashboard
     {
         return Dashboard::new()

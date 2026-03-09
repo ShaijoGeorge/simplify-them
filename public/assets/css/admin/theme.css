@@ -1,0 +1,164 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Sovereign Blue — SimplifyThem EasyAdmin Theme
+   LIC Heritage × Kerala Coastline
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Light Mode ── */
+:root {
+    --color-primary: #003580;
+    --color-success: #1A7A4A;
+    --color-info: #0A7EA4;
+    --color-warning: #C97B00;
+    --color-danger: #C0392B;
+    --color-danger-rgb: 192, 57, 43;
+
+    --text-color: #0F1B30;
+    --text-color-rgb: 15, 27, 48;
+    --text-color-dark: #0F1B30;
+    --text-color-light: #7A95B0;
+    --text-muted: #4A6080;
+    --text-on-primary: #FFFFFF;
+
+    --body-bg: #F4F7FB;
+    --content-bg: #FFFFFF;
+    --content-panel-bg: #EAF0F9;
+    --fieldset-bg: #EAF0F9;
+
+    --border-color: #D0DDF0;
+
+    --sidebar-bg: #002257;
+    --sidebar-border-color: #001a45;
+    --sidebar-logo-color: #FFFFFF;
+    --sidebar-menu-color: #A8C4E0;
+    --sidebar-menu-badge-bg: #001a45;
+    --sidebar-menu-badge-color: #A8C4E0;
+    --sidebar-menu-badge-active-bg: #D4890A;
+    --sidebar-menu-badge-active-color: #FFFFFF;
+    --sidebar-menu-submenu-color: #7A95B0;
+    --sidebar-menu-header-color: #7A95B0;
+    --sidebar-menu-icon-color: #A8C4E0;
+    --sidebar-menu-active-item-bg: rgba(212, 137, 10, 0.15);
+    --sidebar-menu-active-item-color: #D4890A;
+
+    --link-color: #003580;
+    --link-color-rgb: 0, 53, 128;
+    --link-hover-color: #002868;
+    --link-hover-color-rgb: 0, 40, 104;
+
+    --resize-handler-hover-bg: #003580;
+
+    --button-focus-outline-color: #003580;
+
+    --button-primary-box-shadow: 0px 1px 1px 0px rgba(0, 37, 90, 0.1), 0px 1px 3px 0px rgba(0, 37, 90, 0.1);
+    --button-primary-bg: linear-gradient(to bottom, #003d94, #003580);
+    --button-primary-color: #FFFFFF;
+    --button-primary-border-color: rgba(0, 34, 87, 0.2);
+    --button-primary-hover-bg: linear-gradient(to bottom, #003580, #002d6e);
+    --button-primary-hover-color: #FFFFFF;
+    --button-primary-hover-border-color: rgba(0, 34, 87, 0.2);
+    --button-primary-active-box-shadow: inset 0 1px 0 0 rgba(0, 22, 57, 0.3);
+    --button-primary-active-bg: linear-gradient(to bottom, #002d6e, #002868);
+    --button-primary-active-color: #FFFFFF;
+    --button-primary-active-border-color: rgba(0, 34, 87, 0.2);
+
+    --page-login-bg: #F4F7FB;
+    --page-login-form-bg: #FFFFFF;
+    --page-login-form-control-bg: #FFFFFF;
+    --page-login-form-control-border-color: #D0DDF0;
+    --page-login-form-control-button-bg: linear-gradient(to bottom, #003d94, #003580);
+
+    --form-switch-checked-bg: #003580;
+    --form-type-check-input-checked-bg: #003580;
+
+    --table-thead-sorted-marker-color: #003580;
+    --pagination-active-bg: #003580;
+
+    --badge-boolean-true-bg: #003580;
+    --badge-primary-bg: #E8F0FC;
+    --badge-primary-color: #003580;
+
+    --dropdown-settings-active-item-color: #003580;
+    --dropdown-settings-active-item-shadow: inset 0 0 0 1px rgba(0, 53, 128, 0.5);
+
+    --highlight-bg: #FDF3DC;
+}
+
+/* ── Dark Mode ── */
+.ea-dark-scheme {
+    --color-primary: #4A8FE8;
+    --color-success: #2ECC82;
+    --color-info: #26A5D0;
+    --color-warning: #F0A830;
+    --color-danger: #E05A4A;
+    --bs-danger-rgb: 224, 90, 74;
+
+    --text-color: #E0EAF8;
+    --text-color-rgb: 224, 234, 248;
+    --text-color-dark: #E0EAF8;
+    --text-color-light: #4A6A90;
+    --text-muted: #5A7AAA;
+    --text-on-primary: #FFFFFF;
+
+    --body-bg: #090F1E;
+    --content-bg: #101828;
+    --content-panel-bg: #172035;
+    --fieldset-bg: #172035;
+
+    --border-color: #1E2D4A;
+
+    --sidebar-bg: #060C18;
+    --sidebar-border-color: #0a1225;
+    --sidebar-logo-color: #E0EAF8;
+    --sidebar-menu-color: #5A7AAA;
+    --sidebar-menu-badge-bg: #0a1225;
+    --sidebar-menu-badge-color: #5A7AAA;
+    --sidebar-menu-badge-active-bg: #F0A830;
+    --sidebar-menu-badge-active-color: #FFFFFF;
+    --sidebar-menu-submenu-color: #4A6A90;
+    --sidebar-menu-header-color: #4A6A90;
+    --sidebar-menu-icon-color: #5A7AAA;
+    --sidebar-menu-active-item-bg: rgba(240, 168, 48, 0.12);
+    --sidebar-menu-active-item-color: #F0A830;
+
+    --link-color: #4A8FE8;
+    --link-hover-color: #6BA8F0;
+
+    --resize-handler-hover-bg: #4A8FE8;
+
+    --button-focus-outline-color: rgba(74, 143, 232, 0.7);
+
+    --button-primary-box-shadow: none;
+    --button-primary-bg: #1a5cb8;
+    --button-primary-color: #FFFFFF;
+    --button-primary-border-color: rgba(255, 255, 255, 0.15);
+    --button-primary-hover-bg: #2068cc;
+    --button-primary-hover-color: #FFFFFF;
+    --button-primary-hover-border-color: rgba(255, 255, 255, 0.15);
+    --button-primary-active-box-shadow: none;
+    --button-primary-active-bg: #2874d9;
+    --button-primary-active-color: #FFFFFF;
+    --button-primary-active-border-color: rgba(255, 255, 255, 0.15);
+
+    --page-login-bg: #090F1E;
+    --page-login-form-bg: #101828;
+    --page-login-form-control-bg: #172035;
+    --page-login-form-control-border-color: #1E2D4A;
+    --page-login-form-control-button-bg: #1a5cb8;
+
+    --form-switch-checked-bg: #4A8FE8;
+    --form-type-check-input-checked-bg: #4A8FE8;
+
+    --table-thead-sorted-marker-color: #4A8FE8;
+    --pagination-active-bg: #4A8FE8;
+
+    --badge-boolean-true-bg: rgba(74, 143, 232, 0.18);
+    --badge-boolean-true-box-shadow: inset 0 0 0 1px rgba(74, 143, 232, 0.3);
+    --badge-boolean-true-color: #4A8FE8;
+    --badge-primary-bg: #152040;
+    --badge-primary-color: #4A8FE8;
+
+    --dropdown-settings-active-item-color: #4A8FE8;
+    --dropdown-settings-active-item-shadow: inset 0 0 0 1px rgba(74, 143, 232, 0.3);
+
+    --highlight-bg: #2A1F06;
+}
