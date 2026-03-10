@@ -14,26 +14,20 @@
     {% set policy = entity.instance %}
     {% if maturity_projection is defined and maturity_projection is not null %}
         {% set proj = maturity_projection %}
-        <div class="card mt-4 border-0 shadow-sm" id="maturity-projection-banner"
-             style="border-left: 5px solid #10b981 !important; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 60%, #a7f3d0 100%);">
-            <div class="card-body p-4">
+        <div class="card dt-card dt-card--accent-left dt-projection" id="maturity-projection-banner">
+            <div class="dt-card__body">
 
                 {# Top row: icon + title + explanation #}
                 <div class="d-flex align-items-start gap-3 mb-4">
-                    <div style="width:52px;height:52px;min-width:52px;border-radius:16px;
-                                background:linear-gradient(135deg,#10b981,#059669);
-                                display:flex;align-items:center;justify-content:center;
-                                color:#fff;font-size:22px;box-shadow:0 6px 18px rgba(16,185,129,.4);">
+                    <div class="dt-icon">
                         <i class="fas fa-chart-line"></i>
                     </div>
                     <div>
                         <div class="d-flex align-items-center gap-2 mb-1">
-                            <h5 class="mb-0 fw-bold" style="color:#064e3b;">Projected Maturity Amount (Estimated)</h5>
-                            <span class="badge" style="background:#10b981;color:#fff;border-radius:8px;font-size:11px;padding:3px 10px;font-weight:700;">
-                                PROJECTION
-                            </span>
+                            <h5 class="mb-0 dt-card__title">Projected Maturity Amount (Estimated)</h5>
+                            <span class="dt-badge">PROJECTION</span>
                         </div>
-                        <p class="mb-0" style="color:#065f46;font-size:13.5px;line-height:1.5;">
+                        <p class="mb-0 dt-card__desc">
                             Estimated maturity value based on currently declared LIC bonus rates for
                             <strong>{{ policy.licPlan }}</strong>.
                         </p>
@@ -45,15 +39,14 @@
 
                     {# Projected Maturity - the hero figure #}
                     <div class="col-md-3">
-                        <div class="p-3 text-center h-100"
-                             style="background:#fff;border-radius:14px;border:2px solid #10b981;box-shadow:0 4px 16px rgba(16,185,129,.18);">
-                            <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#047857;margin-bottom:6px;">
+                        <div class="dt-metric dt-metric--hero">
+                            <div class="dt-metric__label">
                                 <i class="fas fa-indian-rupee-sign me-1"></i> Projected Maturity
                             </div>
-                            <div style="font-size:1.9rem;font-weight:800;color:#064e3b;line-height:1.1;">
+                            <div class="dt-metric__value dt-metric__value--hero">
                                 ₹{{ proj.maturityAmount|number_format(0, '.', ',') }}
                             </div>
-                            <div style="font-size:11px;color:#047857;margin-top:4px;">
+                            <div class="dt-metric__sub">
                                 SA + Bonus + FAB
                             </div>
                         </div>
@@ -61,15 +54,14 @@
 
                     {# Sum Assured #}
                     <div class="col-md-3">
-                        <div class="p-3 text-center h-100"
-                             style="background:rgba(255,255,255,.7);border-radius:14px;border:1.5px solid #6ee7b7;">
-                            <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#047857;margin-bottom:6px;">
+                        <div class="dt-metric dt-metric--secondary">
+                            <div class="dt-metric__label">
                                 <i class="fas fa-file-contract me-1"></i> Sum Assured
                             </div>
-                            <div style="font-size:1.5rem;font-weight:700;color:#065f46;">
+                            <div class="dt-metric__value">
                                 ₹{{ proj.sumAssured|number_format(0, '.', ',') }}
                             </div>
-                            <div style="font-size:11px;color:#047857;margin-top:4px;">
+                            <div class="dt-metric__sub">
                                 Base guarantee
                             </div>
                         </div>
@@ -77,15 +69,14 @@
 
                     {# Accrued SRB #}
                     <div class="col-md-3">
-                        <div class="p-3 text-center h-100"
-                             style="background:rgba(255,255,255,.7);border-radius:14px;border:1.5px solid #6ee7b7;">
-                            <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#047857;margin-bottom:6px;">
+                        <div class="dt-metric dt-metric--secondary">
+                            <div class="dt-metric__label">
                                 <i class="fas fa-plus-circle me-1"></i> Accrued Bonus (SRB)
                             </div>
-                            <div style="font-size:1.5rem;font-weight:700;color:#065f46;">
+                            <div class="dt-metric__value">
                                 ₹{{ proj.accruedBonus|number_format(0, '.', ',') }}
                             </div>
-                            <div style="font-size:11px;color:#047857;margin-top:4px;">
+                            <div class="dt-metric__sub">
                                 Over {{ proj.totalPolicyYears }} years
                             </div>
                         </div>
@@ -93,19 +84,18 @@
 
                     {# FAB #}
                     <div class="col-md-3">
-                        <div class="p-3 text-center h-100"
-                             style="background:rgba(255,255,255,.7);border-radius:14px;border:1.5px solid #6ee7b7;">
-                            <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#047857;margin-bottom:6px;">
+                        <div class="dt-metric dt-metric--secondary">
+                            <div class="dt-metric__label">
                                 <i class="fas fa-award me-1"></i> Final Additional Bonus
                             </div>
-                            <div style="font-size:1.5rem;font-weight:700;color:#065f46;">
+                            <div class="dt-metric__value">
                                 {% if proj.fabAmount > 0 %}
                                     ₹{{ proj.fabAmount|number_format(0, '.', ',') }}
                                 {% else %}
-                                    <span style="font-size:1rem;color:#6b7280;">N/A</span>
+                                    <span class="text-muted" style="font-size:1rem;">N/A</span>
                                 {% endif %}
                             </div>
-                            <div style="font-size:11px;color:#047857;margin-top:4px;">
+                            <div class="dt-metric__sub">
                                 {% if proj.fabAmount > 0 %}
                                     Term ≥ 15 years
                                 {% else %}
@@ -117,7 +107,7 @@
                 </div>
 
                 {# Rate reliability info #}
-                <div class="px-2 mb-2" style="font-size:12px;color:#065f46;">
+                <div class="dt-info">
                     <i class="fas fa-info-circle me-1"></i>
                     <strong>{{ proj.yearsWithActualRate }}</strong> of {{ proj.totalPolicyYears }} years used actual declared rates
                     {% if proj.yearsWithEstimatedRate > 0 %}
@@ -126,10 +116,9 @@
                 </div>
 
                 {# Disclaimer #}
-                <div class="px-3 py-2 mt-2"
-                     style="background:rgba(16,185,129,.1);border-radius:10px;border:1px dashed #6ee7b7;">
-                    <small style="color:#065f46;">
-                        <i class="fas fa-exclamation-triangle me-1" style="color:#f59e0b;"></i>
+                <div class="dt-disclaimer">
+                    <small>
+                        <i class="fas fa-exclamation-triangle me-1" style="color:var(--color-warning);"></i>
                         <strong>Disclaimer:</strong> This is an estimate based on currently declared bonus rates and may change.
                         Actual maturity value will be determined by LIC at the time of maturity based on their valuation.
                         This projection should not be treated as a guarantee.
@@ -146,26 +135,20 @@
         {% set yearsElapsed = doc ? (date() | date('Y') - doc | date('Y')) : 0 %}
         {% set yearsElapsed = yearsElapsed > ppt ? ppt : yearsElapsed %}
 
-        <div class="card mt-4 border-0 shadow-sm" id="paidup-banner"
-             style="border-left: 5px solid #f59e0b !important; background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 60%, #fde68a 100%);">
-            <div class="card-body p-4">
+        <div class="card dt-card dt-card--accent-left dt-paidup" id="paidup-banner">
+            <div class="dt-card__body">
 
                 {# Top row: icon + title + explanation #}
                 <div class="d-flex align-items-start gap-3 mb-4">
-                    <div style="width:52px;height:52px;min-width:52px;border-radius:16px;
-                                background:linear-gradient(135deg,#f59e0b,#d97706);
-                                display:flex;align-items:center;justify-content:center;
-                                color:#fff;font-size:22px;box-shadow:0 6px 18px rgba(245,158,11,.4);">
+                    <div class="dt-icon">
                         <i class="fas fa-shield-halved"></i>
                     </div>
                     <div>
                         <div class="d-flex align-items-center gap-2 mb-1">
-                            <h5 class="mb-0 fw-bold" style="color:#92400e;">This Policy is PAID-UP</h5>
-                            <span class="badge" style="background:#f59e0b;color:#fff;border-radius:8px;font-size:11px;padding:3px 10px;font-weight:700;">
-                                PAID-UP
-                            </span>
+                            <h5 class="mb-0 dt-card__title">This Policy is PAID-UP</h5>
+                            <span class="dt-badge">PAID-UP</span>
                         </div>
-                        <p class="mb-0" style="color:#78350f;font-size:13.5px;line-height:1.5;">
+                        <p class="mb-0 dt-card__desc">
                             Premium payments have ceased. The policy continues in force with a proportionally reduced Sum Assured.
                             The benefit below is what the client or nominee will receive on claim or maturity.
                         </p>
@@ -177,23 +160,22 @@
 
                     {# Paid-Up SA - the hero figure #}
                     <div class="col-md-4">
-                        <div class="p-3 text-center h-100"
-                             style="background:#fff;border-radius:14px;border:2px solid #f59e0b;box-shadow:0 4px 16px rgba(245,158,11,.18);">
-                            <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#b45309;margin-bottom:6px;">
+                        <div class="dt-metric dt-metric--hero">
+                            <div class="dt-metric__label">
                                 <i class="fas fa-indian-rupee-sign me-1"></i> Paid-Up Sum Assured
                             </div>
                             {% if paidUpSA %}
-                                <div style="font-size:1.9rem;font-weight:800;color:#92400e;line-height:1.1;">
+                                <div class="dt-metric__value dt-metric__value--hero">
                                     ₹{{ paidUpSA | number_format(0, '.', ',') }}
                                 </div>
-                                <div style="font-size:11px;color:#b45309;margin-top:4px;">
+                                <div class="dt-metric__sub">
                                     Benefit payable to client / nominee
                                 </div>
                             {% else %}
-                                <div style="font-size:1.1rem;font-weight:600;color:#d97706;">
+                                <div class="dt-metric__value" style="font-size:1.1rem;">
                                     <i class="fas fa-calculator me-1"></i> Not yet calculated
                                 </div>
-                                <div style="font-size:11px;color:#b45309;margin-top:4px;">
+                                <div class="dt-metric__sub">
                                     Re-save the policy to trigger calculation
                                 </div>
                             {% endif %}
@@ -202,15 +184,14 @@
 
                     {# Original SA #}
                     <div class="col-md-4">
-                        <div class="p-3 text-center h-100"
-                             style="background:rgba(255,255,255,.7);border-radius:14px;border:1.5px solid #fcd34d;">
-                            <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#b45309;margin-bottom:6px;">
+                        <div class="dt-metric dt-metric--secondary">
+                            <div class="dt-metric__label">
                                 <i class="fas fa-file-contract me-1"></i> Original Sum Assured
                             </div>
-                            <div style="font-size:1.5rem;font-weight:700;color:#78350f;">
+                            <div class="dt-metric__value">
                                 ₹{{ originalSA | number_format(0, '.', ',') }}
                             </div>
-                            <div style="font-size:11px;color:#b45309;margin-top:4px;">
+                            <div class="dt-metric__sub">
                                 Full benefit if all {{ ppt }} yrs premiums were paid
                             </div>
                         </div>
@@ -218,21 +199,22 @@
 
                     {# Formula breakdown #}
                     <div class="col-md-4">
-                        <div class="p-3 text-center h-100"
-                             style="background:rgba(255,255,255,.7);border-radius:14px;border:1.5px solid #fcd34d;">
-                            <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#b45309;margin-bottom:6px;">
+                        <div class="dt-metric dt-metric--secondary">
+                            <div class="dt-metric__label">
                                 <i class="fas fa-percent me-1"></i> Calculation Basis
                             </div>
-                            <div style="font-size:13px;font-weight:600;color:#92400e;line-height:1.6;">
+                            <div class="dt-metric__value">
                                 {% if paidUpSA and originalSA %}
                                     {% set ratio = (paidUpSA / originalSA * 100) | round(1) %}
-                                    <span style="font-size:1.5rem;font-weight:800;">{{ ratio }}%</span><br>
-                                    <span style="font-size:11px;color:#b45309;">of original SA retained</span>
+                                    <span style="font-size:1.5rem;font-weight:800;">{{ ratio }}%</span>
                                 {% else %}
                                     -
                                 {% endif %}
                             </div>
-                            <div style="font-size:11px;color:#b45309;margin-top:6px;font-family:monospace;background:rgba(245,158,11,.1);border-radius:6px;padding:4px 8px;">
+                            {% if paidUpSA and originalSA %}
+                                <div class="dt-metric__sub">of original SA retained</div>
+                            {% endif %}
+                            <div class="dt-metric__formula">
                                 ({{ yearsElapsed }} yrs paid ÷ {{ ppt }} PPT) × SA
                             </div>
                         </div>
@@ -248,30 +230,20 @@
        Alerts the agent that additional (doubled) sum assured is claimable.
        ══════════════════════════════════════════════════════════ #}
     {% if policy.status == 'DEATH_CLAIM' and policy.hasActiveDabRider %}
-        <div class="card mt-4 border-0 shadow-sm"
-             style="border-left: 5px solid #ef4444 !important;
-                    background: linear-gradient(135deg, #fff5f5 0%, #fee2e2 60%, #fecaca 100%);">
-            <div class="card-body p-4">
+        <div class="card dt-card dt-card--accent-left dt-dab">
+            <div class="dt-card__body">
                 <div class="d-flex align-items-start gap-3">
-                    <div style="width:52px;height:52px;min-width:52px;border-radius:16px;
-                                background:linear-gradient(135deg,#ef4444,#dc2626);
-                                display:flex;align-items:center;justify-content:center;
-                                color:#fff;font-size:22px;
-                                box-shadow:0 6px 18px rgba(239,68,68,.4);">
+                    <div class="dt-icon">
                         <i class="fas fa-triangle-exclamation"></i>
                     </div>
                     <div class="flex-grow-1">
                         <div class="d-flex align-items-center gap-2 mb-2">
-                            <h5 class="mb-0 fw-bold" style="color:#7f1d1d;">
+                            <h5 class="mb-0 dt-card__title">
                                 DAB Rider - Additional Benefit Claimable
                             </h5>
-                            <span class="badge"
-                                  style="background:#ef4444;color:#fff;border-radius:8px;
-                                         font-size:11px;padding:3px 10px;font-weight:700;">
-                                ACTION REQUIRED
-                            </span>
+                            <span class="dt-badge">ACTION REQUIRED</span>
                         </div>
-                        <p class="mb-3" style="color:#991b1b;font-size:13.5px;line-height:1.6;">
+                        <p class="mb-3 dt-card__desc">
                             This policy has an active <strong>Double Accident Benefit (DAB) rider</strong>.
                             If the cause of death was accidental, the nominee is entitled to
                             <strong>an additional sum assured</strong> on top of the base policy benefit.
@@ -279,49 +251,37 @@
                         </p>
                         <div class="row g-3">
                             <div class="col-md-4">
-                                <div class="p-3 text-center"
-                                     style="background:#fff;border-radius:12px;
-                                            border:2px solid #ef4444;
-                                            box-shadow:0 4px 14px rgba(239,68,68,.15);">
-                                    <div style="font-size:10px;font-weight:700;text-transform:uppercase;
-                                                letter-spacing:.6px;color:#b91c1c;margin-bottom:5px;">
+                                <div class="dt-metric dt-metric--hero">
+                                    <div class="dt-metric__label">
                                         Base Sum Assured
                                     </div>
-                                    <div style="font-size:1.5rem;font-weight:800;color:#7f1d1d;">
+                                    <div class="dt-metric__value dt-metric__value--hero">
                                         ₹{{ policy.sumAssured|number_format(0, '.', ',') }}
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <div class="p-3 text-center"
-                                     style="background:#fff;border-radius:12px;
-                                            border:2px solid #f97316;
-                                            box-shadow:0 4px 14px rgba(249,115,22,.15);">
-                                    <div style="font-size:10px;font-weight:700;text-transform:uppercase;
-                                                letter-spacing:.6px;color:#c2410c;margin-bottom:5px;">
+                                <div class="dt-metric dt-metric--secondary">
+                                    <div class="dt-metric__label">
                                         DAB Additional Benefit
                                     </div>
-                                    <div style="font-size:1.5rem;font-weight:800;color:#7c2d12;">
+                                    <div class="dt-metric__value">
                                         ₹{{ policy.dabClaimableAmount|number_format(0, '.', ',') }}
                                     </div>
-                                    <div style="font-size:11px;color:#c2410c;margin-top:3px;">
+                                    <div class="dt-metric__sub">
                                         (if death was accidental)
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <div class="p-3 text-center"
-                                     style="background:linear-gradient(135deg,#7f1d1d,#991b1b);
-                                            border-radius:12px;
-                                            box-shadow:0 4px 14px rgba(127,29,29,.3);">
-                                    <div style="font-size:10px;font-weight:700;text-transform:uppercase;
-                                                letter-spacing:.6px;color:rgba(255,255,255,.8);margin-bottom:5px;">
+                                <div class="dt-metric dt-metric--total">
+                                    <div class="dt-metric__label">
                                         Total Claimable (Accidental)
                                     </div>
-                                    <div style="font-size:1.7rem;font-weight:800;color:#fff;">
+                                    <div class="dt-metric__value dt-metric__value--hero">
                                         ₹{{ (policy.sumAssured|number_format(0,'.','')|replace({',':''}) + policy.dabClaimableAmount)|number_format(0, '.', ',') }}
                                     </div>
-                                    <div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:3px;">
+                                    <div class="dt-metric__sub">
                                         Base SA + DAB rider
                                     </div>
                                 </div>
@@ -338,20 +298,15 @@
        ══════════════════════════════════════════════════════════ #}
     {% set riders = policy.riders %}
 
-    <div class="card mt-4 border-0 shadow-sm" id="riders-panel">
-        <div class="card-header d-flex align-items-center justify-content-between py-3"
-             style="background: linear-gradient(135deg,#fff7ed,#ffedd5);
-                    border-bottom: 1.5px solid #fed7aa;">
+    <div class="card mt-4 dt-card dt-riders" id="riders-panel">
+        <div class="dt-panel__header">
             <div class="d-flex align-items-center gap-2">
-                <span style="width:36px;height:36px;border-radius:10px;
-                             background:linear-gradient(135deg,#f97316,#ea580c);
-                             display:flex;align-items:center;justify-content:center;
-                             color:#fff;font-size:15px;">
+                <span class="dt-icon dt-icon--sm">
                     <i class="fas fa-shield-halved"></i>
                 </span>
                 <div>
-                    <h6 class="mb-0 fw-bold" style="color:#7c2d12;">Policy Riders</h6>
-                    <small class="text-muted">Add-on benefits attached to this policy</small>
+                    <h6 class="dt-panel__title">Policy Riders</h6>
+                    <small class="dt-panel__subtitle">Add-on benefits attached to this policy</small>
                 </div>
             </div>
 
@@ -361,22 +316,16 @@
                 .setController('App\\Controller\\Admin\\PolicyRiderCrudController')
                 .setAction('new')
                 .set('policyId', policy.id) }}"
-               class="btn btn-sm btn-warning"
-               style="border-radius:10px;font-weight:600;
-                      background:linear-gradient(135deg,#f97316,#ea580c);
-                      border:none;color:#fff;
-                      box-shadow:0 4px 12px rgba(249,115,22,.35);">
-                <i class="fas fa-plus me-1"></i> Add Rider
+               class="dt-btn">
+                <i class="fas fa-plus"></i> Add Rider
             </a>
         </div>
 
         <div class="card-body p-0">
             {% if riders|length == 0 %}
                 {# Empty state #}
-                <div class="text-center py-5">
-                    <div style="width:64px;height:64px;border-radius:50%;background:#fff7ed;
-                                display:flex;align-items:center;justify-content:center;
-                                margin:0 auto 16px;font-size:26px;color:#fdba74;">
+                <div class="dt-empty">
+                    <div class="dt-empty__icon">
                         <i class="fas fa-shield-halved"></i>
                     </div>
                     <p class="text-muted mb-1" style="font-weight:600;">No riders added yet</p>
@@ -387,75 +336,52 @@
             {% else %}
                 {# Total rider premium summary bar #}
                 {% set totalRiderPremium = policy.totalRiderPremium %}
-                <div class="px-4 pt-3 pb-2 d-flex justify-content-between align-items-center"
-                     style="background:#fffbf5;border-bottom:1px solid #fed7aa;">
-                    <small class="fw-semibold" style="color:#c2410c;">
+                <div class="dt-summary-bar">
+                    <small class="dt-summary-bar__label">
                         <i class="fas fa-coins me-1"></i>
                         Total Annual Rider Premium
                     </small>
-                    <span class="fw-bold" style="color:#ea580c;font-size:15px;">
+                    <span class="dt-summary-bar__value">
                         ₹{{ totalRiderPremium|number_format(2, '.', ',') }}
                     </span>
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0 align-middle" style="font-size:13.5px;">
+                    <table class="table table-hover mb-0 align-middle dt-table">
                         <thead>
-                            <tr style="background:#fffbf5;border-bottom:2px solid #fed7aa;">
-                                <th class="ps-4 py-3"
-                                    style="color:#6b7280;font-size:11px;text-transform:uppercase;
-                                           letter-spacing:.5px;font-weight:700;">Rider Type</th>
-                                <th class="py-3"
-                                    style="color:#6b7280;font-size:11px;text-transform:uppercase;
-                                           letter-spacing:.5px;font-weight:700;">Rider SA</th>
-                                <th class="py-3"
-                                    style="color:#6b7280;font-size:11px;text-transform:uppercase;
-                                           letter-spacing:.5px;font-weight:700;">Annual Premium</th>
-                                <th class="py-3"
-                                    style="color:#6b7280;font-size:11px;text-transform:uppercase;
-                                           letter-spacing:.5px;font-weight:700;">Start Date</th>
-                                <th class="py-3"
-                                    style="color:#6b7280;font-size:11px;text-transform:uppercase;
-                                           letter-spacing:.5px;font-weight:700;">End Date</th>
-                                <th class="py-3"
-                                    style="color:#6b7280;font-size:11px;text-transform:uppercase;
-                                           letter-spacing:.5px;font-weight:700;">Status</th>
-                                <th class="py-3 pe-3"
-                                    style="color:#6b7280;font-size:11px;text-transform:uppercase;
-                                           letter-spacing:.5px;font-weight:700;">Actions</th>
+                            <tr>
+                                <th class="ps-4 py-3">Rider Type</th>
+                                <th class="py-3">Rider SA</th>
+                                <th class="py-3">Annual Premium</th>
+                                <th class="py-3">Start Date</th>
+                                <th class="py-3">End Date</th>
+                                <th class="py-3">Status</th>
+                                <th class="py-3 pe-3">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for rider in riders %}
-                                {% set typeColors = {
-                                    'DAB':         '#fff7ed,#c2410c,#f97316',
-                                    'PWBP':        '#eff6ff,#1d4ed8,#3b82f6',
-                                    'CI':          '#fff5f5,#b91c1c,#ef4444',
-                                    'TERM_RIDER':  '#f0fdf4,#15803d,#22c55e'
+                                {% set badgeClass = {
+                                    'DAB':         'dt-rider-badge--dab',
+                                    'PWBP':        'dt-rider-badge--pwbp',
+                                    'CI':          'dt-rider-badge--ci',
+                                    'TERM_RIDER':  'dt-rider-badge--term'
                                 } %}
-                                {% set colors = typeColors[rider.riderType] ?? '#f9fafb,#374151,#6b7280' %}
-                                {% set bg = colors|split(',')|first %}
-                                {% set fg = colors|split(',')|last %}
-                                {% set fgDark = (colors|split(','))[1] %}
+                                {% set cls = badgeClass[rider.riderType] ?? 'dt-rider-badge--default' %}
 
                                 <tr>
                                     <td class="ps-4">
-                                        <span class="badge"
-                                              style="background:{{ bg }};color:{{ fgDark }};
-                                                     border:1.5px solid {{ fg }};border-radius:8px;
-                                                     padding:4px 10px;font-size:11px;font-weight:700;">
+                                        <span class="badge dt-rider-badge {{ cls }}">
                                             {{ rider.riderTypeLabel }}
                                         </span>
                                         {% if rider.riderType == 'DAB' and rider.activeDabRider %}
-                                            <span class="badge ms-1"
-                                                  style="background:#fef3c7;color:#92400e;
-                                                         font-size:10px;border-radius:6px;padding:2px 7px;">
+                                            <span class="badge ms-1 dt-rider-active">
                                                 ⚡ Active
                                             </span>
                                         {% endif %}
                                     </td>
 
-                                    <td style="font-weight:600;color:#0F1B30;">
+                                    <td class="dt-rider-sa">
                                         {% if rider.riderSumAssured %}
                                             ₹{{ rider.riderSumAssured|number_format(0, '.', ',') }}
                                         {% else %}
@@ -463,7 +389,7 @@
                                         {% endif %}
                                     </td>
 
-                                    <td style="font-weight:700;color:#ea580c;">
+                                    <td class="dt-rider-premium">
                                         ₹{{ rider.riderPremium|number_format(2, '.', ',') }}
                                         <span class="text-muted" style="font-size:10px;font-weight:400;">/yr</span>
                                     </td>
@@ -476,9 +402,7 @@
                                         {% if rider.riderEndDate %}
                                             {{ rider.riderEndDate|date('d M Y') }}
                                             {% if rider.riderEndDate < date() %}
-                                                <span class="badge ms-1"
-                                                      style="background:#fee2e2;color:#b91c1c;
-                                                             font-size:10px;border-radius:5px;">Expired</span>
+                                                <span class="badge ms-1 dt-rider-expired">Expired</span>
                                             {% endif %}
                                         {% else %}
                                             <span class="text-muted" style="font-size:12px;">Full term</span>
@@ -487,18 +411,12 @@
 
                                     <td>
                                         {% if rider.active %}
-                                            <span class="badge"
-                                                  style="background:#dcfce7;color:#166534;
-                                                         border-radius:8px;padding:3px 10px;
-                                                         font-size:11px;font-weight:600;">
+                                            <span class="badge dt-status--active">
                                                 <i class="fas fa-circle" style="font-size:7px;margin-right:4px;"></i>
                                                 Active
                                             </span>
                                         {% else %}
-                                            <span class="badge"
-                                                  style="background:#f3f4f6;color:#6b7280;
-                                                         border-radius:8px;padding:3px 10px;
-                                                         font-size:11px;font-weight:600;">
+                                            <span class="badge dt-status--inactive">
                                                 Inactive
                                             </span>
                                         {% endif %}
@@ -510,18 +428,16 @@
                                                 .setController('App\\Controller\\Admin\\PolicyRiderCrudController')
                                                 .setAction('edit')
                                                 .setEntityId(rider.id) }}"
-                                               class="btn btn-xs btn-outline-warning"
-                                               title="Edit Rider"
-                                               style="border-radius:7px;font-size:12px;padding:3px 10px;">
+                                               class="btn btn-xs btn-outline-warning dt-action-btn"
+                                               title="Edit Rider">
                                                 <i class="fas fa-pencil-alt"></i>
                                             </a>
                                             <a href="{{ ea_url()
                                                 .setController('App\\Controller\\Admin\\PolicyRiderCrudController')
                                                 .setAction('delete')
                                                 .setEntityId(rider.id) }}"
-                                               class="btn btn-xs btn-outline-danger"
+                                               class="btn btn-xs btn-outline-danger dt-action-btn"
                                                title="Delete Rider"
-                                               style="border-radius:7px;font-size:12px;padding:3px 10px;"
                                                onclick="return confirm('Are you sure you want to delete this rider?');">
                                                 <i class="fas fa-trash-alt"></i>
                                             </a>
@@ -539,17 +455,15 @@
     {# ── Nominees Section ── #}
     {% set nominees = policy.nominees %}
 
-    <div class="card mt-4 border-0 shadow-sm" id="nominees-panel">
-        <div class="card-header d-flex align-items-center justify-content-between py-3"
-             style="background: linear-gradient(135deg,#F4F7FB,#EAF0F9); border-bottom: 1.5px solid #D0DDF0;">
+    <div class="card mt-4 dt-card dt-nominees" id="nominees-panel">
+        <div class="dt-panel__header">
             <div class="d-flex align-items-center gap-2">
-                <span style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#003580,#002868);
-                             display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;">
+                <span class="dt-icon dt-icon--sm">
                     <i class="fas fa-user-shield"></i>
                 </span>
                 <div>
-                    <h6 class="mb-0 fw-bold" style="color:#0F1B30;">Nominees</h6>
-                    <small class="text-muted">Beneficiaries registered against this policy</small>
+                    <h6 class="dt-panel__title">Nominees</h6>
+                    <small class="dt-panel__subtitle">Beneficiaries registered against this policy</small>
                 </div>
             </div>
 
@@ -559,18 +473,16 @@
                 .setController('App\\Controller\\Admin\\NomineeCrudController')
                 .setAction('new')
                 .set('policyId', policy.id) }}"
-               class="btn btn-sm btn-primary"
-               style="border-radius:10px;font-weight:600;background:linear-gradient(135deg,#003580,#002868);border:none;box-shadow:0 4px 12px rgba(0,53,128,.35);">
-                <i class="fas fa-plus me-1"></i> Add Nominee
+               class="dt-btn">
+                <i class="fas fa-plus"></i> Add Nominee
             </a>
         </div>
 
         <div class="card-body p-0">
             {% if nominees|length == 0 %}
                 {# Empty state #}
-                <div class="text-center py-5">
-                    <div style="width:64px;height:64px;border-radius:50%;background:#EAF0F9;
-                                display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:26px;color:#A8C4E0;">
+                <div class="dt-empty">
+                    <div class="dt-empty__icon">
                         <i class="fas fa-user-shield"></i>
                     </div>
                     <p class="text-muted mb-1" style="font-weight:600;">No nominees added yet</p>
@@ -581,7 +493,7 @@
                 {% set totalShare = policy.totalNomineeShare %}
                 <div class="px-4 pt-3 pb-2">
                     <div class="d-flex justify-content-between align-items-center mb-1">
-                        <small class="fw-semibold" style="color:#003580;">Total Share Allocated</small>
+                        <small class="dt-share-label">Total Share Allocated</small>
                         <small class="fw-bold {% if totalShare == 100 %}text-success{% elseif totalShare > 100 %}text-danger{% else %}text-warning{% endif %}">
                             {{ totalShare|number_format(2) }}%
                             {% if totalShare == 100 %}
@@ -593,7 +505,7 @@
                             {% endif %}
                         </small>
                     </div>
-                    <div class="progress" style="height:6px;border-radius:3px;background:#D0DDF0;">
+                    <div class="progress dt-progress">
                         <div class="progress-bar {% if totalShare == 100 %}bg-success{% elseif totalShare > 100 %}bg-danger{% else %}bg-warning{% endif %}"
                              role="progressbar"
                              style="width: {{ totalShare > 100 ? 100 : totalShare }}%; border-radius:3px; transition: width .4s ease;"
@@ -613,43 +525,41 @@
 
                 {# Nominees table #}
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0 align-middle" style="font-size:13.5px;">
+                    <table class="table table-hover mb-0 align-middle dt-table">
                         <thead>
-                            <tr style="background:#F4F7FB;border-bottom:2px solid #D0DDF0;">
-                                <th class="ps-4 py-3" style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Name</th>
-                                <th class="py-3" style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Relationship</th>
-                                <th class="py-3" style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Date of Birth</th>
-                                <th class="py-3" style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Guardian</th>
-                                <th class="py-3" style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Mobile</th>
-                                <th class="py-3" style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Share %</th>
-                                <th class="py-3 pe-3" style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Actions</th>
+                            <tr>
+                                <th class="ps-4 py-3">Name</th>
+                                <th class="py-3">Relationship</th>
+                                <th class="py-3">Date of Birth</th>
+                                <th class="py-3">Guardian</th>
+                                <th class="py-3">Mobile</th>
+                                <th class="py-3">Share %</th>
+                                <th class="py-3 pe-3">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for nominee in nominees %}
                                 <tr>
-                                    <td class="ps-4 fw-semibold" style="color:#0F1B30;">
+                                    <td class="ps-4 dt-nominee-name">
                                         {{ nominee.name }}
                                         {% if nominee.isMinor %}
-                                            <span class="badge ms-1" style="background:#fef3c7;color:#92400e;font-size:10px;border-radius:6px;padding:2px 7px;">Minor</span>
+                                            <span class="badge ms-1 dt-nominee-minor">Minor</span>
                                         {% endif %}
                                     </td>
 
                                     <td>
-                                        {% set relColor = {
-                                            'SPOUSE': '#dbeafe,#1e40af',
-                                            'SON': '#dcfce7,#166534',
-                                            'DAUGHTER': '#fce7f3,#9d174d',
-                                            'FATHER': '#ede9fe,#4c1d95',
-                                            'MOTHER': '#fef3c7,#92400e',
-                                            'BROTHER': '#e0f2fe,#075985',
-                                            'SISTER': '#fae8ff,#701a75',
-                                            'OTHER': '#f3f4f6,#374151'
+                                        {% set relClass = {
+                                            'SPOUSE':   'dt-rel-badge--spouse',
+                                            'SON':      'dt-rel-badge--son',
+                                            'DAUGHTER': 'dt-rel-badge--daughter',
+                                            'FATHER':   'dt-rel-badge--father',
+                                            'MOTHER':   'dt-rel-badge--mother',
+                                            'BROTHER':  'dt-rel-badge--brother',
+                                            'SISTER':   'dt-rel-badge--sister',
+                                            'OTHER':    'dt-rel-badge--other'
                                         } %}
-                                        {% set colors = relColor[nominee.relationship] ?? '#f3f4f6,#374151' %}
-                                        {% set bg = colors|split(',')|first %}
-                                        {% set fg = colors|split(',')|last %}
-                                        <span class="badge" style="background:{{ bg }};color:{{ fg }};border-radius:8px;padding:3px 10px;font-size:11px;font-weight:600;">
+                                        {% set cls = relClass[nominee.relationship] ?? 'dt-rel-badge--other' %}
+                                        <span class="badge dt-rel-badge {{ cls }}">
                                             {{ nominee.relationship|capitalize }}
                                         </span>
                                     </td>
@@ -664,7 +574,7 @@
 
                                     <td>
                                         {% if nominee.guardianName %}
-                                            <span style="color:#374151;">{{ nominee.guardianName }}</span>
+                                            <span>{{ nominee.guardianName }}</span>
                                         {% else %}
                                             <span class="text-muted">-</span>
                                         {% endif %}
@@ -675,7 +585,7 @@
                                     </td>
 
                                     <td>
-                                        <span class="fw-bold" style="color:#003580;font-size:14px;">
+                                        <span class="dt-share-value">
                                             {{ nominee.sharePercentage|number_format(2) }}%
                                         </span>
                                     </td>
@@ -686,18 +596,16 @@
                                                 .setController('App\\Controller\\Admin\\NomineeCrudController')
                                                 .setAction('edit')
                                                 .setEntityId(nominee.id) }}"
-                                               class="btn btn-xs btn-outline-primary"
-                                               title="Edit"
-                                               style="border-radius:7px;font-size:12px;padding:3px 10px;">
+                                               class="btn btn-xs btn-outline-primary dt-action-btn"
+                                               title="Edit">
                                                 <i class="fas fa-pencil-alt"></i>
                                             </a>
                                             <a href="{{ ea_url()
                                                 .setController('App\\Controller\\Admin\\NomineeCrudController')
                                                 .setAction('delete')
                                                 .setEntityId(nominee.id) }}"
-                                               class="btn btn-xs btn-outline-danger"
+                                               class="btn btn-xs btn-outline-danger dt-action-btn"
                                                title="Delete"
-                                               style="border-radius:7px;font-size:12px;padding:3px 10px;"
                                                onclick="return confirm('Are you sure you want to delete this nominee?');">
                                                 <i class="fas fa-trash-alt"></i>
                                             </a>

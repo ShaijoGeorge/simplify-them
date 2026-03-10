@@ -127,7 +127,8 @@ class DashboardController extends AbstractDashboardController
             ->addCssFile('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap')
             ->addCssFile('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap')
             ->addCssFile('assets/css/admin/theme.css')
-            ->addCssFile('assets/css/admin/dashboard.css');
+            ->addCssFile('assets/css/admin/dashboard.css')
+            ->addCssFile('assets/css/admin/detail.css');
     }
 
 
