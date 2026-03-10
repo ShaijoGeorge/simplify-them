@@ -83,6 +83,20 @@
             margin-top: 5px;
         }
 
+        /* STATUS BADGE */
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-collected { background: #d1ecf1; color: #0c5460; }
+        .status-paid { background: #cce5ff; color: #004085; }
+        .status-completed { background: #d4edda; color: #155724; }
+
         /* DISCLAIMER */
         .disclaimer {
             margin-top: 20px;
@@ -122,11 +136,6 @@
         </div>
 
         <div class="row">
-            <div class="label">Date of Collection</div>
-            <div class="value">{{ receipt.paymentDate|date('d-M-Y') }}</div>
-        </div>
-
-        <div class="row">
             <div class="label">Policy Number</div>
             <div class="value">{{ receipt.policy.policyNumber }}</div>
         </div>
@@ -146,10 +155,92 @@
         </div>
 
         <div class="row">
-            <div class="label">Payment Mode</div>
-            <div class="value">{{ receipt.paymentMode }}</div>
+            <div class="label">Base Premium</div>
+            <div class="value">
+                {{ (receipt.basePremium / 100)|format_currency('INR', {fraction_digit: 2}, 'en_IN') }}
+            </div>
+        </div>
+
+        {% if receipt.licFineAmount and receipt.licFineAmount > 0 %}
+        <div class="row">
+            <div class="label">LIC Late Fine</div>
+            <div class="value">
+                {{ (receipt.licFineAmount / 100)|format_currency('INR', {fraction_digit: 2}, 'en_IN') }}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="row">
+            <div class="label">Status</div>
+            <div class="value">
+                {% if receipt.status == 'COMPLETED' %}
+                    <span class="status-badge status-completed">Completed</span>
+                {% elseif receipt.status == 'COLLECTED_ONLY' %}
+                    <span class="status-badge status-collected">Collected</span>
+                {% elseif receipt.status == 'PAID_ONLY' %}
+                    <span class="status-badge status-paid">Paid to LIC</span>
+                {% else %}
+                    <span class="status-badge status-pending">Pending</span>
+                {% endif %}
+            </div>
         </div>
     </div>
+
+    <!-- CLIENT COLLECTION -->
+    {% if receipt.collectedDate %}
+    <div class="info" style="margin-top:16px;">
+        <div style="font-weight:bold;color:#444;padding:8px 0;border-bottom:2px solid #ddd;margin-bottom:4px;">
+            Client Collection
+        </div>
+
+        <div class="row">
+            <div class="label">Date of Collection</div>
+            <div class="value">{{ receipt.collectedDate|date('d-M-Y') }}</div>
+        </div>
+
+        <div class="row">
+            <div class="label">Amount Collected</div>
+            <div class="value">
+                {{ (receipt.collectedAmount / 100)|format_currency('INR', {fraction_digit: 2}, 'en_IN') }}
+            </div>
+        </div>
+
+        {% if receipt.collectionMethod %}
+        <div class="row">
+            <div class="label">Collection Method</div>
+            <div class="value">{{ receipt.collectionMethod }}</div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- LIC PAYMENT -->
+    {% if receipt.paidToLicDate %}
+    <div class="info" style="margin-top:16px;">
+        <div style="font-weight:bold;color:#444;padding:8px 0;border-bottom:2px solid #ddd;margin-bottom:4px;">
+            LIC Payment
+        </div>
+
+        <div class="row">
+            <div class="label">Date Paid to LIC</div>
+            <div class="value">{{ receipt.paidToLicDate|date('d-M-Y') }}</div>
+        </div>
+
+        <div class="row">
+            <div class="label">Amount Paid to LIC</div>
+            <div class="value">
+                {{ (receipt.paidToLicAmount / 100)|format_currency('INR', {fraction_digit: 2}, 'en_IN') }}
+            </div>
+        </div>
+
+        {% if receipt.paymentChannel %}
+        <div class="row">
+            <div class="label">Payment Channel</div>
+            <div class="value">{{ receipt.paymentChannel }}</div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
 
     <!-- PREMIUM BREAKDOWN (base + riders) -->
     {% set riders = receipt.policy.riders %}
@@ -190,11 +281,15 @@
     </div>
     {% endif %}
 
-    <!-- AMOUNT -->
+    <!-- AMOUNT BOX -->
     <div class="amount-box">
-        <div class="amount-label">Amount Collected</div>
+        <div class="amount-label">Amount Collected from Client</div>
         <div class="amount-value">
-            {{ (receipt.amount / 100)|format_currency('INR', {fraction_digit: 2}, 'en_IN') }}
+            {% if receipt.collectedAmount %}
+                {{ (receipt.collectedAmount / 100)|format_currency('INR', {fraction_digit: 2}, 'en_IN') }}
+            {% else %}
+                —
+            {% endif %}
         </div>
         {% if riders|length > 0 %}
         <div style="font-size:9px;color:#888;margin-top:6px;">

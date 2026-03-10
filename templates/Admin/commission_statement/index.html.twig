@@ -76,10 +76,10 @@
                     <tbody>
                         {% for r in receipts %}
                         <tr>
-                            <td>{{ r.paymentDate|date('d-M-Y') }}</td>
+                            <td>{{ r.collectedDate|date('d-M-Y') }}</td>
                             <td><span class="fw-semibold">{{ r.receiptNumber }}</span></td>
                             <td>{{ r.policy.policyNumber ?? '—' }}</td>
-                            <td class="text-end">₹{{ r.amount|number_format(2) }}</td>
+                            <td class="text-end">₹{{ r.collectedAmount|number_format(2) }}</td>
                             <td class="text-end">₹{{ r.grossCommission|number_format(2) }}</td>
                             <td class="text-center">
                                 <span class="badge {{ hasPan ? 'bg-success' : 'bg-warning text-dark' }}">

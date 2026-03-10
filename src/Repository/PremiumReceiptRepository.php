@@ -28,11 +28,11 @@ class PremiumReceiptRepository extends ServiceEntityRepository
 
         $receipts = $this->createQueryBuilder('r')
             ->andWhere('r.agency = :agency')
-            ->andWhere('r.paymentDate BETWEEN :from AND :to')
+            ->andWhere('r.collectedDate BETWEEN :from AND :to')
             ->setParameter('agency', $agencyId)
             ->setParameter('from', $from)
             ->setParameter('to', $to)
-            ->orderBy('r.paymentDate', 'ASC')
+            ->orderBy('r.collectedDate', 'ASC')
             ->getQuery()
             ->getResult();
 
@@ -62,9 +62,9 @@ class PremiumReceiptRepository extends ServiceEntityRepository
         $end   = new \DateTime('last day of this month 23:59:59');
 
         $result = $this->createQueryBuilder('r')
-            ->select('SUM(r.amount) as total')
+            ->select('SUM(r.collectedAmount) as total')
             ->andWhere('r.agency = :agency')
-            ->andWhere('r.paymentDate BETWEEN :start AND :end')
+            ->andWhere('r.collectedDate BETWEEN :start AND :end')
             ->setParameter('agency', $agencyId)
             ->setParameter('start', $start)
             ->setParameter('end', $end)
