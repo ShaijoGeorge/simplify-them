@@ -106,16 +106,17 @@ class PremiumReceiptCrudController extends BaseCrudController
             ->setCurrency('INR')
             ->setStoredAsCents(false)
             ->setRequired(true)
-            ->setColumns(12);
+            ->setColumns(6);
 
         yield MoneyField::new('licFineAmount', 'LIC Late Fine')
             ->setCurrency('INR')
             ->setStoredAsCents(false)
             ->setHelp('Penalty imposed by LIC for late payment (if any)')
-            ->setColumns(12);
+            ->setColumns(6);
 
-        // ── PANEL 2: Client Collection (Phase 1) ──────────────────────
         yield FormField::addColumn(6);
+
+        // Client Collection (Phase 1)
 
         yield FormField::addFieldset('1. Client Collection')
             ->setIcon('fa fa-hand-holding-usd')
@@ -124,10 +125,10 @@ class PremiumReceiptCrudController extends BaseCrudController
         yield MoneyField::new('collectedAmount', 'Amount Collected')
             ->setCurrency('INR')
             ->setStoredAsCents(false)
-            ->setColumns(12);
+            ->setColumns(4);
 
         yield DateField::new('collectedDate', 'Collection Date')
-            ->setColumns(12);
+            ->setColumns(4);
 
         yield ChoiceField::new('collectionMethod', 'Collection Method')
             ->setChoices([
@@ -136,10 +137,9 @@ class PremiumReceiptCrudController extends BaseCrudController
                 'Cheque' => 'CHEQUE',
             ])
             ->renderAsBadges()
-            ->setColumns(12);
+            ->setColumns(4);
 
-        // ── PANEL 3: LIC Payment (Phase 2) ────────────────────────────
-        yield FormField::addColumn(6);
+        // LIC Payment (Phase 2)
 
         yield FormField::addFieldset('2. LIC Payment')
             ->setIcon('fa fa-university')
@@ -148,10 +148,10 @@ class PremiumReceiptCrudController extends BaseCrudController
         yield MoneyField::new('paidToLicAmount', 'Amount Paid to LIC')
             ->setCurrency('INR')
             ->setStoredAsCents(false)
-            ->setColumns(12);
+            ->setColumns(4);
 
         yield DateField::new('paidToLicDate', 'LIC Payment Date')
-            ->setColumns(12);
+            ->setColumns(4);
 
         yield ChoiceField::new('paymentChannel', 'Payment Channel')
             ->setChoices([
@@ -160,9 +160,9 @@ class PremiumReceiptCrudController extends BaseCrudController
                 'Cheque' => 'CHEQUE',
             ])
             ->renderAsBadges()
-            ->setColumns(12);
+            ->setColumns(4);
 
-        // ── PANEL 4: Status & Commission ──────────────────────────────
+        // Status & Commission
         yield FormField::addColumn(6);
 
         yield FormField::addFieldset('Status & Commission')
@@ -200,7 +200,9 @@ class PremiumReceiptCrudController extends BaseCrudController
             ->setStoredAsCents(false)
             ->setDisabled(true);
 
-        // ── PANEL 5: Metadata ─────────────────────────────────────────
+        // Metadata
+        yield FormField::addColumn(6);
+
         yield FormField::addFieldset('System Metadata')->setIcon('fa fa-database');
 
         $agencyField = AssociationField::new('agency', 'Agency')
