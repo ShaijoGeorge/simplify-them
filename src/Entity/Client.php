@@ -44,6 +44,9 @@ class Client
     #[ORM\Column(length: 10, nullable: true)]
     private ?string $pincode = null;
 
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, options: ['default' => '0.00'])]
+    private ?string $walletBalance = '0.00';
+
     #[ORM\ManyToOne(inversedBy: 'clients')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Agency $agency = null;
@@ -305,6 +308,31 @@ class Client
     public function getFullName(): string
     {
         return $this->name ?? '';
+    }
+
+    // Wallet Balance
+
+    public function getWalletBalance(): ?string
+    {
+        return $this->walletBalance;
+    }
+
+    public function setWalletBalance(?string $walletBalance): static
+    {
+        $this->walletBalance = $walletBalance;
+        return $this;
+    }
+
+    /**
+     * Adjust the wallet balance by a delta amount.
+     * Positive delta = agency owes client more (client overpaid).
+     * Negative delta = client owes agency more (agent covered shortfall/fine).
+     */
+    public function adjustWalletBalance(float $delta): static
+    {
+        $current = (float) ($this->walletBalance ?? 0);
+        $this->walletBalance = (string) round($current + $delta, 2);
+        return $this;
     }
 
     public function __toString(): string
