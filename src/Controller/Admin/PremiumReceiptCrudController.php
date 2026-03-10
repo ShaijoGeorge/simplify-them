@@ -79,15 +79,15 @@ class PremiumReceiptCrudController extends BaseCrudController
 
     public function configureFields(string $pageName): iterable
     {
-        // LEFT COLUMN: TRANSACTION INFO
+        // ── PANEL 1: Policy & Expected Premium ────────────────────────
         yield FormField::addColumn(6);
 
-        yield FormField::addFieldset('Transaction Details')
+        yield FormField::addFieldset('Policy & Expected Premium')
             ->setIcon('fa fa-file-invoice')
-            ->setHelp('Policy and date information');
+            ->setHelp('Policy link and the premium amount expected by LIC');
 
         yield TextField::new('receiptNumber', 'Receipt No')
-            ->hideOnForm() // Generated automatically
+            ->hideOnForm()
             ->setColumns(12);
 
         yield AssociationField::new('policy', 'Linked Policy')
@@ -102,21 +102,34 @@ class PremiumReceiptCrudController extends BaseCrudController
             })
             ->setColumns(12);
 
-        yield DateField::new('paymentDate', 'Payment Date')
+        yield MoneyField::new('basePremium', 'Base Premium')
+            ->setCurrency('INR')
+            ->setStoredAsCents(false)
+            ->setRequired(true)
             ->setColumns(12);
 
-        // RIGHT COLUMN: PAYMENT SPECS
+        yield MoneyField::new('licFineAmount', 'LIC Late Fine')
+            ->setCurrency('INR')
+            ->setStoredAsCents(false)
+            ->setHelp('Penalty imposed by LIC for late payment (if any)')
+            ->setColumns(12);
+
+        // ── PANEL 2: Client Collection (Phase 1) ──────────────────────
         yield FormField::addColumn(6);
 
-        yield FormField::addFieldset('Payment Specification')
-            ->setIcon('fa fa-money-bill-wave');
+        yield FormField::addFieldset('1. Client Collection')
+            ->setIcon('fa fa-hand-holding-usd')
+            ->setHelp('What the agent collected from the client');
 
-        yield MoneyField::new('amount', 'Amount Received')
+        yield MoneyField::new('collectedAmount', 'Amount Collected')
             ->setCurrency('INR')
             ->setStoredAsCents(false)
             ->setColumns(12);
 
-        yield ChoiceField::new('paymentMode', 'Payment Mode')
+        yield DateField::new('collectedDate', 'Collection Date')
+            ->setColumns(12);
+
+        yield ChoiceField::new('collectionMethod', 'Collection Method')
             ->setChoices([
                 'Cash' => 'CASH',
                 'UPI/Online' => 'ONLINE',
@@ -125,8 +138,52 @@ class PremiumReceiptCrudController extends BaseCrudController
             ->renderAsBadges()
             ->setColumns(12);
 
-        // COMMISSION BREAKDOWN (read-only)
-        yield FormField::addFieldset('Commission & TDS')->setIcon('fa fa-calculator');
+        // ── PANEL 3: LIC Payment (Phase 2) ────────────────────────────
+        yield FormField::addColumn(6);
+
+        yield FormField::addFieldset('2. LIC Payment')
+            ->setIcon('fa fa-university')
+            ->setHelp('What the agent paid to LIC');
+
+        yield MoneyField::new('paidToLicAmount', 'Amount Paid to LIC')
+            ->setCurrency('INR')
+            ->setStoredAsCents(false)
+            ->setColumns(12);
+
+        yield DateField::new('paidToLicDate', 'LIC Payment Date')
+            ->setColumns(12);
+
+        yield ChoiceField::new('paymentChannel', 'Payment Channel')
+            ->setChoices([
+                'Cash' => 'CASH',
+                'UPI/Online' => 'ONLINE',
+                'Cheque' => 'CHEQUE',
+            ])
+            ->renderAsBadges()
+            ->setColumns(12);
+
+        // ── PANEL 4: Status & Commission ──────────────────────────────
+        yield FormField::addColumn(6);
+
+        yield FormField::addFieldset('Status & Commission')
+            ->setIcon('fa fa-calculator');
+
+        yield ChoiceField::new('status', 'Workflow Status')
+            ->setChoices([
+                'Pending' => PremiumReceipt::STATUS_PENDING,
+                'Collected, Not Paid to LIC' => PremiumReceipt::STATUS_COLLECTED_ONLY,
+                'Paid to LIC, Not Collected' => PremiumReceipt::STATUS_PAID_ONLY,
+                'Completed' => PremiumReceipt::STATUS_COMPLETED,
+            ])
+            ->renderAsBadges([
+                PremiumReceipt::STATUS_PENDING => 'warning',
+                PremiumReceipt::STATUS_COLLECTED_ONLY => 'info',
+                PremiumReceipt::STATUS_PAID_ONLY => 'primary',
+                PremiumReceipt::STATUS_COMPLETED => 'success',
+            ])
+            ->setDisabled(true)
+            ->setHelp('Auto-derived from collection & payment data')
+            ->setColumns(12);
 
         yield MoneyField::new('grossCommission', 'Gross Commission')
             ->setCurrency('INR')
@@ -143,7 +200,7 @@ class PremiumReceiptCrudController extends BaseCrudController
             ->setStoredAsCents(false)
             ->setDisabled(true);
 
-        // META DATA
+        // ── PANEL 5: Metadata ─────────────────────────────────────────
         yield FormField::addFieldset('System Metadata')->setIcon('fa fa-database');
 
         $agencyField = AssociationField::new('agency', 'Agency')
@@ -163,7 +220,6 @@ class PremiumReceiptCrudController extends BaseCrudController
 
     public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
     {
-
         if (!$entityInstance instanceof PremiumReceipt) {
             parent::persistEntity($entityManager, $entityInstance);
             return;
@@ -171,20 +227,23 @@ class PremiumReceiptCrudController extends BaseCrudController
 
         $user = $this->getUser();
 
-        // Agency Fallbak
+        // Agency Fallback
         if ($user && $user->getAgency() && !$entityInstance->getAgency()) {
             $entityInstance->setAgency($user->getAgency());
         }
 
-        // Generate Receipt Number (Simple Random for now)
+        // Generate Receipt Number
         if (!$entityInstance->getReceiptNumber()) {
             $entityInstance->setReceiptNumber(
                 'REC-' . date('Y') . '-' . strtoupper(substr(uniqid(), -6))
             );
         }
 
-        // Calculate Commission (Shared Logic)
+        // Calculate Commission (on paidToLicAmount)
         $this->calculateCommission($entityManager, $entityInstance);
+
+        // Adjust Client Wallet
+        $this->adjustClientWallet($entityManager, $entityInstance, null);
 
         // Update Policy Due Date (ONLY ON CREATE)
         $this->advancePolicyDueDate($entityManager, $entityInstance);
@@ -206,17 +265,81 @@ class PremiumReceiptCrudController extends BaseCrudController
             $entityInstance->setAgency($user->getAgency());
         }
 
-        // Recalculate Commission (In case Amount changed)
+        // We need the OLD values to reverse the previous wallet delta.
+        // Doctrine's UnitOfWork holds the original data.
+        $uow = $entityManager->getUnitOfWork();
+        $originalData = $uow->getOriginalEntityData($entityInstance);
+
+        // Recalculate Commission
         $this->calculateCommission($entityManager, $entityInstance);
+
+        // Adjust Client Wallet (reverse old, apply new)
+        $this->adjustClientWallet($entityManager, $entityInstance, $originalData);
 
         parent::updateEntity($entityManager, $entityInstance);
     }
 
-    // COMMISSION CALCULATION
+    // ── WALLET ADJUSTMENT ─────────────────────────────────────────────
+
+    /**
+     * Adjust the client's wallet balance based on the difference between
+     * collected and paid-to-LIC amounts.
+     *
+     * On CREATE: $originalData is null – just apply the new delta.
+     * On UPDATE: reverse old delta, then apply new delta.
+     */
+    private function adjustClientWallet(
+        EntityManagerInterface $em,
+        PremiumReceipt $receipt,
+        ?array $originalData
+    ): void {
+        $client = $receipt->getPolicy()?->getClient();
+        if (!$client) {
+            return;
+        }
+
+        $newCollected = (float) ($receipt->getCollectedAmount() ?? 0);
+        $newPaid      = (float) ($receipt->getPaidToLicAmount() ?? 0);
+
+        // Only apply wallet logic when BOTH sides are filled (receipt is COMPLETED)
+        if ($newCollected <= 0 || $newPaid <= 0) {
+            // If updating and was previously completed, reverse old delta
+            if ($originalData !== null) {
+                $oldCollected = (float) ($originalData['collectedAmount'] ?? 0);
+                $oldPaid      = (float) ($originalData['paidToLicAmount'] ?? 0);
+                if ($oldCollected > 0 && $oldPaid > 0) {
+                    $oldDelta = $oldCollected - $oldPaid;
+                    $client->adjustWalletBalance(-$oldDelta);
+                    $em->persist($client);
+                }
+            }
+            return;
+        }
+
+        $newDelta = $newCollected - $newPaid;
+
+        if ($originalData !== null) {
+            // Reverse old delta first
+            $oldCollected = (float) ($originalData['collectedAmount'] ?? 0);
+            $oldPaid      = (float) ($originalData['paidToLicAmount'] ?? 0);
+            if ($oldCollected > 0 && $oldPaid > 0) {
+                $oldDelta = $oldCollected - $oldPaid;
+                $client->adjustWalletBalance(-$oldDelta);
+            }
+        }
+
+        // Apply new delta
+        $client->adjustWalletBalance($newDelta);
+        $em->persist($client);
+    }
+
+    // ── COMMISSION CALCULATION ────────────────────────────────────────
     // Priority order:
     //   1. Single-premium override  → 2 % flat (no CommissionRule lookup needed)
     //   2. CommissionRule DB lookup → rate defined per plan / year / term
     //   3. Fallback                 → 0 % (no matching rule found)
+    //
+    // Commission is now calculated on paidToLicAmount (the LIC-facing premium).
     private function calculateCommission(EntityManagerInterface $em, PremiumReceipt $receipt): void
     {
         $policy = $receipt->getPolicy();
@@ -229,17 +352,21 @@ class PremiumReceiptCrudController extends BaseCrudController
             return;
         }
 
+        // Use paidToLicAmount if available, otherwise basePremium
+        $commissionBase = $receipt->getPaidToLicAmount() ?? $receipt->getBasePremium();
+        if (!$commissionBase) {
+            return;
+        }
+
         $grossCommission = 0.0;
 
         // 1. Single-premium override
-        // Check BOTH the LicPlan flag AND the policy's premiumMode so the override
-        // fires regardless of which mechanism identified the policy as single-premium.
         if ($plan->isSinglePremium() || $policy->isSinglePremiumPolicy()) {
-            $grossCommission = ((float) $receipt->getAmount() * self::SINGLE_PREMIUM_COMMISSION_RATE) / 100;
+            $grossCommission = ((float) $commissionBase * self::SINGLE_PREMIUM_COMMISSION_RATE) / 100;
         } else {
             // 2. Standard CommissionRule lookup
             $doc = $policy->getCommencementDate();
-            $payDate = $receipt->getPaymentDate() ?? new \DateTime();
+            $payDate = $receipt->getPaidToLicDate() ?? $receipt->getCollectedDate() ?? new \DateTime();
 
             $diff = $doc->diff($payDate);
             $policyYear = $diff->y + 1;
@@ -260,7 +387,7 @@ class PremiumReceiptCrudController extends BaseCrudController
                 ->getOneOrNullResult();
 
             if ($rule) {
-                $grossCommission = ((float) $receipt->getAmount() * (float) $rule->getCommissionRate()) / 100;
+                $grossCommission = ((float) $commissionBase * (float) $rule->getCommissionRate()) / 100;
             }
             // else: no rule found — stays 0
         }
