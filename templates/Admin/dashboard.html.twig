@@ -23,7 +23,7 @@
             <div class="db-card__body">
                 <div class="db-card__info">
                     <span class="db-card__label">Premiums Due</span>
-                    <span class="db-card__value">₹{{ (due_amount/100)|number_format(2) }}</span>
+                    <span class="db-card__value">₹{{ due_amount|number_format(2) }}</span>
                     <span class="db-card__sub">Expected for {{ current_month }}</span>
                 </div>
                 <div class="db-card__icon db-card__icon--gold">
