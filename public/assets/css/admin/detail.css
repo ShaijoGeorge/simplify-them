@@ -771,6 +771,18 @@
     color: var(--color-danger);
 }
 
+.ea-dark-scheme .dt-dab .dt-metric--total .dt-metric__label {
+    color: rgba(255, 255, 255, .8);
+}
+
+.ea-dark-scheme .dt-dab .dt-metric--total .dt-metric__value {
+    color: #fff;
+}
+
+.ea-dark-scheme .dt-dab .dt-metric--total .dt-metric__sub {
+    color: rgba(255, 255, 255, .7);
+}
+
 /* ── Riders panel ── */
 .ea-dark-scheme .dt-riders {
     background: rgba(16, 24, 40, .7);
