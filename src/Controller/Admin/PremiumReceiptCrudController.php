@@ -262,6 +262,12 @@ class PremiumReceiptCrudController extends BaseCrudController
         $this->calculateCommission($entityManager, $entityInstance);
 
         parent::updateEntity($entityManager, $entityInstance);
+
+        // Sync ledger: create PAID_TO_LIC entry if it wasn't created during initial save
+        $this->ledgerService->syncPaidToLicForReceipt($entityInstance);
+        // Sync ledger: create COLLECTION entry if collection fields were filled in
+        $this->ledgerService->syncCollectionForReceipt($entityInstance);
+        $entityManager->flush();
     }
 
     // COMMISSION CALCULATION
