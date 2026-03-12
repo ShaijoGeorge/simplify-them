@@ -93,6 +93,31 @@ class PremiumReceiptCrudController extends BaseCrudController
             ->onlyOnDetail()
             ->setColumns(4);
 
+        // Virtual status field - derived from payment/collection data
+        yield TextField::new('receiptNumber', 'Status')
+            ->hideOnForm()
+            ->renderAsHtml()
+            ->formatValue(static function ($value, ?PremiumReceipt $receipt): string {
+                if (!$receipt) {
+                    return '';
+                }
+
+                $paid = $receipt->getAmount() !== null && (float) $receipt->getAmount() > 0;
+                $collected = $receipt->getCollectedFromClient() !== null && (float) $receipt->getCollectedFromClient() > 0;
+
+                if ($paid && $collected) {
+                    return '<span class="badge badge-success">Complete</span>';
+                }
+                if ($paid && !$collected) {
+                    return '<span class="badge badge-warning">Collection Pending</span>';
+                }
+                if (!$paid && $collected) {
+                    return '<span class="badge badge-danger">Payment Pending</span>';
+                }
+
+                return '<span class="badge badge-secondary">Incomplete</span>';
+            });
+
         yield AssociationField::new('policy', 'Linked Policy')
             ->setRequired(true)
             ->setFormTypeOption('choice_label', static function (Policy $policy): string {
@@ -155,7 +180,8 @@ class PremiumReceiptCrudController extends BaseCrudController
                 'ONLINE' => 'info',
                 'CHEQUE' => 'secondary',
             ])
-            ->setColumns(4);
+            ->setColumns(4)
+            ->hideOnIndex();
 
         // GROUP 3: PREMIUM PAYMENT (right column)
 
@@ -182,7 +208,8 @@ class PremiumReceiptCrudController extends BaseCrudController
                 'LIC_OFFICE'    => 'primary',
                 'PREMIUM_POINT' => 'success',
             ])
-            ->setColumns(4);
+            ->setColumns(4)
+            ->hideOnIndex();
 
         // COMMISSION BREAKDOWN (read-only)
 
