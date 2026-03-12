@@ -47,8 +47,8 @@ class PremiumReceiptCrudController extends BaseCrudController
     public function configureCrud(Crud $crud): Crud
     {
         return $crud
-            ->setEntityLabelInSingular('Premium Collection')
-            ->setEntityLabelInPlural('Premium Collections');
+            ->setEntityLabelInSingular('Premium Collection & Payment')
+            ->setEntityLabelInPlural('Premium Collections & Payments');
     }
 
     public function configureActions(Actions $actions): Actions
@@ -83,7 +83,7 @@ class PremiumReceiptCrudController extends BaseCrudController
     public function configureFields(string $pageName): iterable
     {
         // GROUP 1: POLICY DETAILS
-        yield FormField::addColumn(12);
+        yield FormField::addColumn(6);
 
         yield FormField::addFieldset('Policy Details')
             ->setIcon('fa fa-file-contract')
@@ -104,6 +104,16 @@ class PremiumReceiptCrudController extends BaseCrudController
                     : $policyNumber;
             })
             ->setColumns(12);
+
+        // META DATA 
+        $user = $this->getUser();
+        if ($user->isAdministrator()) {
+            yield FormField::addFieldset('System Metadata')->setIcon('fa fa-database');
+
+            yield AssociationField::new('agency', 'Agency')
+                ->setRequired(true)
+                ->setHelp('Super Admin Only: Assign user to a specific agency');
+        } 
 
         // GROUP 2: CLIENT COLLECTION (left column)
         yield FormField::addColumn(6);
@@ -165,39 +175,25 @@ class PremiumReceiptCrudController extends BaseCrudController
 
         yield FormField::addColumn(6);
 
-        yield FormField::addFieldset('Commission & TDS')->setIcon('fa fa-calculator');
+        yield FormField::addFieldset('Commission & TDS')->setIcon('fa fa-calculator')->onlyOnDetail();
 
         yield MoneyField::new('grossCommission', 'Gross Commission')
             ->setCurrency('INR')
             ->setStoredAsCents(false)
-            ->setDisabled(true);
+            ->setDisabled(true)
+            ->onlyOnDetail();
 
         yield MoneyField::new('tdsOnCommission', 'TDS Deducted')
             ->setCurrency('INR')
             ->setStoredAsCents(false)
-            ->setDisabled(true);
+            ->setDisabled(true)
+            ->onlyOnDetail();
 
         yield MoneyField::new('netCommission', 'Net Commission')
             ->setCurrency('INR')
             ->setStoredAsCents(false)
-            ->setDisabled(true);
-
-        // META DATA 
-        yield FormField::addFieldset('System Metadata')->setIcon('fa fa-database');
-
-        $agencyField = AssociationField::new('agency', 'Agency')
-            ->setColumns(12);
-
-        $user = $this->getUser();
-        if ($user->isAdministrator()) {
-            yield $agencyField
-                ->setRequired(true)
-                ->setHelp('Super Admin Only: Assign user to a specific agency');
-        } else {
-            yield $agencyField
-                ->hideOnIndex()
-                ->setDisabled(true);
-        }
+            ->setDisabled(true)
+            ->onlyOnDetail();
     }
 
     public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
