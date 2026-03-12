@@ -13,19 +13,21 @@ class ClientTransaction
     // Transaction types
     public const TYPE_COLLECTION  = 'COLLECTION';   // Client → Agency (agent collects from client)
     public const TYPE_PAID_TO_LIC = 'PAID_TO_LIC';  // Agency pays LIC on behalf of client
-    public const TYPE_SETTLEMENT  = 'SETTLEMENT';   // Balance settlement (either direction)
+    public const TYPE_SETTLEMENT  = 'SETTLEMENT';   // Balance settlement (legacy)
+    public const TYPE_REFUND      = 'REFUND';       // Agency pays client back (e.g. overpayment)
     public const TYPE_ADJUSTMENT  = 'ADJUSTMENT';   // Manual correction / carry-forward
 
     public const TYPES = [
         'Collection (Client → Agency)'  => self::TYPE_COLLECTION,
-        'Settlement'                    => self::TYPE_SETTLEMENT,
-        'Adjustment'                    => self::TYPE_ADJUSTMENT,
+        'Refund to Client (Agency → Client)' => self::TYPE_REFUND,
+        'Adjustment (+/-)'              => self::TYPE_ADJUSTMENT,
     ];
 
     // All types including auto-generated ones (for display)
     public const ALL_TYPES = [
         'Collection (Client → Agency)'  => self::TYPE_COLLECTION,
         'Paid to LIC'                   => self::TYPE_PAID_TO_LIC,
+        'Refund to Client'              => self::TYPE_REFUND,
         'Settlement'                    => self::TYPE_SETTLEMENT,
         'Adjustment'                    => self::TYPE_ADJUSTMENT,
     ];
@@ -216,9 +218,10 @@ class ClientTransaction
         $amt = (float) ($this->amount ?? 0);
 
         return match ($this->type) {
-            self::TYPE_PAID_TO_LIC => $amt,       // Client's debt increases
-            self::TYPE_COLLECTION  => -$amt,      // Client's debt decreases
-            self::TYPE_SETTLEMENT  => -$amt,      // Settlement reduces debt (agent handles sign)
+            self::TYPE_PAID_TO_LIC => $amt,       // Money Out (Asset increment / Client debt)
+            self::TYPE_REFUND      => $amt,       // Money Out (Asset increment / Debt reduction)
+            self::TYPE_COLLECTION  => -$amt,      // Money In  (Liability reduction / Client credit)
+            self::TYPE_SETTLEMENT  => -$amt,      // Legacy: Sign reversed by default
             self::TYPE_ADJUSTMENT  => $amt,       // Stored with intended sign already
             default                => 0.0,
         };

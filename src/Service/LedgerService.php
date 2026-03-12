@@ -208,7 +208,30 @@ class LedgerService
     }
 
     /**
-     * Create a SETTLEMENT entry to close outstanding balances.
+     * Create a REFUND entry (agency pays client back).
+     */
+    public function recordRefund(
+        Client $client,
+        Agency $agency,
+        float $amount,
+        \DateTime $date,
+        ?string $description = null
+    ): ClientTransaction {
+        $txn = new ClientTransaction();
+        $txn->setClient($client);
+        $txn->setAgency($agency);
+        $txn->setType(ClientTransaction::TYPE_REFUND);
+        $txn->setAmount((string) $amount);
+        $txn->setTransactionDate($date);
+        $txn->setDescription($description ?? 'Refund paid to client');
+
+        $this->em->persist($txn);
+
+        return $txn;
+    }
+
+    /**
+     * Create a SETTLEMENT entry to close outstanding balances (LEGACY).
      */
     public function recordSettlement(
         Client $client,

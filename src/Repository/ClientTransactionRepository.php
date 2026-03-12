@@ -66,6 +66,7 @@ class ClientTransactionRepository extends ServiceEntityRepository
             SELECT t.client_id,
                    SUM(CASE
                        WHEN t.type = 'PAID_TO_LIC'  THEN  CAST(t.amount AS DECIMAL(10,2))
+                       WHEN t.type = 'REFUND'       THEN  CAST(t.amount AS DECIMAL(10,2))
                        WHEN t.type = 'COLLECTION'   THEN -CAST(t.amount AS DECIMAL(10,2))
                        WHEN t.type = 'SETTLEMENT'   THEN -CAST(t.amount AS DECIMAL(10,2))
                        ELSE CAST(t.amount AS DECIMAL(10,2))
@@ -75,6 +76,7 @@ class ClientTransactionRepository extends ServiceEntityRepository
              GROUP BY t.client_id
             HAVING ABS(SUM(CASE
                        WHEN t.type = 'PAID_TO_LIC'  THEN  CAST(t.amount AS DECIMAL(10,2))
+                       WHEN t.type = 'REFUND'       THEN  CAST(t.amount AS DECIMAL(10,2))
                        WHEN t.type = 'COLLECTION'   THEN -CAST(t.amount AS DECIMAL(10,2))
                        WHEN t.type = 'SETTLEMENT'   THEN -CAST(t.amount AS DECIMAL(10,2))
                        ELSE CAST(t.amount AS DECIMAL(10,2))
