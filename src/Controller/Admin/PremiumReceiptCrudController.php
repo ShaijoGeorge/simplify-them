@@ -82,16 +82,16 @@ class PremiumReceiptCrudController extends BaseCrudController
 
     public function configureFields(string $pageName): iterable
     {
-        // LEFT COLUMN: TRANSACTION INFO
-        yield FormField::addColumn(6);
+        // GROUP 1: POLICY DETAILS
+        yield FormField::addColumn(12);
 
-        yield FormField::addFieldset('Transaction Details')
-            ->setIcon('fa fa-file-invoice')
-            ->setHelp('Policy and date information');
+        yield FormField::addFieldset('Policy Details')
+            ->setIcon('fa fa-file-contract')
+            ->setHelp('Select the policy this premium belongs to');
 
         yield TextField::new('receiptNumber', 'Receipt No')
-            ->hideOnForm() // Generated automatically
-            ->setColumns(12);
+            ->hideOnForm()
+            ->setColumns(4);
 
         yield AssociationField::new('policy', 'Linked Policy')
             ->setRequired(true)
@@ -105,45 +105,66 @@ class PremiumReceiptCrudController extends BaseCrudController
             })
             ->setColumns(12);
 
-        yield DateField::new('paymentDate', 'Payment Date')
-            ->setColumns(12);
-
-        // RIGHT COLUMN: PAYMENT SPECS
+        // GROUP 2: CLIENT COLLECTION (left column)
         yield FormField::addColumn(6);
 
-        yield FormField::addFieldset('Payment Specification')
-            ->setIcon('fa fa-money-bill-wave');
+        yield FormField::addFieldset('Client Collection')
+            ->setIcon('fa fa-hand-holding-usd')
+            ->setHelp('How and when you collected from the client');
 
-        yield MoneyField::new('amount', 'Amount Received')
+        yield MoneyField::new('collectedFromClient', 'Collected Amount')
             ->setCurrency('INR')
             ->setStoredAsCents(false)
-            ->setColumns(12);
+            ->setColumns(4)
+            ->setHelp('Actual amount collected from client');
+
+        yield DateField::new('collectionDate', 'Collection Date')
+            ->setColumns(4);
+
+        yield ChoiceField::new('collectionMode', 'Collection Mode')
+            ->setChoices([
+                'Cash'       => 'CASH',
+                'UPI/Online' => 'ONLINE',
+                'Cheque'     => 'CHEQUE',
+            ])
+            ->renderAsBadges([
+                'CASH'   => 'warning',
+                'ONLINE' => 'info',
+                'CHEQUE' => 'secondary',
+            ])
+            ->setColumns(4);
+
+        // GROUP 3: PREMIUM PAYMENT (right column)
+
+        yield FormField::addFieldset('Premium Payment')
+            ->setIcon('fa fa-building-columns')
+            ->setHelp('Payment made to LIC');
+
+        yield MoneyField::new('amount', 'Premium Amount')
+            ->setCurrency('INR')
+            ->setStoredAsCents(false)
+            ->setColumns(4);
+
+        yield DateField::new('paymentDate', 'Payment Date')
+            ->setColumns(4);
 
         yield ChoiceField::new('paymentMode', 'Payment Mode')
             ->setChoices([
-                'Cash' => 'CASH',
-                'UPI/Online' => 'ONLINE',
-                'Cheque' => 'CHEQUE',
+                'UPI/Online'    => 'ONLINE',
+                'LIC Office'    => 'LIC_OFFICE',
+                'Premium Point' => 'PREMIUM_POINT',
             ])
-            ->renderAsBadges()
-            ->setColumns(12);
-
-        // CLIENT COLLECTION TRACKING
-        yield FormField::addFieldset('Client Collection')
-            ->setIcon('fa fa-hand-holding-usd')
-            ->setHelp('Track when and how much was collected from the client');
-
-        yield MoneyField::new('collectedFromClient', 'Collected from Client')
-            ->setCurrency('INR')
-            ->setStoredAsCents(false)
-            ->setColumns(12)
-            ->setHelp('Actual amount collected from client (may differ from LIC payment)');
-
-        yield DateField::new('collectionDate', 'Collection Date')
-            ->setColumns(12)
-            ->setHelp('When the agent collected money from the client');
+            ->renderAsBadges([
+                'ONLINE'        => 'info',
+                'LIC_OFFICE'    => 'primary',
+                'PREMIUM_POINT' => 'success',
+            ])
+            ->setColumns(4);
 
         // COMMISSION BREAKDOWN (read-only)
+
+        yield FormField::addColumn(6);
+
         yield FormField::addFieldset('Commission & TDS')->setIcon('fa fa-calculator');
 
         yield MoneyField::new('grossCommission', 'Gross Commission')
@@ -161,7 +182,7 @@ class PremiumReceiptCrudController extends BaseCrudController
             ->setStoredAsCents(false)
             ->setDisabled(true);
 
-        // META DATA
+        // META DATA 
         yield FormField::addFieldset('System Metadata')->setIcon('fa fa-database');
 
         $agencyField = AssociationField::new('agency', 'Agency')

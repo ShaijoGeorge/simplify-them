@@ -20,13 +20,13 @@ class PremiumReceipt
     #[ORM\Column(length: 50)]
     private ?string $receiptNumber = null;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTime $paymentDate = null;
 
-    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
     private ?string $amount = null;
 
-    #[ORM\Column(length: 20)]
+    #[ORM\Column(length: 20, nullable: true)]
     private ?string $paymentMode = null;
 
     #[ORM\ManyToOne(inversedBy: 'premiumReceipts')]
@@ -53,6 +53,10 @@ class PremiumReceipt
     /** Date the agent collected money from the client (may differ from LIC payment date). */
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTime $collectionDate = null;
+
+    /** Mode used to collect from client (Cash, UPI/Online, Cheque). */
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $collectionMode = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     #[Gedmo\Timestampable(on: 'create')]
@@ -92,7 +96,7 @@ class PremiumReceipt
         return $this->paymentDate;
     }
 
-    public function setPaymentDate(\DateTime $paymentDate): static
+    public function setPaymentDate(?\DateTime $paymentDate): static
     {
         $this->paymentDate = $paymentDate;
 
@@ -104,7 +108,7 @@ class PremiumReceipt
         return $this->amount;
     }
 
-    public function setAmount(string $amount): static
+    public function setAmount(?string $amount): static
     {
         $this->amount = $amount;
 
@@ -116,7 +120,7 @@ class PremiumReceipt
         return $this->paymentMode;
     }
 
-    public function setPaymentMode(string $paymentMode): static
+    public function setPaymentMode(?string $paymentMode): static
     {
         $this->paymentMode = $paymentMode;
 
@@ -251,6 +255,17 @@ class PremiumReceipt
     public function setCollectionDate(?\DateTime $collectionDate): static
     {
         $this->collectionDate = $collectionDate;
+        return $this;
+    }
+
+    public function getCollectionMode(): ?string
+    {
+        return $this->collectionMode;
+    }
+
+    public function setCollectionMode(?string $collectionMode): static
+    {
+        $this->collectionMode = $collectionMode;
         return $this;
     }
 }
