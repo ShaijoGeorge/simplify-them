@@ -63,6 +63,12 @@ class Client
     #[ORM\OneToMany(targetEntity: Policy::class, mappedBy: 'client')]
     private Collection $policies;
 
+    /**
+     * @var Collection<int, ClientTransaction>
+     */
+    #[ORM\OneToMany(targetEntity: ClientTransaction::class, mappedBy: 'client')]
+    private Collection $clientTransactions;
+
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     #[Gedmo\Timestampable(on: 'create')]
     private ?\DateTimeInterface $createdAt = null;
@@ -83,6 +89,7 @@ class Client
     {
         $this->familyMembers = new ArrayCollection();
         $this->policies = new ArrayCollection();
+        $this->clientTransactions = new ArrayCollection();
     }
 
     public function getId(): ?int
