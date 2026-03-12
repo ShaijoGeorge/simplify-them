@@ -1,0 +1,165 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title %}
+    <div class="d-flex align-items-center justify-content-between">
+        <div>
+            <h2 class="mb-0">{{ client.name }}</h2>
+            <small class="text-muted">Transaction Ledger — {{ client.mobile }}</small>
+        </div>
+        <a href="{{ path('admin_client_balances') }}" class="lg-btn lg-btn--outline">
+            <i class="fas fa-arrow-left me-1"></i> Back to Balances
+        </a>
+    </div>
+{% endblock %}
+
+{% block main %}
+<div class="container-fluid lg-container">
+
+    {# SUMMARY CARDS #}
+    <div class="lg-metrics lg-metrics--2">
+        <div class="lg-card lg-card--teal">
+            <div class="lg-card__body">
+                <div>
+                    <span class="lg-card__label">Total Collected</span>
+                    <span class="lg-card__value lg-card__value--teal">₹{{ total_collected|number_format(2) }}</span>
+                    <span class="lg-card__sub">From {{ client.name }}</span>
+                </div>
+                <div class="lg-card__icon lg-card__icon--teal">
+                    <i class="fas fa-hand-holding-dollar"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg-card {{ balance > 0 ? 'lg-card--red' : (balance < 0 ? 'lg-card--green' : 'lg-card--blue') }}">
+            <div class="lg-card__body">
+                <div>
+                    <span class="lg-card__label">Current Balance</span>
+                    <span class="lg-card__value {{ balance > 0 ? 'lg-card__value--red' : (balance < 0 ? 'lg-card__value--green' : 'lg-card__value--blue') }}">
+                        ₹{{ balance|abs|number_format(2) }}
+                    </span>
+                    <span class="lg-card__sub">
+                        {% if balance > 0 %}Client owes you
+                        {% elseif balance < 0 %}You owe client
+                        {% else %}Fully settled
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="lg-card__icon {{ balance > 0 ? 'lg-card__icon--red' : (balance < 0 ? 'lg-card__icon--green' : 'lg-card__icon--blue') }}">
+                    <i class="fas {{ balance > 0 ? 'fa-exclamation-triangle' : (balance < 0 ? 'fa-arrow-up' : 'fa-check-circle') }}"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# LEDGER TABLE #}
+    <div class="lg-panel">
+        <div class="lg-panel__header">
+            <div class="d-flex align-items-center gap-2">
+                <div class="lg-panel__icon lg-panel__icon--blue">
+                    <i class="fas fa-list-ol"></i>
+                </div>
+                <div>
+                    <h6 class="lg-panel__title">Transaction History</h6>
+                    <small class="lg-panel__sub">{{ ledger|length }} transaction{{ ledger|length != 1 ? 's' : '' }}</small>
+                </div>
+            </div>
+        </div>
+
+        {% if ledger|length > 0 %}
+        <div class="table-responsive">
+            <table class="table lg-table mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th class="text-end">Debit</th>
+                        <th class="text-end">Credit</th>
+                        <th class="text-end">Balance</th>
+                        <th>Receipt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i, entry in ledger %}
+                    {% set txn = entry.transaction %}
+                    {% set signed = txn.signedAmount %}
+                    <tr>
+                        <td class="text-muted">{{ i + 1 }}</td>
+                        <td>{{ txn.transactionDate|date('d-M-Y') }}</td>
+                        <td>
+                            {% if txn.type == 'COLLECTION' %}
+                                <span class="lg-type-badge lg-type-badge--collection">⬇️ Collection</span>
+                            {% elseif txn.type == 'PAID_TO_LIC' %}
+                                <span class="lg-type-badge lg-type-badge--lic">⬆️ Paid to LIC</span>
+                            {% elseif txn.type == 'SETTLEMENT' %}
+                                <span class="lg-type-badge lg-type-badge--settlement">🤝 Settlement</span>
+                            {% elseif txn.type == 'ADJUSTMENT' %}
+                                <span class="lg-type-badge lg-type-badge--adjustment">🔧 Adjustment</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ txn.description ?? '—' }}</td>
+                        {# Debit = increases client's debt (positive signed amount) #}
+                        <td class="text-end">
+                            {% if signed > 0 %}
+                                <span class="lg-amount--positive">₹{{ txn.amount|number_format(2) }}</span>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        {# Credit = decreases client's debt (negative signed amount) #}
+                        <td class="text-end">
+                            {% if signed < 0 %}
+                                <span class="lg-amount--negative">₹{{ txn.amount|number_format(2) }}</span>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <span class="fw-bold {{ entry.runningBalance > 0 ? 'lg-amount--positive' : (entry.runningBalance < 0 ? 'lg-amount--negative' : '') }}">
+                                ₹{{ entry.runningBalance|abs|number_format(2) }}
+                                {% if entry.runningBalance > 0 %}
+                                    <small class="text-muted">DR</small>
+                                {% elseif entry.runningBalance < 0 %}
+                                    <small class="text-muted">CR</small>
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            {% if txn.premiumReceipt %}
+                                <code>{{ txn.premiumReceipt.receiptNumber }}</code>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="lg-table__footer">
+                        <td colspan="4" class="fw-bold">Final Balance</td>
+                        <td></td>
+                        <td></td>
+                        <td class="text-end">
+                            <span class="fw-bold {{ balance > 0 ? 'lg-amount--positive' : (balance < 0 ? 'lg-amount--negative' : '') }}">
+                                ₹{{ balance|abs|number_format(2) }}
+                                {% if balance > 0 %}<small class="text-muted">DR</small>
+                                {% elseif balance < 0 %}<small class="text-muted">CR</small>
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% else %}
+        <div class="lg-empty">
+            <i class="fas fa-inbox"></i>
+            <p>No transactions recorded for {{ client.name }}.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

@@ -60,26 +60,68 @@ class ClientTransactionRepository extends ServiceEntityRepository
      */
     public function getOutstandingBalances(Agency $agency): array
     {
-        $qb = $this->createQueryBuilder('t')
-            ->select('IDENTITY(t.client) AS clientId')
-            ->addSelect("SUM(CASE 
-                WHEN t.type = 'PAID_TO_LIC' THEN CAST(t.amount AS float)
-                WHEN t.type = 'COLLECTION' THEN -CAST(t.amount AS float)
-                WHEN t.type = 'SETTLEMENT' THEN -CAST(t.amount AS float)
-                ELSE CAST(t.amount AS float)
-            END) AS balance")
-            ->where('t.agency = :agency')
-            ->setParameter('agency', $agency)
-            ->groupBy('t.client')
-            ->having('ABS(SUM(CASE 
-                WHEN t.type = \'PAID_TO_LIC\' THEN CAST(t.amount AS float)
-                WHEN t.type = \'COLLECTION\' THEN -CAST(t.amount AS float)
-                WHEN t.type = \'SETTLEMENT\' THEN -CAST(t.amount AS float)
-                ELSE CAST(t.amount AS float)
-            END)) > 0.01')
-            ->getQuery()
-            ->getResult();
+        $conn = $this->getEntityManager()->getConnection();
 
-        return $qb;
+        $sql = <<<'SQL'
+            SELECT t.client_id,
+                   SUM(CASE
+                       WHEN t.type = 'PAID_TO_LIC'  THEN  CAST(t.amount AS DECIMAL(10,2))
+                       WHEN t.type = 'COLLECTION'   THEN -CAST(t.amount AS DECIMAL(10,2))
+                       WHEN t.type = 'SETTLEMENT'   THEN -CAST(t.amount AS DECIMAL(10,2))
+                       ELSE CAST(t.amount AS DECIMAL(10,2))
+                   END) AS balance
+              FROM client_transaction t
+             WHERE t.agency_id = :agencyId
+             GROUP BY t.client_id
+            HAVING ABS(SUM(CASE
+                       WHEN t.type = 'PAID_TO_LIC'  THEN  CAST(t.amount AS DECIMAL(10,2))
+                       WHEN t.type = 'COLLECTION'   THEN -CAST(t.amount AS DECIMAL(10,2))
+                       WHEN t.type = 'SETTLEMENT'   THEN -CAST(t.amount AS DECIMAL(10,2))
+                       ELSE CAST(t.amount AS DECIMAL(10,2))
+                   END)) > 0.01
+            SQL;
+
+        $rows = $conn->executeQuery($sql, ['agencyId' => $agency->getId()])->fetchAllAssociative();
+
+        $em = $this->getEntityManager();
+        $result = [];
+
+        foreach ($rows as $row) {
+            $client = $em->getRepository(Client::class)->find($row['client_id']);
+            if ($client) {
+                $result[] = [
+                    'client'  => $client,
+                    'balance' => round((float) $row['balance'], 2),
+                ];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Returns all transactions for a client in an agency with running balance.
+     *
+     * @return array<array{transaction: ClientTransaction, runningBalance: float}>
+     */
+    public function getClientLedger(Client $client, Agency $agency): array
+    {
+        $transactions = $this->findBy(
+            ['client' => $client, 'agency' => $agency],
+            ['transactionDate' => 'ASC', 'id' => 'ASC']
+        );
+
+        $ledger = [];
+        $balance = 0.0;
+
+        foreach ($transactions as $txn) {
+            $balance += $txn->getSignedAmount();
+            $ledger[] = [
+                'transaction'    => $txn,
+                'runningBalance' => round($balance, 2),
+            ];
+        }
+
+        return $ledger;
     }
 }

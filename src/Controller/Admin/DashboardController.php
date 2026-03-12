@@ -7,6 +7,7 @@ use App\Entity\Client;
 use App\Entity\BonusRate;
 use App\Entity\ClientTransaction;
 use App\Entity\CommissionRule;
+use App\Repository\ClientTransactionRepository;
 use App\Entity\LicPlan;
 use App\Entity\LicPlanType;
 use App\Entity\Module;
@@ -40,6 +41,7 @@ class DashboardController extends AbstractDashboardController
         private ClientRepository $clientRepository,
         private SurvivalBenefitRepository $survivalBenefitRepository,
         private PremiumReceiptRepository $receiptRepository,
+        private ClientTransactionRepository $txnRepository,
     ) {}
 
     public function index(): Response
@@ -121,6 +123,80 @@ class DashboardController extends AbstractDashboardController
         ]);
     }
 
+    #[Route('/admin/client-balances', name: 'admin_client_balances')]
+    public function clientBalances(): Response
+    {
+        $user = $this->getUser();
+        $agency = $user->getAgency();
+
+        if (!$agency) {
+            throw $this->createAccessDeniedException('No agency assigned.');
+        }
+
+        $balances = $this->txnRepository->getOutstandingBalances($agency);
+
+        // Compute totals
+        $totalReceivable = 0.0; // clients owe agency (positive balances)
+        $totalPayable    = 0.0; // agency owes clients (negative balances)
+
+        foreach ($balances as $entry) {
+            if ($entry['balance'] > 0) {
+                $totalReceivable += $entry['balance'];
+            } else {
+                $totalPayable += abs($entry['balance']);
+            }
+        }
+
+        return $this->render('Admin/client_balances/index.html.twig', [
+            'balances'         => $balances,
+            'total_receivable' => round($totalReceivable, 2),
+            'total_payable'    => round($totalPayable, 2),
+            'net_position'     => round($totalReceivable - $totalPayable, 2),
+            'agency'           => $agency,
+        ]);
+    }
+
+    #[Route('/admin/client-ledger/{id}', name: 'admin_client_ledger')]
+    public function clientLedger(Client $client): Response
+    {
+        $user = $this->getUser();
+        $agency = $user->getAgency();
+
+        if (!$agency) {
+            throw $this->createAccessDeniedException('No agency assigned.');
+        }
+
+        // Verify client belongs to this agency
+        if ($client->getAgency()?->getId() !== $agency->getId()) {
+            throw $this->createAccessDeniedException('Client does not belong to your agency.');
+        }
+
+        $ledger  = $this->txnRepository->getClientLedger($client, $agency);
+        $balance = $this->txnRepository->getClientBalance($client, $agency);
+
+        // Compute totals
+        $totalCollected = 0.0;
+        $totalPaidToLic = 0.0;
+
+        foreach ($ledger as $entry) {
+            $txn = $entry['transaction'];
+            $amt = (float) $txn->getAmount();
+            if ($txn->getType() === ClientTransaction::TYPE_COLLECTION) {
+                $totalCollected += $amt;
+            } elseif ($txn->getType() === ClientTransaction::TYPE_PAID_TO_LIC) {
+                $totalPaidToLic += $amt;
+            }
+        }
+
+        return $this->render('Admin/client_balances/ledger.html.twig', [
+            'client'           => $client,
+            'ledger'           => $ledger,
+            'balance'          => $balance,
+            'total_collected'  => round($totalCollected, 2),
+            'total_paid_to_lic'=> round($totalPaidToLic, 2),
+        ]);
+    }
+
     public function configureAssets(): \EasyCorp\Bundle\EasyAdminBundle\Config\Assets
     {
         return parent::configureAssets()
@@ -129,7 +205,8 @@ class DashboardController extends AbstractDashboardController
             ->addCssFile('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap')
             ->addCssFile('assets/css/admin/theme.css')
             ->addCssFile('assets/css/admin/dashboard.css')
-            ->addCssFile('assets/css/admin/detail.css');
+            ->addCssFile('assets/css/admin/detail.css')
+            ->addCssFile('assets/css/admin/ledger.css');
     }
 
 
@@ -160,6 +237,7 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToRoute('Quick Policy Entry', 'fa fa-bolt', 'app_quick_policy');
         yield MenuItem::linkToCrud('Premium Collection', 'fa fa-rupee-sign', PremiumReceipt::class);
         yield MenuItem::linkToCrud('Client Transactions', 'fa fa-exchange-alt', ClientTransaction::class);
+        yield MenuItem::linkToRoute('Client Balances', 'fa fa-scale-balanced', 'admin_client_balances');
         yield MenuItem::linkToCrud('Nominees', 'fa fa-user-shield', Nominee::class);
         yield MenuItem::linkToCrud('Policy Riders', 'fa fa-shield-halved', PolicyRider::class);
         yield MenuItem::linkToCrud('Survival Benefits', 'fa fa-hand-holding-dollar', SurvivalBenefit::class);
