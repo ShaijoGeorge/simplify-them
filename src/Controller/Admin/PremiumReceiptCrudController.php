@@ -180,7 +180,8 @@ class PremiumReceiptCrudController extends BaseCrudController
                 'ONLINE' => 'info',
                 'CHEQUE' => 'secondary',
             ])
-            ->setColumns(4);
+            ->setColumns(4)
+            ->hideOnIndex();
 
         // GROUP 3: PREMIUM PAYMENT (right column)
 
@@ -207,7 +208,8 @@ class PremiumReceiptCrudController extends BaseCrudController
                 'LIC_OFFICE'    => 'primary',
                 'PREMIUM_POINT' => 'success',
             ])
-            ->setColumns(4);
+            ->setColumns(4)
+            ->hideOnIndex();
 
         // COMMISSION BREAKDOWN (read-only)
 
