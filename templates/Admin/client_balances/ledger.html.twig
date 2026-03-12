@@ -92,6 +92,8 @@
                                 <span class="lg-type-badge lg-type-badge--collection">⬇️ Collection</span>
                             {% elseif txn.type == 'PAID_TO_LIC' %}
                                 <span class="lg-type-badge lg-type-badge--lic">⬆️ Paid to LIC</span>
+                            {% elseif txn.type == 'REFUND' %}
+                                <span class="lg-type-badge lg-type-badge--refund">⬆️ Refund to Client</span>
                             {% elseif txn.type == 'SETTLEMENT' %}
                                 <span class="lg-type-badge lg-type-badge--settlement">🤝 Settlement</span>
                             {% elseif txn.type == 'ADJUSTMENT' %}
