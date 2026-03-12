@@ -91,11 +91,12 @@ class ClientTransactionCrudController extends BaseCrudController
                 ClientTransaction::TYPE_ADJUSTMENT => 'warning',
             ])
             ->setRequired(true)
-            ->setColumns(12);
+            ->setColumns(12)
+            ->onlyOnForms();
 
         // On detail/index, show all types including auto-generated PAID_TO_LIC
         yield TextField::new('type', 'Type')
-            ->onlyOnIndex()
+            ->hideOnForm()
             ->formatValue(static function (?string $value): string {
                 return match ($value) {
                     ClientTransaction::TYPE_COLLECTION  => '⬇️ Collection',
