@@ -90,12 +90,25 @@ class PremiumReceiptCrudController extends BaseCrudController
             ->setHelp('Select the policy this premium belongs to');
 
         yield TextField::new('receiptNumber', 'Receipt No')
-            ->hideOnForm()
+            ->onlyOnDetail()
             ->setColumns(4);
 
         yield AssociationField::new('policy', 'Linked Policy')
             ->setRequired(true)
             ->setFormTypeOption('choice_label', static function (Policy $policy): string {
+                $policyNumber = (string) ($policy->getPolicyNumber() ?? '');
+                $clientName = (string) ($policy->getClient()?->getName() ?? '');
+
+                return $clientName !== ''
+                    ? sprintf('%s - %s', $policyNumber, $clientName)
+                    : $policyNumber;
+            })
+            ->formatValue(static function ($value, ?PremiumReceipt $receipt): string {
+                $policy = $receipt?->getPolicy();
+                if (!$policy) {
+                    return '';
+                }
+
                 $policyNumber = (string) ($policy->getPolicyNumber() ?? '');
                 $clientName = (string) ($policy->getClient()?->getName() ?? '');
 
