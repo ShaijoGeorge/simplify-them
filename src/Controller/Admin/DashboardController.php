@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\Entity\Agency;
 use App\Entity\Client;
 use App\Entity\BonusRate;
+use App\Entity\ClientTransaction;
 use App\Entity\CommissionRule;
 use App\Entity\LicPlan;
 use App\Entity\LicPlanType;
@@ -158,6 +159,7 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToCrud('Policies', 'fa fa-file-contract', Policy::class);
         yield MenuItem::linkToRoute('Quick Policy Entry', 'fa fa-bolt', 'app_quick_policy');
         yield MenuItem::linkToCrud('Premium Collection', 'fa fa-rupee-sign', PremiumReceipt::class);
+        yield MenuItem::linkToCrud('Client Transactions', 'fa fa-exchange-alt', ClientTransaction::class);
         yield MenuItem::linkToCrud('Nominees', 'fa fa-user-shield', Nominee::class);
         yield MenuItem::linkToCrud('Policy Riders', 'fa fa-shield-halved', PolicyRider::class);
         yield MenuItem::linkToCrud('Survival Benefits', 'fa fa-hand-holding-dollar', SurvivalBenefit::class);
