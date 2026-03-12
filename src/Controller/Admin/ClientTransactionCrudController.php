@@ -87,7 +87,7 @@ class ClientTransactionCrudController extends BaseCrudController
             ->setChoices(ClientTransaction::TYPES)
             ->renderAsBadges([
                 ClientTransaction::TYPE_COLLECTION => 'success',
-                ClientTransaction::TYPE_SETTLEMENT => 'info',
+                ClientTransaction::TYPE_REFUND     => 'info',
                 ClientTransaction::TYPE_ADJUSTMENT => 'warning',
             ])
             ->setRequired(true)
@@ -99,8 +99,9 @@ class ClientTransactionCrudController extends BaseCrudController
             ->hideOnForm()
             ->formatValue(static function (?string $value): string {
                 return match ($value) {
-                    ClientTransaction::TYPE_COLLECTION  => '⬇️ Collection',
+                    ClientTransaction::TYPE_COLLECTION  => '⬇️ Collection from Client',
                     ClientTransaction::TYPE_PAID_TO_LIC => '⬆️ Paid to LIC',
+                    ClientTransaction::TYPE_REFUND      => '⬆️ Refund to Client',
                     ClientTransaction::TYPE_SETTLEMENT  => '🤝 Settlement',
                     ClientTransaction::TYPE_ADJUSTMENT  => '🔧 Adjustment',
                     default => $value ?? '',
