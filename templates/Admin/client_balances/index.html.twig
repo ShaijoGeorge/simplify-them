@@ -1,0 +1,119 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title %}
+    <div class="d-flex align-items-center justify-content-between">
+        <div>
+            <h2 class="mb-0">Client Balances</h2>
+            <small class="text-muted">{{ agency.businessName }} — Who owes whom?</small>
+        </div>
+    </div>
+{% endblock %}
+
+{% block main %}
+<div class="container-fluid lg-container">
+
+    {# SUMMARY CARDS #}
+    <div class="lg-metrics">
+        <div class="lg-card lg-card--green">
+            <div class="lg-card__body">
+                <div>
+                    <span class="lg-card__label">Total Receivable</span>
+                    <span class="lg-card__value lg-card__value--green">₹{{ total_receivable|number_format(2) }}</span>
+                    <span class="lg-card__sub">Clients owe you</span>
+                </div>
+                <div class="lg-card__icon lg-card__icon--green">
+                    <i class="fas fa-arrow-down"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg-card lg-card--red">
+            <div class="lg-card__body">
+                <div>
+                    <span class="lg-card__label">Total Payable</span>
+                    <span class="lg-card__value lg-card__value--red">₹{{ total_payable|number_format(2) }}</span>
+                    <span class="lg-card__sub">You owe clients</span>
+                </div>
+                <div class="lg-card__icon lg-card__icon--red">
+                    <i class="fas fa-arrow-up"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg-card lg-card--blue">
+            <div class="lg-card__body">
+                <div>
+                    <span class="lg-card__label">Net Position</span>
+                    <span class="lg-card__value lg-card__value--blue">₹{{ net_position|number_format(2) }}</span>
+                    <span class="lg-card__sub">{{ net_position >= 0 ? 'Net receivable' : 'Net payable' }}</span>
+                </div>
+                <div class="lg-card__icon lg-card__icon--blue">
+                    <i class="fas fa-scale-balanced"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# CLIENT TABLE #}
+    <div class="lg-panel">
+        <div class="lg-panel__header">
+            <div class="d-flex align-items-center gap-2">
+                <div class="lg-panel__icon lg-panel__icon--blue">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div>
+                    <h6 class="lg-panel__title">Outstanding Balances</h6>
+                    <small class="lg-panel__sub">{{ balances|length }} client{{ balances|length != 1 ? 's' : '' }} with pending balances</small>
+                </div>
+            </div>
+        </div>
+
+        {% if balances|length > 0 %}
+        <div class="table-responsive">
+            <table class="table lg-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Client</th>
+                        <th>Mobile</th>
+                        <th class="text-end">Balance</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in balances %}
+                    <tr>
+                        <td class="fw-semibold">{{ entry.client.name }}</td>
+                        <td><code>{{ entry.client.mobile }}</code></td>
+                        <td class="text-end">
+                            <span class="fw-bold {{ entry.balance > 0 ? 'lg-amount--positive' : 'lg-amount--negative' }}">
+                                ₹{{ entry.balance|abs|number_format(2) }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            {% if entry.balance > 0 %}
+                                <span class="lg-status lg-status--owes">Client Owes</span>
+                            {% else %}
+                                <span class="lg-status lg-status--owed">You Owe</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ path('admin_client_ledger', {id: entry.client.id}) }}" class="lg-btn lg-btn--outline">
+                                View Ledger <i class="fas fa-arrow-right ms-1"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="lg-empty">
+            <i class="fas fa-check-circle"></i>
+            <p>All settled! No outstanding balances.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
