@@ -46,6 +46,14 @@ class PremiumReceipt
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
     private ?string $netCommission = null;
 
+    /** Amount actually collected from the client (may differ from LIC payment amount). */
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
+    private ?string $collectedFromClient = null;
+
+    /** Date the agent collected money from the client (may differ from LIC payment date). */
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
+    private ?\DateTime $collectionDate = null;
+
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     #[Gedmo\Timestampable(on: 'create')]
     private ?\DateTimeInterface $createdAt = null;
@@ -221,6 +229,28 @@ class PremiumReceipt
     {
         $this->netCommission = $netCommission;
 
+        return $this;
+    }
+
+    public function getCollectedFromClient(): ?string
+    {
+        return $this->collectedFromClient;
+    }
+
+    public function setCollectedFromClient(?string $collectedFromClient): static
+    {
+        $this->collectedFromClient = $collectedFromClient;
+        return $this;
+    }
+
+    public function getCollectionDate(): ?\DateTime
+    {
+        return $this->collectionDate;
+    }
+
+    public function setCollectionDate(?\DateTime $collectionDate): static
+    {
+        $this->collectionDate = $collectionDate;
         return $this;
     }
 }

@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\Entity\CommissionRule;
 use App\Entity\Policy;
 use App\Entity\PremiumReceipt;
+use App\Service\LedgerService;
 use App\Service\PermissionCheckerService;
 use Doctrine\ORM\EntityManagerInterface;
 use Dompdf\Dompdf;
@@ -26,8 +27,10 @@ class PremiumReceiptCrudController extends BaseCrudController
     // Commission rate applied to all single-premium policies (flat, no CommissionRule needed).
     private const SINGLE_PREMIUM_COMMISSION_RATE = 2.0;
 
-    public function __construct(PermissionCheckerService $permissionChecker)
-    {
+    public function __construct(
+        PermissionCheckerService $permissionChecker,
+        private LedgerService $ledgerService,
+    ) {
         parent::__construct($permissionChecker);
     }
 
@@ -125,6 +128,21 @@ class PremiumReceiptCrudController extends BaseCrudController
             ->renderAsBadges()
             ->setColumns(12);
 
+        // CLIENT COLLECTION TRACKING
+        yield FormField::addFieldset('Client Collection')
+            ->setIcon('fa fa-hand-holding-usd')
+            ->setHelp('Track when and how much was collected from the client');
+
+        yield MoneyField::new('collectedFromClient', 'Collected from Client')
+            ->setCurrency('INR')
+            ->setStoredAsCents(false)
+            ->setColumns(12)
+            ->setHelp('Actual amount collected from client (may differ from LIC payment)');
+
+        yield DateField::new('collectionDate', 'Collection Date')
+            ->setColumns(12)
+            ->setHelp('When the agent collected money from the client');
+
         // COMMISSION BREAKDOWN (read-only)
         yield FormField::addFieldset('Commission & TDS')->setIcon('fa fa-calculator');
 
@@ -190,6 +208,10 @@ class PremiumReceiptCrudController extends BaseCrudController
         $this->advancePolicyDueDate($entityManager, $entityInstance);
 
         parent::persistEntity($entityManager, $entityInstance);
+
+        // Auto-create ledger entries (PAID_TO_LIC + optional COLLECTION)
+        $this->ledgerService->recordPaidToLic($entityInstance);
+        $entityManager->flush();
     }
 
     public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void
