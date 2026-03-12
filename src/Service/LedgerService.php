@@ -45,7 +45,7 @@ class LedgerService
         $client = $policy->getClient();
         $agency = $receipt->getAgency();
 
-        if (!$client || !$agency) {
+        if (!$client || !$agency || $receipt->getAmount() === null) {
             return null;
         }
 
