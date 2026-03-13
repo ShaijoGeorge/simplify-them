@@ -182,13 +182,13 @@ class ClaimCrudController extends BaseCrudController
             ->hideOnForm();
 
         yield TextField::new('createdBy', 'Created By')
-            ->hideOnForm();
+            ->onlyOnDetail();
 
         yield DateField::new('createdAt', 'Created At')
             ->hideOnForm();
 
         yield TextField::new('updatedBy', 'Updated By')
-            ->hideOnForm();
+            ->onlyOnDetail();
 
         yield DateField::new('updatedAt', 'Updated At')
             ->hideOnForm();
