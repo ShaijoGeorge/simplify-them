@@ -15,7 +15,7 @@
     <div class="card mt-4 dt-card dt-claims" id="claims-panel">
         <div class="dt-panel__header">
             <div class="d-flex align-items-center gap-2">
-                <span class="dt-icon dt-icon--sm">
+                <span class="dt-icon dt-icon--sm" style="background:linear-gradient(135deg,#dc3545,#a02a1f);color:#fff">
                     <i class="fas fa-file-medical"></i>
                 </span>
                 <div>
@@ -29,7 +29,7 @@
                 .unset('entityId')
                 .setController('App\\Controller\\Admin\\ClaimCrudController')
                 .setAction('new') }}"
-               class="dt-btn">
+               class="dt-btn" style="background:linear-gradient(135deg,#dc3545,#a02a1f);color:#fff">
                 <i class="fas fa-plus"></i> File Claim
             </a>
         </div>
