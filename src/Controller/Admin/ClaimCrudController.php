@@ -3,6 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Claim;
+use App\Entity\Policy;
 use App\Entity\User;
 use App\Repository\PolicyRepository;
 use App\Service\PermissionCheckerService;
@@ -97,6 +98,14 @@ class ClaimCrudController extends BaseCrudController
 
         $policyField = AssociationField::new('policy', 'Policy')
             ->setRequired(true)
+            ->setFormTypeOption('choice_label', static function (Policy $policy): string {
+                $policyNumber = (string) ($policy->getPolicyNumber() ?? '');
+                $clientName = (string) ($policy->getClient()?->getName() ?? '');
+
+                return $clientName !== ''
+                    ? sprintf('%s - %s', $policyNumber, $clientName)
+                    : $policyNumber;
+            })
             ->setColumns(12);
 
         $request = $this->requestStack->getCurrentRequest();
