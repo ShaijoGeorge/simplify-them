@@ -1,11 +1,12 @@
 {# Override: Replace default EasyAdmin flash banners with SweetAlert2 toasts #}
+{% set admin_asset_version = '20260313-1' %}
 
 {# ── Load SweetAlert2 CSS + JS via CDN ── #}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.20/dist/sweetalert2.min.css">
-<link rel="stylesheet" href="/assets/css/admin/sweetalert.css">
+<link rel="stylesheet" href="/assets/css/admin/sweetalert.css?v={{ admin_asset_version }}">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.20/dist/sweetalert2.all.min.js"></script>
-<script src="/assets/js/admin/sweetalert.js"></script>
-<script src="/assets/js/admin/delete_confirm.js"></script>
+<script src="/assets/js/admin/sweetalert.js?v={{ admin_asset_version }}"></script>
+<script src="/assets/js/admin/delete_confirm.js?v={{ admin_asset_version }}"></script>
 
 {# ── Fire toasts for each Symfony flash message ── #}
 {% set flash_messages = app.flashes %}
