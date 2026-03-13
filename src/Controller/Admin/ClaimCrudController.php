@@ -4,8 +4,10 @@ namespace App\Controller\Admin;
 
 use App\Entity\Claim;
 use App\Entity\User;
+use App\Repository\PolicyRepository;
 use App\Service\PermissionCheckerService;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
@@ -17,11 +19,14 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\FormField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\MoneyField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 class ClaimCrudController extends BaseCrudController
 {
     public function __construct(
-        PermissionCheckerService $permissionChecker
+        PermissionCheckerService $permissionChecker,
+        private RequestStack $requestStack,
+        private PolicyRepository $policyRepository
     ) {
         parent::__construct($permissionChecker);
     }
@@ -65,6 +70,16 @@ class ClaimCrudController extends BaseCrudController
             $claim->setAgency($user->getAgency());
         }
 
+        // Contextual Pre-selection: if clientId is passed, pre-select the policy
+        $request = $this->requestStack->getCurrentRequest();
+        $clientId = $request?->query->get('clientId');
+        if ($clientId) {
+            $policies = $this->policyRepository->findBy(['client' => $clientId]);
+            if (count($policies) === 1) {
+                $claim->setPolicy($policies[0]);
+            }
+        }
+
         return $claim;
     }
 
@@ -80,9 +95,19 @@ class ClaimCrudController extends BaseCrudController
             ->setIcon('fa fa-file-medical')
             ->setHelp('Policy, type, and amount information');
 
-        yield AssociationField::new('policy', 'Policy')
+        $policyField = AssociationField::new('policy', 'Policy')
             ->setRequired(true)
             ->setColumns(12);
+
+        $request = $this->requestStack->getCurrentRequest();
+        $clientId = $request?->query->get('clientId');
+        if ($clientId) {
+            $policyField->setQueryBuilder(function (QueryBuilder $qb) use ($clientId) {
+                return $qb->andWhere('entity.client = :clientId')
+                          ->setParameter('clientId', $clientId);
+            });
+        }
+        yield $policyField;
 
         yield ChoiceField::new('claimType', 'Claim Type')
             ->setChoices(array_flip(Claim::CLAIM_TYPES))

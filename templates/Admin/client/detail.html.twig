@@ -28,7 +28,8 @@
             <a href="{{ ea_url()
                 .unset('entityId')
                 .setController('App\\Controller\\Admin\\ClaimCrudController')
-                .setAction('new') }}"
+                .setAction('new')
+                .set('clientId', client.id) }}"
                class="dt-btn" style="background:linear-gradient(135deg,#dc3545,#a02a1f);color:#fff">
                 <i class="fas fa-plus"></i> File Claim
             </a>
