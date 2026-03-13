@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Entity\Client;
 use App\Entity\User;
+use App\Repository\ClaimRepository;
 use App\Service\ClientImportService;
 use App\Service\PermissionCheckerService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -12,6 +13,7 @@ use Dompdf\Options;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
+use EasyCorp\Bundle\EasyAdminBundle\Config\KeyValueStore;
 use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
@@ -35,6 +37,7 @@ class ClientCrudController extends BaseCrudController
     public function __construct(
         private ClientImportService $importService,
         private EntityManagerInterface $entityManager,
+        private ClaimRepository $claimRepository,
         PermissionCheckerService $permissionChecker
     ) {
         parent::__construct($permissionChecker);
@@ -55,7 +58,8 @@ class ClientCrudController extends BaseCrudController
         return $crud
             ->setEntityLabelInSingular('Client')
             ->setEntityLabelInPlural('Clients')
-            ->overrideTemplate('crud/index', 'Admin/client/index.html.twig');
+            ->overrideTemplate('crud/index', 'Admin/client/index.html.twig')
+            ->overrideTemplate('crud/detail', 'Admin/client/detail.html.twig');
     }
 
     public function configureActions(Actions $actions): Actions
@@ -187,6 +191,22 @@ class ClientCrudController extends BaseCrudController
         }
 
         parent::updateEntity($entityManager, $entityInstance);
+    }
+
+    public function configureResponseParameters(KeyValueStore $responseParameters): KeyValueStore
+    {
+        $responseParameters = parent::configureResponseParameters($responseParameters);
+
+        if (Crud::PAGE_DETAIL === $responseParameters->get('pageName')) {
+            $entity = $responseParameters->get('entity');
+            if ($entity) {
+                $client = $entity->getInstance();
+                $claims = $this->claimRepository->findByClient($client->getId());
+                $responseParameters->set('claims', $claims);
+            }
+        }
+
+        return $responseParameters;
     }
 
     // File Upload
