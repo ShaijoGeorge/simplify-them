@@ -29,6 +29,7 @@ class InsertModulesCommand extends Command
         $modules = [
             ['name' => 'Agencies', 'key' => 'agencies'],
             ['name' => 'Bonus Rates', 'key' => 'bonus_rates'],
+            ['name' => 'Claims', 'key' => 'claims'],
             ['name' => 'Clients', 'key' => 'clients'],
             ['name' => 'Commission Rules', 'key' => 'commission_rules'],
             ['name' => 'Dashboard', 'key' => 'dashboard'], 

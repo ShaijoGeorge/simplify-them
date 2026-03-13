@@ -89,6 +89,12 @@ class Policy
     #[ORM\OneToMany(targetEntity: SurvivalBenefit::class, mappedBy: 'policy', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $survivalBenefits;
 
+    /**
+     * @var Collection<int, Claim>
+     */
+    #[ORM\OneToMany(targetEntity: Claim::class, mappedBy: 'policy')]
+    private Collection $claims;
+
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     #[Gedmo\Timestampable(on: 'create')]
     private ?\DateTimeInterface $createdAt = null;
@@ -152,6 +158,7 @@ class Policy
         $this->nominees = new ArrayCollection();
         $this->riders = new ArrayCollection();
         $this->survivalBenefits = new ArrayCollection();
+        $this->claims = new ArrayCollection();
     }
 
     // HELPERS
@@ -921,6 +928,31 @@ class Policy
         if ($this->survivalBenefits->removeElement($survivalBenefit)) {
             if ($survivalBenefit->getPolicy() === $this) {
                 $survivalBenefit->setPolicy(null);
+            }
+        }
+        return $this;
+    }
+
+    // Claims collection
+    public function getClaims(): Collection
+    {
+        return $this->claims;
+    }
+
+    public function addClaim(Claim $claim): static
+    {
+        if (!$this->claims->contains($claim)) {
+            $this->claims->add($claim);
+            $claim->setPolicy($this);
+        }
+        return $this;
+    }
+
+    public function removeClaim(Claim $claim): static
+    {
+        if ($this->claims->removeElement($claim)) {
+            if ($claim->getPolicy() === $this) {
+                $claim->setPolicy(null);
             }
         }
         return $this;

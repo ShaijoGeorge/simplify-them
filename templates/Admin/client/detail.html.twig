@@ -1,0 +1,179 @@
+{# templates/Admin/client/detail.html.twig #}
+{# Extends EasyAdmin's default detail page and injects a Claims summary panel below #}
+{% extends '@EasyAdmin/crud/detail.html.twig' %}
+
+{% block main %}
+    {# ── Render the standard EasyAdmin detail fields ── #}
+    {{ parent() }}
+
+    {# ══════════════════════════════════════════════════════════
+       CLAIMS SUMMARY PANEL
+       Shows all claims filed against this client's policies.
+       ══════════════════════════════════════════════════════════ #}
+    {% set client = entity.instance %}
+
+    <div class="card mt-4 dt-card dt-claims" id="claims-panel">
+        <div class="dt-panel__header">
+            <div class="d-flex align-items-center gap-2">
+                <span class="dt-icon dt-icon--sm" style="background:linear-gradient(135deg,#dc3545,#a02a1f);color:#fff">
+                    <i class="fas fa-file-medical"></i>
+                </span>
+                <div>
+                    <h6 class="dt-panel__title">Claims</h6>
+                    <small class="dt-panel__subtitle">Claims filed against this client's policies</small>
+                </div>
+            </div>
+
+            {# "File Claim" button - links to the Claim NEW page #}
+            <a href="{{ ea_url()
+                .unset('entityId')
+                .setController('App\\Controller\\Admin\\ClaimCrudController')
+                .setAction('new')
+                .set('clientId', client.id) }}"
+               class="dt-btn" style="background:linear-gradient(135deg,#dc3545,#a02a1f);color:#fff">
+                <i class="fas fa-plus"></i> File Claim
+            </a>
+        </div>
+
+        <div class="card-body p-0">
+            {% if claims is not defined or claims|length == 0 %}
+                {# Empty state #}
+                <div class="dt-empty">
+                    <div class="dt-empty__icon">
+                        <i class="fas fa-file-medical"></i>
+                    </div>
+                    <p class="text-muted mb-1" style="font-weight:600;">No claims filed yet</p>
+                    <small class="text-muted">
+                        Claims filed against this client's policies will appear here.
+                    </small>
+                </div>
+            {% else %}
+                {# Claims summary bar #}
+                {% set totalClaimed = 0 %}
+                {% set totalSettled = 0 %}
+                {% set claimCount = claims|length %}
+                {% for claim in claims %}
+                    {% set totalClaimed = totalClaimed + (claim.claimedAmount|default(0)) %}
+                    {% if claim.settledAmount %}
+                        {% set totalSettled = totalSettled + claim.settledAmount %}
+                    {% endif %}
+                {% endfor %}
+                <div class="dt-summary-bar">
+                    <small class="dt-summary-bar__label">
+                        <i class="fas fa-file-medical me-1"></i>
+                        {{ claimCount }} claim{{ claimCount > 1 ? 's' : '' }}
+                        &middot; Total Claimed: ₹{{ totalClaimed|number_format(2, '.', ',') }}
+                        {% if totalSettled > 0 %}
+                            &middot; Total Settled: ₹{{ totalSettled|number_format(2, '.', ',') }}
+                        {% endif %}
+                    </small>
+                </div>
+
+                {# Claims table #}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle dt-table">
+                        <thead>
+                            <tr>
+                                <th class="ps-4 py-3">Policy</th>
+                                <th class="py-3">Claim Type</th>
+                                <th class="py-3">Claim Date</th>
+                                <th class="py-3">Claimed Amount</th>
+                                <th class="py-3">Status</th>
+                                <th class="py-3">Settled Amount</th>
+                                <th class="py-3">Claimant</th>
+                                <th class="py-3 pe-3">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for claim in claims %}
+                                {% set typeBadge = {
+                                    'DEATH':            'danger',
+                                    'MATURITY':         'success',
+                                    'SURVIVAL_BENEFIT': 'info',
+                                    'ACCIDENTAL_DEATH': 'danger'
+                                } %}
+                                {% set statusBadge = {
+                                    'INTIMATED':           'secondary',
+                                    'DOCUMENTS_SUBMITTED': 'info',
+                                    'UNDER_PROCESS':       'warning',
+                                    'SETTLED':             'success',
+                                    'REPUDIATED':          'danger'
+                                } %}
+                                <tr>
+                                    <td class="ps-4">
+                                        {% if claim.policy %}
+                                            <a href="{{ ea_url()
+                                                .setController('App\\Controller\\Admin\\PolicyCrudController')
+                                                .setAction('detail')
+                                                .setEntityId(claim.policy.id) }}"
+                                               class="text-decoration-none fw-bold">
+                                                {{ claim.policy.policyNumber }}
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        <span class="badge badge-{{ typeBadge[claim.claimType] ?? 'secondary' }}">
+                                            {{ claim.claimTypeLabel }}
+                                        </span>
+                                    </td>
+
+                                    <td class="text-muted">
+                                        {{ claim.claimDate ? claim.claimDate|date('d M Y') : '-' }}
+                                    </td>
+
+                                    <td class="fw-bold">
+                                        ₹{{ claim.claimedAmount|number_format(2, '.', ',') }}
+                                    </td>
+
+                                    <td>
+                                        <span class="badge badge-{{ statusBadge[claim.status] ?? 'secondary' }}">
+                                            {{ claim.statusLabel }}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        {% if claim.settledAmount %}
+                                            <span class="fw-bold text-success">
+                                                ₹{{ claim.settledAmount|number_format(2, '.', ',') }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td class="text-muted">
+                                        {{ claim.claimantName ?? '-' }}
+                                    </td>
+
+                                    <td class="pe-3">
+                                        <div class="d-flex gap-2">
+                                            <a href="{{ ea_url()
+                                                .setController('App\\Controller\\Admin\\ClaimCrudController')
+                                                .setAction('edit')
+                                                .setEntityId(claim.id) }}"
+                                               class="btn btn-xs btn-outline-warning dt-action-btn"
+                                               title="Edit Claim">
+                                                <i class="fas fa-pencil-alt"></i>
+                                            </a>
+                                            <a href="{{ ea_url()
+                                                .setController('App\\Controller\\Admin\\ClaimCrudController')
+                                                .setAction('detail')
+                                                .setEntityId(claim.id) }}"
+                                               class="btn btn-xs btn-outline-primary dt-action-btn"
+                                               title="View Claim">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
