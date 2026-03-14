@@ -3,7 +3,6 @@
 namespace App\Controller\Admin;
 
 use App\Entity\CommissionRule;
-use App\Entity\Policy;
 use App\Entity\PremiumReceipt;
 use App\Service\LedgerService;
 use App\Service\PermissionCheckerService;
@@ -120,27 +119,6 @@ class PremiumReceiptCrudController extends BaseCrudController
 
         yield AssociationField::new('policy', 'Linked Policy')
             ->setRequired(true)
-            ->setFormTypeOption('choice_label', static function (Policy $policy): string {
-                $policyNumber = (string) ($policy->getPolicyNumber() ?? '');
-                $clientName = (string) ($policy->getClient()?->getName() ?? '');
-
-                return $clientName !== ''
-                    ? sprintf('%s - %s', $policyNumber, $clientName)
-                    : $policyNumber;
-            })
-            ->formatValue(static function ($value, ?PremiumReceipt $receipt): string {
-                $policy = $receipt?->getPolicy();
-                if (!$policy) {
-                    return '';
-                }
-
-                $policyNumber = (string) ($policy->getPolicyNumber() ?? '');
-                $clientName = (string) ($policy->getClient()?->getName() ?? '');
-
-                return $clientName !== ''
-                    ? sprintf('%s - %s', $policyNumber, $clientName)
-                    : $policyNumber;
-            })
             ->setColumns(12);
 
         // META DATA 

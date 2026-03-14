@@ -1,0 +1,11 @@
+{# templates/Admin/field/document_view_link.html.twig #}
+{% if entity.instance.filePath %}
+    <a href="{{ path('admin_policy_document_download', { id: entity.instance.id }) }}" 
+       target="_blank" 
+       class="btn btn-sm btn-outline-primary" 
+       title="View in Browser">
+        <i class="fa fa-eye"></i> View
+    </a>
+{% else %}
+    <span class="text-muted">—</span>
+{% endif %}

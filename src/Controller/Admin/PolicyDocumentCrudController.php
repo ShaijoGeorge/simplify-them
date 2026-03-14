@@ -2,7 +2,6 @@
 
 namespace App\Controller\Admin;
 
-use App\Entity\Policy;
 use App\Entity\PolicyDocument;
 use App\Entity\User;
 use App\Repository\PolicyDocumentRepository;
@@ -17,6 +16,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\FormField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -73,7 +73,6 @@ class PolicyDocumentCrudController extends BaseCrudController
             ->setCssClass('btn btn-sm btn-outline-success');
 
         $actions->add(Crud::PAGE_DETAIL, $downloadAction);
-        $actions->add(Crud::PAGE_INDEX, $downloadAction);
 
         return $actions;
     }
@@ -109,17 +108,9 @@ class PolicyDocumentCrudController extends BaseCrudController
 
         $policyField = AssociationField::new('policy', 'Policy')
             ->setRequired(true)
-            ->setFormTypeOption('choice_label', static function (Policy $policy): string {
-                $policyNumber = (string) ($policy->getPolicyNumber() ?? '');
-                $clientName = (string) ($policy->getClient()?->getName() ?? '');
-
-                return $clientName !== ''
-                    ? sprintf('%s - %s', $policyNumber, $clientName)
-                    : $policyNumber;
-            })
             ->setColumns(12);
 
-        // If policyId is passed, filter the dropdown to only show that policy
+        // If policyId is passed, disable the dropdown so the user can't change it
         $request = $this->requestStack->getCurrentRequest();
         $policyId = $request?->query->get('policyId');
         if ($policyId) {
@@ -177,6 +168,16 @@ class PolicyDocumentCrudController extends BaseCrudController
 
         yield DateTimeField::new('uploadedAt', 'Uploaded At')
             ->hideOnForm();
+
+        if ($pageName === Crud::PAGE_INDEX) {
+            yield IdField::new('id', 'View')
+                ->setTemplatePath('Admin/field/document_view_link.html.twig')
+                ->setSortable(false);
+
+            yield IdField::new('id', 'Download')
+                ->setTemplatePath('Admin/field/document_download_link.html.twig')
+                ->setSortable(false);
+        }
     }
 
     public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
@@ -213,7 +214,7 @@ class PolicyDocumentCrudController extends BaseCrudController
     // ── Download Route ─────────────────────────────────────────────
 
     #[Route('/admin/policy-document/{id}/download', name: 'admin_policy_document_download', methods: ['GET'])]
-    public function downloadDocument(int $id): BinaryFileResponse
+    public function downloadDocument(int $id, \Symfony\Component\HttpFoundation\Request $request): BinaryFileResponse
     {
         $document = $this->documentRepository->find($id);
 
@@ -231,8 +232,14 @@ class PolicyDocumentCrudController extends BaseCrudController
 
         // Use the human-friendly fileName for the download, fallback to filePath
         $downloadName = $document->getFileName() ?? $document->getFilePath();
+        
+        // If 'download' param is present, force attachment
+        $disposition = $request->query->get('download') 
+            ? ResponseHeaderBag::DISPOSITION_ATTACHMENT 
+            : ResponseHeaderBag::DISPOSITION_INLINE;
+
         $response->setContentDisposition(
-            ResponseHeaderBag::DISPOSITION_INLINE,
+            $disposition,
             $downloadName
         );
 
