@@ -667,6 +667,78 @@
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   POLICY DOCUMENTS PANEL
+   Accent: Info / Secondary Teal
+   ═══════════════════════════════════════════════════════════════════════════ */
+.dt-documents {
+    background: var(--content-bg);
+    border: 1px solid var(--border-color);
+}
+
+.dt-documents .dt-panel__header {
+    background: var(--content-panel-bg);
+    border-bottom: 1.5px solid var(--border-color);
+}
+
+.dt-documents .dt-icon--sm {
+    background: linear-gradient(135deg, var(--color-info), #0869a4);
+    color: #fff;
+}
+
+.dt-documents .dt-panel__title {
+    color: var(--text-color);
+}
+
+.dt-documents .dt-btn {
+    background: linear-gradient(135deg, var(--color-info), #0869a4);
+    box-shadow: 0 4px 12px rgba(10, 126, 164, .3);
+}
+
+.dt-documents .dt-empty__icon {
+    background: var(--content-panel-bg);
+    color: var(--color-info);
+}
+
+/* Document type badges */
+.dt-doc-badge {
+    border-radius: 8px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.dt-doc-badge--bond {
+    background: rgba(0, 53, 128, .08);
+    color: var(--color-primary);
+}
+
+.dt-doc-badge--letter {
+    background: rgba(10, 126, 164, .08);
+    color: var(--color-secondary);
+}
+
+.dt-doc-badge--warning {
+    background: rgba(212, 137, 10, .08);
+    color: var(--color-accent);
+}
+
+.dt-doc-badge--success {
+    background: rgba(26, 122, 74, .08);
+    color: var(--color-success);
+}
+
+.dt-doc-badge--danger {
+    background: rgba(var(--color-danger-rgb), .08);
+    color: var(--color-danger);
+}
+
+.dt-doc-badge--other {
+    background: var(--content-panel-bg);
+    color: var(--text-muted);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
    DARK MODE OVERRIDES
    ═══════════════════════════════════════════════════════════════════════════ */
 .ea-dark-scheme .dt-card {
@@ -946,4 +1018,61 @@
 
 .ea-dark-scheme .dt-empty__icon {
     background: rgba(30, 45, 74, .4);
+}
+
+/* ── Documents panel ── */
+.ea-dark-scheme .dt-documents {
+    background: rgba(16, 24, 40, .7);
+    border-color: rgba(30, 45, 74, .6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.ea-dark-scheme .dt-documents .dt-panel__header {
+    background: rgba(16, 24, 40, .5);
+    border-bottom-color: rgba(30, 45, 74, .6);
+}
+
+.ea-dark-scheme .dt-documents .dt-icon--sm {
+    background: linear-gradient(135deg, var(--color-info), #1a8ab8);
+}
+
+.ea-dark-scheme .dt-documents .dt-btn {
+    background: linear-gradient(135deg, var(--color-info), #1a8ab8);
+    box-shadow: 0 4px 12px rgba(38, 165, 208, .2);
+}
+
+.ea-dark-scheme .dt-documents .dt-empty__icon {
+    background: rgba(38, 165, 208, .08);
+    color: rgba(38, 165, 208, .4);
+}
+
+/* Document type badges dark */
+.ea-dark-scheme .dt-doc-badge--bond {
+    background: rgba(74, 143, 232, .1);
+    color: var(--color-primary);
+}
+
+.ea-dark-scheme .dt-doc-badge--letter {
+    background: rgba(38, 165, 208, .12);
+    color: var(--color-secondary);
+}
+
+.ea-dark-scheme .dt-doc-badge--warning {
+    background: rgba(240, 168, 48, .1);
+    color: var(--color-accent);
+}
+
+.ea-dark-scheme .dt-doc-badge--success {
+    background: rgba(46, 204, 130, .1);
+    color: var(--color-success);
+}
+
+.ea-dark-scheme .dt-doc-badge--danger {
+    background: rgba(224, 90, 74, .1);
+    color: var(--color-danger);
+}
+
+.ea-dark-scheme .dt-doc-badge--other {
+    background: rgba(30, 45, 74, .5);
 }
