@@ -1,0 +1,11 @@
+{# templates/Admin/field/document_download_link.html.twig #}
+{% if entity.instance.filePath %}
+    {# We add a 'download=1' query param which the controller can use to switch to ATTACHMENT disposition #}
+    <a href="{{ path('admin_policy_document_download', { id: entity.instance.id, download: 1 }) }}" 
+       class="btn btn-sm btn-outline-success" 
+       title="Download File">
+        <i class="fa fa-download"></i> Download
+    </a>
+{% else %}
+    <span class="text-muted">—</span>
+{% endif %}
