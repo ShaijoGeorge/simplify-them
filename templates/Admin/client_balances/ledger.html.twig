@@ -120,11 +120,6 @@
                         <td class="text-end">
                             <span class="fw-bold {{ entry.runningBalance > 0 ? 'lg-amount--positive' : (entry.runningBalance < 0 ? 'lg-amount--negative' : '') }}">
                                 ₹{{ entry.runningBalance|abs|number_format(2) }}
-                                {% if entry.runningBalance > 0 %}
-                                    <small class="text-muted">DR</small>
-                                {% elseif entry.runningBalance < 0 %}
-                                    <small class="text-muted">CR</small>
-                                {% endif %}
                             </span>
                         </td>
                         <td>
@@ -145,9 +140,6 @@
                         <td class="text-end">
                             <span class="fw-bold {{ balance > 0 ? 'lg-amount--positive' : (balance < 0 ? 'lg-amount--negative' : '') }}">
                                 ₹{{ balance|abs|number_format(2) }}
-                                {% if balance > 0 %}<small class="text-muted">DR</small>
-                                {% elseif balance < 0 %}<small class="text-muted">CR</small>
-                                {% endif %}
                             </span>
                         </td>
                         <td></td>
