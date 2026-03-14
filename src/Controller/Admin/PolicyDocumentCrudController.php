@@ -2,7 +2,6 @@
 
 namespace App\Controller\Admin;
 
-use App\Entity\Policy;
 use App\Entity\PolicyDocument;
 use App\Entity\User;
 use App\Repository\PolicyDocumentRepository;
@@ -109,17 +108,9 @@ class PolicyDocumentCrudController extends BaseCrudController
 
         $policyField = AssociationField::new('policy', 'Policy')
             ->setRequired(true)
-            ->setFormTypeOption('choice_label', static function (Policy $policy): string {
-                $policyNumber = (string) ($policy->getPolicyNumber() ?? '');
-                $clientName = (string) ($policy->getClient()?->getName() ?? '');
-
-                return $clientName !== ''
-                    ? sprintf('%s - %s', $policyNumber, $clientName)
-                    : $policyNumber;
-            })
             ->setColumns(12);
 
-        // If policyId is passed, filter the dropdown to only show that policy
+        // If policyId is passed, disable the dropdown so the user can't change it
         $request = $this->requestStack->getCurrentRequest();
         $policyId = $request?->query->get('policyId');
         if ($policyId) {

@@ -992,6 +992,11 @@ class Policy
 
     public function __toString(): string
     {
+        if ($this->client) {
+            // Assuming your Client entity also has a __toString() or getName() method
+            return sprintf('%s - %s', $this->policyNumber, (string) $this->client);
+        }
+
         return (string) $this->policyNumber;
     }
 }
