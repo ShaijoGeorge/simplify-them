@@ -621,4 +621,111 @@
             {% endif %}
         </div>
     </div>
+
+    {# ── Policy Documents Section ── #}
+    {% set documents = policy.documents %}
+
+    <div class="card mt-4 dt-card dt-documents" id="documents-panel">
+        <div class="dt-panel__header">
+            <div class="d-flex align-items-center gap-2">
+                <span class="dt-icon dt-icon--sm">
+                    <i class="fas fa-file-pdf"></i>
+                </span>
+                <div>
+                    <h6 class="dt-panel__title">Policy Documents</h6>
+                    <small class="dt-panel__subtitle">Bonds, letters, and other records</small>
+                </div>
+            </div>
+
+            {# "Add Document" button - links to the PolicyDocument NEW page pre-filled with policyId #}
+            <a href="{{ ea_url()
+                .unset('entityId')
+                .setController('App\\Controller\\Admin\\PolicyDocumentCrudController')
+                .setAction('new')
+                .set('policyId', policy.id) }}"
+               class="dt-btn">
+                <i class="fas fa-plus"></i> Add Document
+            </a>
+        </div>
+
+        <div class="card-body p-0">
+            {% if documents|length == 0 %}
+                {# Empty state #}
+                <div class="dt-empty">
+                    <div class="dt-empty__icon">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <p class="text-muted mb-1" style="font-weight:600;">No documents uploaded yet</p>
+                    <small class="text-muted">Upload policy bonds, revival letters or claim forms for easy access.</small>
+                </div>
+            {% else %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle dt-table">
+                        <thead>
+                            <tr>
+                                <th class="ps-4 py-3">Type</th>
+                                <th class="py-3">File Name</th>
+                                <th class="py-3">Uploaded By</th>
+                                <th class="py-3">Uploaded At</th>
+                                <th class="py-3 pe-3">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in documents %}
+                                <tr>
+                                    <td class="ps-4">
+                                        {% set typeClass = {
+                                            'POLICY_BOND':       'dt-doc-badge--bond',
+                                            'REVIVAL_LETTER':    'dt-doc-badge--letter',
+                                            'ASSIGNMENT_DEED':   'dt-doc-badge--warning',
+                                            'DISCHARGE_VOUCHER': 'dt-doc-badge--success',
+                                            'CLAIM_FORM':        'dt-doc-badge--danger',
+                                            'OTHER':             'dt-doc-badge--other'
+                                        } %}
+                                        {% set cls = typeClass[doc.documentType] ?? 'dt-doc-badge--other' %}
+                                        <span class="badge dt-doc-badge {{ cls }}">
+                                            {{ doc.documentTypeLabel }}
+                                        </span>
+                                    </td>
+                                    <td>{{ doc.fileName ?? '—' }}</td>
+                                    <td>{{ doc.uploadedBy ?? '—' }}</td>
+                                    <td class="text-muted">{{ doc.uploadedAt ? doc.uploadedAt|date('d M Y') : '—' }}</td>
+                                    <td class="pe-3">
+                                        <div class="d-flex gap-2">
+                                            {% if doc.filePath %}
+                                                <a href="{{ path('admin_policy_document_download', { id: doc.id }) }}"
+                                                   target="_blank"
+                                                   class="btn btn-xs btn-outline-success dt-action-btn"
+                                                   title="View / Download">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            {% endif %}
+                                            <a href="{{ ea_url()
+                                                .setController('App\\Controller\\Admin\\PolicyDocumentCrudController')
+                                                .setAction('edit')
+                                                .setEntityId(doc.id) }}"
+                                               class="btn btn-xs btn-outline-primary dt-action-btn"
+                                               title="Edit">
+                                                <i class="fas fa-pencil-alt"></i>
+                                            </a>
+                                            <button type="button"
+                                               formaction="{{ ea_url()
+                                                   .setController('App\\Controller\\Admin\\PolicyDocumentCrudController')
+                                                   .setAction('delete')
+                                                   .setEntityId(doc.id) }}"
+                                               class="btn btn-xs btn-outline-danger dt-action-btn"
+                                               data-action-name="delete"
+                                               title="Delete">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}

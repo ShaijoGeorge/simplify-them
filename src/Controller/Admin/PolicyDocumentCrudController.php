@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\Entity\Policy;
 use App\Entity\PolicyDocument;
 use App\Entity\User;
+use App\Repository\PolicyDocumentRepository;
 use App\Repository\PolicyRepository;
 use App\Service\PermissionCheckerService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -17,7 +18,11 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\FormField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Routing\Attribute\Route;
 use Vich\UploaderBundle\Form\Type\VichFileType;
 
 class PolicyDocumentCrudController extends BaseCrudController
@@ -25,7 +30,9 @@ class PolicyDocumentCrudController extends BaseCrudController
     public function __construct(
         PermissionCheckerService $permissionChecker,
         private RequestStack $requestStack,
-        private PolicyRepository $policyRepository
+        private PolicyRepository $policyRepository,
+        private PolicyDocumentRepository $documentRepository,
+        private string $projectDir
     ) {
         parent::__construct($permissionChecker);
     }
@@ -55,6 +62,18 @@ class PolicyDocumentCrudController extends BaseCrudController
         if ($this->permissionChecker->hasPermission($this->getModuleKey(), 'view')) {
             $actions->add(Crud::PAGE_INDEX, Action::DETAIL);
         }
+
+        // Download / View action
+        $downloadAction = Action::new('downloadDocument', 'Download', 'fa fa-download')
+            ->linkToUrl(function (PolicyDocument $doc): string {
+                return $this->container->get('router')->generate('admin_policy_document_download', [
+                    'id' => $doc->getId(),
+                ]);
+            })
+            ->setCssClass('btn btn-sm btn-outline-success');
+
+        $actions->add(Crud::PAGE_DETAIL, $downloadAction);
+        $actions->add(Crud::PAGE_INDEX, $downloadAction);
 
         return $actions;
     }
@@ -189,5 +208,34 @@ class PolicyDocumentCrudController extends BaseCrudController
         return $filters
             ->add('documentType')
             ->add('policy');
+    }
+
+    // ── Download Route ─────────────────────────────────────────────
+
+    #[Route('/admin/policy-document/{id}/download', name: 'admin_policy_document_download', methods: ['GET'])]
+    public function downloadDocument(int $id): BinaryFileResponse
+    {
+        $document = $this->documentRepository->find($id);
+
+        if (!$document || !$document->getFilePath()) {
+            throw new NotFoundHttpException('Document not found.');
+        }
+
+        $absolutePath = $this->projectDir . '/var/storage/policy_docs/' . $document->getFilePath();
+
+        if (!file_exists($absolutePath)) {
+            throw new NotFoundHttpException('File not found on disk.');
+        }
+
+        $response = new BinaryFileResponse($absolutePath);
+
+        // Use the human-friendly fileName for the download, fallback to filePath
+        $downloadName = $document->getFileName() ?? $document->getFilePath();
+        $response->setContentDisposition(
+            ResponseHeaderBag::DISPOSITION_INLINE,
+            $downloadName
+        );
+
+        return $response;
     }
 }

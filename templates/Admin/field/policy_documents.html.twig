@@ -13,26 +13,41 @@
                 <th>File Name</th>
                 <th>Uploaded By</th>
                 <th>Uploaded At</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for doc in documents %}
                 <tr>
                     <td>
-                        <span class="badge
-                            {% if doc.documentType == 'POLICY_BOND' %}bg-primary
-                            {% elseif doc.documentType == 'REVIVAL_LETTER' %}bg-info
-                            {% elseif doc.documentType == 'ASSIGNMENT_DEED' %}bg-warning text-dark
-                            {% elseif doc.documentType == 'DISCHARGE_VOUCHER' %}bg-success
-                            {% elseif doc.documentType == 'CLAIM_FORM' %}bg-danger
-                            {% else %}bg-secondary
-                            {% endif %}">
+                        {% set typeClass = {
+                            'POLICY_BOND':       'dt-doc-badge--bond',
+                            'REVIVAL_LETTER':    'dt-doc-badge--letter',
+                            'ASSIGNMENT_DEED':   'dt-doc-badge--warning',
+                            'DISCHARGE_VOUCHER': 'dt-doc-badge--success',
+                            'CLAIM_FORM':        'dt-doc-badge--danger',
+                            'OTHER':             'dt-doc-badge--other'
+                        } %}
+                        {% set cls = typeClass[doc.documentType] ?? 'dt-doc-badge--other' %}
+                        <span class="badge dt-doc-badge {{ cls }}">
                             {{ doc.documentTypeLabel }}
                         </span>
                     </td>
                     <td>{{ doc.fileName ?? '—' }}</td>
                     <td>{{ doc.uploadedBy ?? '—' }}</td>
                     <td>{{ doc.uploadedAt ? doc.uploadedAt|date('d-M-Y H:i') : '—' }}</td>
+                    <td>
+                        {% if doc.filePath %}
+                            <a href="{{ path('admin_policy_document_download', { id: doc.id }) }}"
+                               target="_blank"
+                               class="btn btn-sm btn-outline-success"
+                               title="View / Download">
+                                <i class="fa fa-download"></i> View
+                            </a>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
                 </tr>
             {% endfor %}
         </tbody>
