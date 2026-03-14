@@ -21,6 +21,7 @@ use App\Entity\Role;
 use App\Entity\SaRebate;
 use App\Entity\SurvivalBenefit;
 use App\Entity\Claim;
+use App\Entity\PolicyDocument;
 use App\Entity\User;
 use App\Repository\ClientRepository;
 use App\Repository\PolicyRepository;
@@ -243,6 +244,7 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToCrud('Policy Riders', 'fa fa-shield-halved', PolicyRider::class);
         yield MenuItem::linkToCrud('Survival Benefits', 'fa fa-hand-holding-dollar', SurvivalBenefit::class);
         yield MenuItem::linkToCrud('Claims', 'fa fa-file-medical', Claim::class);
+        yield MenuItem::linkToCrud('Documents', 'fa fa-file-pdf', PolicyDocument::class);
         yield MenuItem::linkToRoute('Commission Statement', 'fa fa-file-invoice-dollar', 'admin_commission_statement');
 
         // SETTINGS
