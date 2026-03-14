@@ -30,11 +30,11 @@
             </div>
         </div>
 
-        <div class="lg-card {{ balance > 0 ? 'lg-card--red' : (balance < 0 ? 'lg-card--green' : 'lg-card--blue') }}">
+        <div class="lg-card {{ balance > 0 ? 'lg-card--green' : (balance < 0 ? 'lg-card--red' : 'lg-card--blue') }}">
             <div class="lg-card__body">
                 <div>
                     <span class="lg-card__label">Current Balance</span>
-                    <span class="lg-card__value {{ balance > 0 ? 'lg-card__value--red' : (balance < 0 ? 'lg-card__value--green' : 'lg-card__value--blue') }}">
+                    <span class="lg-card__value {{ balance > 0 ? 'lg-card__value--green' : (balance < 0 ? 'lg-card__value--red' : 'lg-card__value--blue') }}">
                         ₹{{ balance|abs|number_format(2) }}
                     </span>
                     <span class="lg-card__sub">
@@ -44,7 +44,7 @@
                         {% endif %}
                     </span>
                 </div>
-                <div class="lg-card__icon {{ balance > 0 ? 'lg-card__icon--red' : (balance < 0 ? 'lg-card__icon--green' : 'lg-card__icon--blue') }}">
+                <div class="lg-card__icon {{ balance > 0 ? 'lg-card__icon--green' : (balance < 0 ? 'lg-card__icon--red' : 'lg-card__icon--blue') }}">
                     <i class="fas {{ balance > 0 ? 'fa-exclamation-triangle' : (balance < 0 ? 'fa-arrow-up' : 'fa-check-circle') }}"></i>
                 </div>
             </div>

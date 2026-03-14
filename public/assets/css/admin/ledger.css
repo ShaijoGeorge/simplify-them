@@ -180,13 +180,13 @@
 
 /* ── Amounts ── */
 .lg-amount--positive {
-    color: #C0392B;
+    color: #1A7A4A;
     font-family: var(--font-mono);
     font-weight: 600;
 }
 
 .lg-amount--negative {
-    color: #1A7A4A;
+    color: #C0392B;
     font-family: var(--font-mono);
     font-weight: 600;
 }
@@ -201,15 +201,15 @@
 }
 
 .lg-status--owes {
-    background: rgba(192, 57, 43, .1);
-    color: #C0392B;
-    border: 1.5px solid rgba(192, 57, 43, .25);
-}
-
-.lg-status--owed {
     background: rgba(26, 122, 74, .1);
     color: #1A7A4A;
     border: 1.5px solid rgba(26, 122, 74, .25);
+}
+
+.lg-status--owed {
+    background: rgba(192, 57, 43, .1);
+    color: #C0392B;
+    border: 1.5px solid rgba(192, 57, 43, .25);
 }
 
 /* ── Type Badges ── */
@@ -328,19 +328,19 @@
     background: linear-gradient(135deg, #1a5cb8, #4A8FE8);
 }
 
-.ea-dark-scheme .lg-amount--positive { color: #E05A4A; }
-.ea-dark-scheme .lg-amount--negative { color: #2ECC82; }
+.ea-dark-scheme .lg-amount--positive { color: #2ECC82; }
+.ea-dark-scheme .lg-amount--negative { color: #E05A4A; }
 
 .ea-dark-scheme .lg-status--owes {
-    background: rgba(224, 90, 74, .12);
-    color: #E05A4A;
-    border-color: rgba(224, 90, 74, .3);
-}
-
-.ea-dark-scheme .lg-status--owed {
     background: rgba(46, 204, 130, .12);
     color: #2ECC82;
     border-color: rgba(46, 204, 130, .3);
+}
+
+.ea-dark-scheme .lg-status--owed {
+    background: rgba(224, 90, 74, .12);
+    color: #E05A4A;
+    border-color: rgba(224, 90, 74, .3);
 }
 
 .ea-dark-scheme .lg-type-badge--collection {
