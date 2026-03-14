@@ -1,0 +1,8 @@
+vich_uploader:
+    db_driver: orm
+
+    mappings:
+        policy_documents:
+            uri_prefix: ''
+            upload_destination: '%kernel.project_dir%/var/storage/policy_docs'
+            namer: Vich\UploaderBundle\Naming\SmartUniqueNamer
