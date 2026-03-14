@@ -95,6 +95,12 @@ class Policy
     #[ORM\OneToMany(targetEntity: Claim::class, mappedBy: 'policy')]
     private Collection $claims;
 
+    /**
+     * @var Collection<int, PolicyDocument>
+     */
+    #[ORM\OneToMany(targetEntity: PolicyDocument::class, mappedBy: 'policy', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $documents;
+
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     #[Gedmo\Timestampable(on: 'create')]
     private ?\DateTimeInterface $createdAt = null;
@@ -159,6 +165,7 @@ class Policy
         $this->riders = new ArrayCollection();
         $this->survivalBenefits = new ArrayCollection();
         $this->claims = new ArrayCollection();
+        $this->documents = new ArrayCollection();
     }
 
     // HELPERS
@@ -953,6 +960,31 @@ class Policy
         if ($this->claims->removeElement($claim)) {
             if ($claim->getPolicy() === $this) {
                 $claim->setPolicy(null);
+            }
+        }
+        return $this;
+    }
+
+    // Documents collection
+    public function getDocuments(): Collection
+    {
+        return $this->documents;
+    }
+
+    public function addDocument(PolicyDocument $document): static
+    {
+        if (!$this->documents->contains($document)) {
+            $this->documents->add($document);
+            $document->setPolicy($this);
+        }
+        return $this;
+    }
+
+    public function removeDocument(PolicyDocument $document): static
+    {
+        if ($this->documents->removeElement($document)) {
+            if ($document->getPolicy() === $this) {
+                $document->setPolicy(null);
             }
         }
         return $this;

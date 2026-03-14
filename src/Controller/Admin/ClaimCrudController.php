@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Entity\Claim;
 use App\Entity\Policy;
+use App\Entity\PolicyDocument;
 use App\Entity\User;
 use App\Repository\PolicyRepository;
 use App\Service\PermissionCheckerService;
@@ -57,6 +58,23 @@ class ClaimCrudController extends BaseCrudController
         if ($this->permissionChecker->hasPermission($this->getModuleKey(), 'view')) {
             $actions->add(Crud::PAGE_INDEX, Action::DETAIL);
         }
+
+        // Custom action: Upload Document (links to PolicyDocumentCrudController)
+        $uploadDocAction = Action::new('uploadDocument', 'Upload Document', 'fa fa-file-upload')
+            ->linkToUrl(function (Claim $claim): string {
+                if (!$claim->getPolicy()) {
+                    return '#';
+                }
+                return $this->container->get('router')->generate('admin', [
+                    'crudController' => PolicyDocumentCrudController::class,
+                    'crudAction' => 'new',
+                    'policyId' => $claim->getPolicy()->getId(),
+                ]);
+            })
+            ->setCssClass('btn btn-sm btn-outline-primary');
+
+        $actions->add(Crud::PAGE_DETAIL, $uploadDocAction);
+        $actions->add(Crud::PAGE_EDIT, $uploadDocAction);
 
         return $actions;
     }

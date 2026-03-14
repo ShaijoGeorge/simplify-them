@@ -66,6 +66,20 @@ class PolicyCrudController extends BaseCrudController
             $actions->add(Crud::PAGE_INDEX, Action::DETAIL);
         }
 
+        // Custom action: Upload Document (links to PolicyDocumentCrudController)
+        $uploadDocAction = Action::new('uploadDocument', 'Upload Document', 'fa fa-file-upload')
+            ->linkToUrl(function (Policy $policy): string {
+                return $this->container->get('router')->generate('admin', [
+                    'crudController' => PolicyDocumentCrudController::class,
+                    'crudAction' => 'new',
+                    'policyId' => $policy->getId(),
+                ]);
+            })
+            ->setCssClass('btn btn-sm btn-outline-primary');
+
+        $actions->add(Crud::PAGE_DETAIL, $uploadDocAction);
+        $actions->add(Crud::PAGE_EDIT, $uploadDocAction);
+
         return $actions;
     }
 
@@ -267,6 +281,16 @@ class PolicyCrudController extends BaseCrudController
 
         yield TextareaField::new('notes', 'Notes')
             ->hideOnIndex();
+
+        // POLICY DOCUMENTS SECTION
+        yield FormField::addFieldset('Policy Documents')
+            ->setIcon('fa fa-file-pdf')
+            ->setHelp('Uploaded documents for this policy (bonds, letters, claim forms, etc.)');
+
+        yield AssociationField::new('documents', 'Documents')
+            ->setTemplatePath('Admin/field/policy_documents.html.twig')
+            ->hideOnForm()
+            ->setColumns(12);
 
         // META DATA
         yield FormField::addFieldset('System Metadata')->setIcon('fa fa-database');

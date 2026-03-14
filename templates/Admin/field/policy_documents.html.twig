@@ -1,0 +1,40 @@
+{# templates/Admin/field/policy_documents.html.twig #}
+{# Custom field template to render the documents collection on Policy/Claim detail pages #}
+
+{% set documents = field.value %}
+
+{% if documents is empty %}
+    <span class="text-muted"><em>No documents uploaded yet.</em></span>
+{% else %}
+    <table class="table table-sm table-bordered mb-0">
+        <thead class="table-light">
+            <tr>
+                <th>Type</th>
+                <th>File Name</th>
+                <th>Uploaded By</th>
+                <th>Uploaded At</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for doc in documents %}
+                <tr>
+                    <td>
+                        <span class="badge
+                            {% if doc.documentType == 'POLICY_BOND' %}bg-primary
+                            {% elseif doc.documentType == 'REVIVAL_LETTER' %}bg-info
+                            {% elseif doc.documentType == 'ASSIGNMENT_DEED' %}bg-warning text-dark
+                            {% elseif doc.documentType == 'DISCHARGE_VOUCHER' %}bg-success
+                            {% elseif doc.documentType == 'CLAIM_FORM' %}bg-danger
+                            {% else %}bg-secondary
+                            {% endif %}">
+                            {{ doc.documentTypeLabel }}
+                        </span>
+                    </td>
+                    <td>{{ doc.fileName ?? '—' }}</td>
+                    <td>{{ doc.uploadedBy ?? '—' }}</td>
+                    <td>{{ doc.uploadedAt ? doc.uploadedAt|date('d-M-Y H:i') : '—' }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
