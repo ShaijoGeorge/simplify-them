@@ -9,6 +9,7 @@ use App\Repository\SaRebateRepository;
 use App\Service\MaturityProjectionService;
 use App\Service\PremiumValidationService;
 use App\Service\PermissionCheckerService;
+use App\Service\WhatsAppService;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
@@ -35,6 +36,7 @@ class PolicyCrudController extends BaseCrudController
         private MaturityProjectionService $maturityProjectionService,
         private PremiumValidationService $premiumValidationService,
         private SaRebateRepository $saRebateRepository,
+        private WhatsAppService $whatsAppService,
         PermissionCheckerService $permissionChecker
     ) {
         parent::__construct($permissionChecker);
@@ -233,6 +235,27 @@ class PolicyCrudController extends BaseCrudController
 
         yield DateField::new('fup', 'FUP Date')
             ->setColumns(4);
+
+        // WhatsApp column (index page only)
+        if ($pageName === Crud::PAGE_INDEX) {
+            yield TextField::new('whatsappUrl', 'WhatsApp')
+                ->setTemplatePath('Admin/policy/whatsapp_column.html.twig')
+                ->setVirtual(true)
+                ->formatValue(function ($value, Policy $entity) {
+                    $client = $entity->getClient();
+                    if (!$client || !$client->getMobile() || !$entity->getNextDueDate()) {
+                        return null;
+                    }
+                    return $this->whatsAppService->generateWhatsAppUrl(
+                        $client->getMobile(),
+                        $client->getName(),
+                        $entity->getPolicyNumber(),
+                        $entity->getNextDueDate()->format('d-M-Y'),
+                        $entity->getTotalPremium() ?? '0'
+                    );
+                })
+                ->setSortable(false);
+        }
 
         yield DateField::new('maturityDate', 'Maturity Date')
             ->setColumns(4)

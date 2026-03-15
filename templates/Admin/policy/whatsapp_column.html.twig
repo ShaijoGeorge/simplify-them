@@ -1,0 +1,14 @@
+{# templates/Admin/policy/whatsapp_column.html.twig #}
+{% if field.formattedValue %}
+    <a href="{{ field.formattedValue }}"
+       target="_blank"
+       rel="noopener noreferrer"
+       class="btn btn-sm"
+       title="Send WhatsApp Reminder"
+       style="background-color: #25D366; color: #fff; border: none; border-radius: 4px; padding: 4px 10px; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+        <i class="fab fa-whatsapp" style="font-size: 1rem;"></i>
+        Send
+    </a>
+{% else %}
+    <span class="text-muted" style="font-size: 0.8rem;">—</span>
+{% endif %}
