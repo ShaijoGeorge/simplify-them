@@ -1,0 +1,18 @@
+{# templates/Admin/field/whatsapp_button.html.twig #}
+{% set client = entity.instance.client %}
+{% if client and client.mobile %}
+    {% set mobile = client.mobile|replace({'+': '', ' ': '', '-': ''}) %}
+    {% if mobile|length == 10 %}
+        {% set mobile = '91' ~ mobile %}
+    {% endif %}
+    {% set message = 'Dear ' ~ client.name ~ ', your Premium for LIC Policy ' ~ entity.instance.policyNumber ~ ' is due on ' ~ (entity.instance.nextDueDate ? entity.instance.nextDueDate|date('d-M-Y') : 'N/A') ~ '. Amount: Rs.' ~ entity.instance.totalPremium ~ '. Please ignore if already paid.' %}
+    <a href="https://wa.me/{{ mobile }}?text={{ message|url_encode }}"
+       target="_blank"
+       class="btn btn-sm btn-success"
+       title="Send WhatsApp Reminder"
+       style="background-color: #25D366; border-color: #25D366; color: white;">
+        <i class="fab fa-whatsapp"></i> Send
+    </a>
+{% else %}
+    <span class="text-muted"><i class="fa fa-phone-slash"></i> No Mobile</span>
+{% endif %}
