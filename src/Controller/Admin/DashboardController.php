@@ -208,7 +208,8 @@ class DashboardController extends AbstractDashboardController
             ->addCssFile('assets/css/admin/theme.css')
             ->addCssFile('assets/css/admin/dashboard.css')
             ->addCssFile('assets/css/admin/detail.css')
-            ->addCssFile('assets/css/admin/ledger.css');
+            ->addCssFile('assets/css/admin/ledger.css')
+            ->addCssFile('assets/css/admin/commands.css');
     }
 
 
@@ -246,6 +247,10 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToCrud('Claims', 'fa fa-file-medical', Claim::class);
         yield MenuItem::linkToCrud('Documents', 'fa fa-file-pdf', PolicyDocument::class);
         yield MenuItem::linkToRoute('Commission Statement', 'fa fa-file-invoice-dollar', 'admin_commission_statement');
+
+        // TOOLS
+        yield MenuItem::section('TOOLS');
+        yield MenuItem::linkToRoute('Commands', 'fa fa-terminal', 'admin_commands');
 
         // SETTINGS
         yield MenuItem::section('SETTINGS');

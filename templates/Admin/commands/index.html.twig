@@ -1,0 +1,418 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title %}{% endblock %}
+
+{% block main %}
+<div class="cmd">
+
+    {# Header #}
+    <header class="cmd-header">
+        <div>
+            <h1 class="cmd-title">Command Center</h1>
+            <p class="cmd-subtitle">Monitor and execute scheduled automation tasks</p>
+        </div>
+        <div class="cmd-header__actions">
+            <button class="cmd-btn cmd-btn--outline" id="refreshStats" title="Refresh">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+        </div>
+    </header>
+
+    {# Stats Cards #}
+    <div class="cmd-stats">
+        <div class="cmd-stat cmd-stat--blue">
+            <div class="cmd-stat__icon"><i class="fas fa-terminal"></i></div>
+            <div class="cmd-stat__info">
+                <span class="cmd-stat__value" id="stat-total">{{ stats.total }}</span>
+                <span class="cmd-stat__label">Total Executions</span>
+            </div>
+        </div>
+        <div class="cmd-stat cmd-stat--green">
+            <div class="cmd-stat__icon"><i class="fas fa-check-circle"></i></div>
+            <div class="cmd-stat__info">
+                <span class="cmd-stat__value" id="stat-success">{{ stats.success }}</span>
+                <span class="cmd-stat__label">Successful</span>
+            </div>
+        </div>
+        <div class="cmd-stat cmd-stat--red">
+            <div class="cmd-stat__icon"><i class="fas fa-times-circle"></i></div>
+            <div class="cmd-stat__info">
+                <span class="cmd-stat__value" id="stat-failed">{{ stats.failed }}</span>
+                <span class="cmd-stat__label">Failed</span>
+            </div>
+        </div>
+        <div class="cmd-stat cmd-stat--teal">
+            <div class="cmd-stat__icon"><i class="fas fa-clock"></i></div>
+            <div class="cmd-stat__info">
+                <span class="cmd-stat__value" id="stat-avg">
+                    {% if stats.avgDurationMs > 0 %}
+                        {{ (stats.avgDurationMs / 1000)|number_format(1) }}s
+                    {% else %}
+                        —
+                    {% endif %}
+                </span>
+                <span class="cmd-stat__label">Avg Duration</span>
+            </div>
+        </div>
+    </div>
+
+    {# Main Content: Commands + Activity #}
+    <div class="cmd-layout">
+
+        {# Commands List (Left) #}
+        <div class="cmd-main">
+            {% for category, commands in grouped_commands %}
+            <div class="cmd-category">
+                <div class="cmd-category__head">
+                    {% if category == 'Policy Lifecycle' %}
+                        <div class="cmd-category__icon cmd-category__icon--blue">
+                            <i class="fas fa-sync-alt"></i>
+                        </div>
+                    {% elseif category == 'Notifications' %}
+                        <div class="cmd-category__icon cmd-category__icon--gold">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                    {% else %}
+                        <div class="cmd-category__icon cmd-category__icon--teal">
+                            <i class="fas fa-terminal"></i>
+                        </div>
+                    {% endif %}
+                    <h5 class="cmd-category__title">{{ category }}</h5>
+                    <span class="cmd-badge">{{ commands|length }}</span>
+                </div>
+
+                <div class="cmd-list">
+                    {% for cmd in commands %}
+                    {% set slug = cmd.name|replace({':': '-', ' ': '-'}) %}
+                    {% set lastExec = last_executions[cmd.name] ?? null %}
+                    <div class="cmd-item" id="card-{{ slug }}">
+                        <div class="cmd-item__top">
+                            <div class="cmd-item__name">
+                                <code>{{ cmd.name }}</code>
+                                {% if lastExec %}
+                                    {% if lastExec.status == 'success' %}
+                                        <span class="cmd-status cmd-status--success" title="Last run succeeded">
+                                            <i class="fas fa-check-circle"></i>
+                                        </span>
+                                    {% elseif lastExec.status == 'failed' %}
+                                        <span class="cmd-status cmd-status--failed" title="Last run failed">
+                                            <i class="fas fa-times-circle"></i>
+                                        </span>
+                                    {% elseif lastExec.status == 'running' %}
+                                        <span class="cmd-status cmd-status--running" title="Currently running">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="cmd-status cmd-status--never" title="Never executed">
+                                        <i class="fas fa-minus-circle"></i>
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <div class="cmd-item__actions">
+                                <button
+                                    class="cmd-btn cmd-btn--sm cmd-btn--ghost history-btn"
+                                    data-command="{{ cmd.name }}"
+                                    data-url="{{ path('admin_commands_history', {commandName: cmd.name}) }}"
+                                    title="View history"
+                                >
+                                    <i class="fas fa-history"></i>
+                                </button>
+                                <button
+                                    class="cmd-btn cmd-btn--sm cmd-btn--primary run-command-btn"
+                                    data-command="{{ cmd.name }}"
+                                    data-url="{{ path('admin_commands_run') }}"
+                                >
+                                    <i class="fas fa-play"></i> Run
+                                </button>
+                            </div>
+                        </div>
+                        <p class="cmd-item__desc">{{ cmd.description }}</p>
+                        <div class="cmd-item__meta">
+                            <span class="cmd-meta" title="Schedule: {{ cmd.cron }}">
+                                <i class="fas fa-clock"></i> {{ cmd.cronHuman }}
+                            </span>
+                            {% if lastExec %}
+                                <span class="cmd-meta" title="Last executed">
+                                    <i class="fas fa-calendar-check"></i> {{ lastExec.executedAt|date('d M Y, h:i A') }}
+                                </span>
+                                {% if lastExec.durationMs %}
+                                    <span class="cmd-meta">
+                                        <i class="fas fa-stopwatch"></i> {{ (lastExec.durationMs / 1000)|number_format(1) }}s
+                                    </span>
+                                {% endif %}
+                            {% else %}
+                                <span class="cmd-meta cmd-meta--muted">
+                                    <i class="fas fa-info-circle"></i> Never executed
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        {# Output panel (hidden by default) #}
+                        <div class="cmd-output d-none" id="output-{{ slug }}">
+                            <div class="cmd-output__head">
+                                <span><i class="fas fa-terminal"></i> Output</span>
+                                <button class="cmd-btn cmd-btn--sm cmd-btn--ghost close-output-btn" title="Close">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <pre class="cmd-output__pre"></pre>
+                        </div>
+
+                        {# History panel (hidden by default) #}
+                        <div class="cmd-history d-none" id="history-{{ slug }}">
+                            <div class="cmd-history__head">
+                                <span><i class="fas fa-history"></i> Execution History</span>
+                                <button class="cmd-btn cmd-btn--sm cmd-btn--ghost close-history-btn" title="Close">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="cmd-history__body">
+                                <div class="cmd-history__loading">
+                                    <i class="fas fa-spinner fa-spin"></i> Loading...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {# Recent Activity (Right Sidebar) #}
+        <div class="cmd-sidebar">
+            <div class="cmd-panel">
+                <div class="cmd-panel__head">
+                    <h6 class="cmd-panel__title">
+                        <i class="fas fa-stream"></i> Recent Activity
+                    </h6>
+                </div>
+                {% if recent_activity|length > 0 %}
+                    <div class="cmd-timeline">
+                        {% for exec in recent_activity %}
+                        <div class="cmd-timeline__item">
+                            <div class="cmd-timeline__dot cmd-timeline__dot--{{ exec.status }}"></div>
+                            <div class="cmd-timeline__content">
+                                <div class="cmd-timeline__row">
+                                    <code class="cmd-timeline__cmd">{{ exec.commandName|split(':')|last }}</code>
+                                    <span class="cmd-timeline__badge cmd-timeline__badge--{{ exec.status }}">
+                                        {{ exec.status }}
+                                    </span>
+                                </div>
+                                <div class="cmd-timeline__time">
+                                    {{ exec.executedAt|date('d M, h:i A') }}
+                                    {% if exec.durationMs %}
+                                        &middot; {{ (exec.durationMs / 1000)|number_format(1) }}s
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="cmd-empty">
+                        <i class="fas fa-inbox"></i>
+                        <span>No executions yet</span>
+                        <small>Run a command to see activity here</small>
+                    </div>
+                {% endif %}
+            </div>
+
+            {# Success Rate Donut #}
+            {% if stats.total > 0 %}
+            <div class="cmd-panel">
+                <div class="cmd-panel__head">
+                    <h6 class="cmd-panel__title">
+                        <i class="fas fa-chart-pie"></i> Success Rate
+                    </h6>
+                </div>
+                <div class="cmd-donut-wrap">
+                    {% set pct = ((stats.success / stats.total) * 100)|round %}
+                    <div class="cmd-donut" style="--pct: {{ pct }}">
+                        <svg viewBox="0 0 36 36" class="cmd-donut__svg">
+                            <path class="cmd-donut__bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="cmd-donut__fill" stroke-dasharray="{{ pct }}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        </svg>
+                        <div class="cmd-donut__label">{{ pct }}%</div>
+                    </div>
+                    <div class="cmd-donut__legend">
+                        <span><i class="fas fa-circle" style="color: var(--color-success)"></i> {{ stats.success }} passed</span>
+                        <span><i class="fas fa-circle" style="color: var(--color-danger)"></i> {{ stats.failed }} failed</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    // Run Command
+    document.querySelectorAll('.run-command-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var command = this.dataset.command;
+            var url = this.dataset.url;
+            var slug = command.replace(/:/g, '-').replace(/ /g, '-');
+            var outputEl = document.getElementById('output-' + slug);
+            var preEl = outputEl.querySelector('.cmd-output__pre');
+            var historyEl = document.getElementById('history-' + slug);
+
+            // Hide history if open
+            historyEl.classList.add('d-none');
+
+            // Disable button
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running...';
+
+            // Show output
+            outputEl.classList.remove('d-none');
+            preEl.textContent = 'Executing ' + command + '...\n';
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: 'command=' + encodeURIComponent(command)
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                preEl.textContent = data.output || '(no output)';
+
+                // Update status indicator
+                var card = document.getElementById('card-' + slug);
+                var statusEl = card.querySelector('.cmd-status');
+                if (statusEl) {
+                    statusEl.className = 'cmd-status cmd-status--' + (data.success ? 'success' : 'failed');
+                    statusEl.innerHTML = data.success
+                        ? '<i class="fas fa-check-circle"></i>'
+                        : '<i class="fas fa-times-circle"></i>';
+                }
+
+                // Update meta
+                var metaRow = card.querySelector('.cmd-item__meta');
+                if (data.executedAt) {
+                    // Update last run info
+                    var metas = metaRow.querySelectorAll('.cmd-meta');
+                    if (metas.length >= 2) {
+                        metas[1].innerHTML = '<i class="fas fa-calendar-check"></i> ' + data.executedAt;
+                    }
+                    if (data.durationMs && metas.length >= 3) {
+                        metas[2].innerHTML = '<i class="fas fa-stopwatch"></i> ' + (data.durationMs / 1000).toFixed(1) + 's';
+                    }
+                }
+
+                if (data.success) {
+                    btn.innerHTML = '<i class="fas fa-check"></i> Done';
+                    btn.classList.add('cmd-btn--success-state');
+                } else {
+                    btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Failed';
+                    btn.classList.add('cmd-btn--danger-state');
+                }
+            })
+            .catch(function(err) {
+                preEl.textContent = 'Request failed: ' + err.message;
+                btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error';
+                btn.classList.add('cmd-btn--danger-state');
+            })
+            .finally(function() {
+                setTimeout(function() {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-play"></i> Run';
+                    btn.classList.remove('cmd-btn--success-state', 'cmd-btn--danger-state');
+                }, 3000);
+            });
+        });
+    });
+
+    // History
+    document.querySelectorAll('.history-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var command = this.dataset.command;
+            var url = this.dataset.url;
+            var slug = command.replace(/:/g, '-').replace(/ /g, '-');
+            var historyEl = document.getElementById('history-' + slug);
+            var outputEl = document.getElementById('output-' + slug);
+            var bodyEl = historyEl.querySelector('.cmd-history__body');
+
+            // Toggle
+            if (!historyEl.classList.contains('d-none')) {
+                historyEl.classList.add('d-none');
+                return;
+            }
+
+            // Hide output if open
+            outputEl.classList.add('d-none');
+
+            historyEl.classList.remove('d-none');
+            bodyEl.innerHTML = '<div class="cmd-history__loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+
+            fetch(url)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.history || data.history.length === 0) {
+                    bodyEl.innerHTML = '<div class="cmd-empty cmd-empty--sm"><i class="fas fa-inbox"></i><span>No history yet</span></div>';
+                    return;
+                }
+
+                var html = '<table class="cmd-htable"><thead><tr><th>Status</th><th>Date</th><th>Duration</th><th>Exit</th><th></th></tr></thead><tbody>';
+                data.history.forEach(function(row, i) {
+                    var statusClass = row.status === 'success' ? 'success' : 'failed';
+                    var dur = row.durationMs ? (row.durationMs / 1000).toFixed(1) + 's' : '—';
+                    html += '<tr>'
+                        + '<td><span class="cmd-timeline__badge cmd-timeline__badge--' + statusClass + '">' + row.status + '</span></td>'
+                        + '<td>' + row.executedAt + '</td>'
+                        + '<td class="cmd-htable__mono">' + dur + '</td>'
+                        + '<td class="cmd-htable__mono">' + (row.exitCode !== null ? row.exitCode : '—') + '</td>'
+                        + '<td><button class="cmd-btn cmd-btn--sm cmd-btn--ghost toggle-output-btn" data-index="' + i + '"><i class="fas fa-file-alt"></i></button></td>'
+                        + '</tr>'
+                        + '<tr class="cmd-htable__output-row d-none" data-output-index="' + i + '"><td colspan="5"><pre class="cmd-output__pre">' + escapeHtml(row.output || '(no output)') + '</pre></td></tr>';
+                });
+                html += '</tbody></table>';
+                bodyEl.innerHTML = html;
+
+                // Toggle individual outputs
+                bodyEl.querySelectorAll('.toggle-output-btn').forEach(function(tbtn) {
+                    tbtn.addEventListener('click', function() {
+                        var idx = this.dataset.index;
+                        var outputRow = bodyEl.querySelector('[data-output-index="' + idx + '"]');
+                        outputRow.classList.toggle('d-none');
+                    });
+                });
+            })
+            .catch(function() {
+                bodyEl.innerHTML = '<div class="cmd-empty cmd-empty--sm"><i class="fas fa-exclamation-triangle"></i><span>Failed to load history</span></div>';
+            });
+        });
+    });
+
+    // Close panels
+    document.querySelectorAll('.close-output-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            this.closest('.cmd-output').classList.add('d-none');
+        });
+    });
+    document.querySelectorAll('.close-history-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            this.closest('.cmd-history').classList.add('d-none');
+        });
+    });
+
+    // Refresh
+    document.getElementById('refreshStats').addEventListener('click', function() {
+        location.reload();
+    });
+
+    function escapeHtml(text) {
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+});
+</script>
+{% endblock %}
