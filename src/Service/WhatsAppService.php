@@ -57,6 +57,41 @@ class WhatsAppService
     }
 
     /**
+     * Build the maturity notification message text.
+     */
+    private function buildMaturityMessage(string $policyNo, string $maturityDate): string
+    {
+        return "Your LIC Policy $policyNo has matured on $maturityDate. Please collect your maturity amount from LIC branch.";
+    }
+
+    /**
+     * Generate a WhatsApp click-to-chat URL for maturity notification.
+     */
+    public function generateMaturityWhatsAppUrl(string $mobile, string $policyNo, string $maturityDate): string
+    {
+        $phone = $this->formatMobile($mobile);
+        $message = $this->buildMaturityMessage($policyNo, $maturityDate);
+
+        return 'https://wa.me/' . $phone . '?text=' . rawurlencode($message);
+    }
+
+    /**
+     * Send a maturity notification (logs to console; uncomment API call when ready).
+     */
+    public function sendMaturityNotification(string $mobile, string $clientName, string $policyNo, string $maturityDate): bool
+    {
+        try {
+            $message = $this->buildMaturityMessage($policyNo, $maturityDate);
+            $this->logger->info("WHATSAPP → $mobile: $message");
+
+            return true;
+        } catch (\Exception $e) {
+            $this->logger->error("Failed to send WhatsApp maturity notification: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Send a premium reminder (logs to console; uncomment API call when ready).
      */
     public function sendPremiumReminder(string $mobile, string $clientName, string $policyNo, string $dueDate, string $amount): bool
