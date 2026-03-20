@@ -2,6 +2,7 @@
 
 namespace App\Command;
 
+use App\Entity\PolicyStatusLog;
 use App\Repository\PolicyRepository;
 use App\Service\WhatsAppService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -53,8 +54,21 @@ class DetectMaturitiesCommand extends Command
         $rows = [];
 
         foreach ($policies as $policy) {
+            $oldStatus = $policy->getStatus();
             $policy->setStatus('MATURED');
             $maturedCount++;
+
+            // Log the transition
+            $log = new PolicyStatusLog();
+            $log->setPolicy($policy);
+            $log->setOldStatus($oldStatus);
+            $log->setNewStatus('MATURED');
+            $log->setTriggeredBy('app:detect-maturities');
+            $log->setReason(sprintf(
+                'Policy maturity date %s has passed.',
+                $policy->getMaturityDate()->format('d-M-Y')
+            ));
+            $this->entityManager->persist($log);
 
             $maturityDate = $policy->getMaturityDate()->format('d-M-Y');
 

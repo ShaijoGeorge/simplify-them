@@ -36,7 +36,7 @@ class CommandsController extends AbstractController
             ],
             [
                 'name' => 'app:detect-lapses',
-                'description' => 'Detects policies past their FUP grace period and marks them as LAPSED.',
+                'description' => 'Detects policies past their FUP grace period. Marks them as LAPSED or PAID_UP (if 3+ years premiums paid). Logs all transitions to PolicyStatusLog.',
                 'cron' => '0 2 * * *',
                 'cronHuman' => 'Daily at 2:00 AM',
                 'category' => 'Policy Lifecycle',
