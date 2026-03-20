@@ -164,6 +164,12 @@ class Policy
     #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 2, nullable: true)]
     private ?string $revivalArrearsAmount = null;
 
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
+    private ?\DateTime $surrenderDate = null;
+
+    #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 2, nullable: true)]
+    private ?string $surrenderValue = null;
+
     public function __construct()
     {
         $this->premiumReceipts = new ArrayCollection();
@@ -1015,6 +1021,28 @@ class Policy
     public function setRevivalArrearsAmount(?string $revivalArrearsAmount): static
     {
         $this->revivalArrearsAmount = $revivalArrearsAmount;
+        return $this;
+    }
+
+    public function getSurrenderDate(): ?\DateTime
+    {
+        return $this->surrenderDate;
+    }
+
+    public function setSurrenderDate(?\DateTime $surrenderDate): static
+    {
+        $this->surrenderDate = $surrenderDate;
+        return $this;
+    }
+
+    public function getSurrenderValue(): ?string
+    {
+        return $this->surrenderValue;
+    }
+
+    public function setSurrenderValue(?string $surrenderValue): static
+    {
+        $this->surrenderValue = $surrenderValue;
         return $this;
     }
 
