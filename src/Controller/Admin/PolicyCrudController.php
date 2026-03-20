@@ -13,6 +13,8 @@ use App\Service\PremiumValidationService;
 use App\Service\PermissionCheckerService;
 use App\Service\WhatsAppService;
 use Doctrine\ORM\EntityManagerInterface;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
@@ -30,6 +32,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 class PolicyCrudController extends BaseCrudController
@@ -601,5 +604,106 @@ class PolicyCrudController extends BaseCrudController
             'crudAction' => 'detail',
             'entityId' => $id,
         ]));
+    }
+
+    #[Route('/admin/policy/{id}/record-surrender', name: 'app_admin_policy_record_surrender', methods: ['POST'])]
+    public function recordSurrender(int $id, Request $request): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('surrender_' . $id, $request->request->get('_token'))) {
+            $this->addFlash('danger', 'Invalid CSRF token.');
+            return $this->redirectToRoute('admin');
+        }
+
+        $policy = $this->entityManager->getRepository(Policy::class)->find($id);
+
+        if (!$policy || !in_array($policy->getStatus(), ['IN_FORCE', 'PAID_UP'], true)) {
+            $this->addFlash('danger', 'Surrender can only be recorded for IN_FORCE or PAID_UP policies.');
+            return $this->redirectToRoute('admin');
+        }
+
+        $surrenderValue = (float) $request->request->get('surrender_value', 0);
+        if ($surrenderValue <= 0) {
+            $this->addFlash('danger', 'Please enter a valid surrender value from LIC.');
+            return $this->redirect($this->container->get('router')->generate('admin', [
+                'crudController' => self::class,
+                'crudAction' => 'detail',
+                'entityId' => $id,
+            ]));
+        }
+
+        $surrenderNotes = trim($request->request->get('surrender_notes', ''));
+        $oldStatus = $policy->getStatus();
+
+        // Update policy
+        $policy->setStatus('SURRENDERED');
+        $policy->setSurrenderDate(new \DateTime());
+        $policy->setSurrenderValue((string) $surrenderValue);
+
+        // Append surrender notes if provided
+        if ($surrenderNotes !== '') {
+            $existingNotes = $policy->getNotes();
+            $stamp = (new \DateTime())->format('d-M-Y');
+            $surrenderNote = "[Surrender {$stamp}] {$surrenderNotes}";
+            $policy->setNotes($existingNotes ? $existingNotes . "\n" . $surrenderNote : $surrenderNote);
+        }
+
+        // Log the status transition
+        $log = new PolicyStatusLog();
+        $log->setPolicy($policy);
+        $log->setOldStatus($oldStatus);
+        $log->setNewStatus('SURRENDERED');
+        $log->setTriggeredBy('manual:surrender');
+        $log->setReason(sprintf(
+            'Policy surrendered. Surrender value: ₹%s%s',
+            number_format($surrenderValue, 2),
+            $surrenderNotes !== '' ? '. Notes: ' . $surrenderNotes : ''
+        ));
+        $this->entityManager->persist($log);
+
+        $this->entityManager->flush();
+
+        $this->addFlash('success', sprintf(
+            'Policy %s has been surrendered. Surrender value: ₹%s',
+            $policy->getPolicyNumber(),
+            number_format($surrenderValue, 2)
+        ));
+
+        return $this->redirect($this->container->get('router')->generate('admin', [
+            'crudController' => self::class,
+            'crudAction' => 'detail',
+            'entityId' => $id,
+        ]));
+    }
+
+    #[Route('/admin/policy/{id}/surrender-acknowledgement', name: 'app_admin_policy_surrender_pdf', methods: ['GET'])]
+    public function surrenderAcknowledgement(int $id): Response
+    {
+        $policy = $this->entityManager->getRepository(Policy::class)->find($id);
+
+        if (!$policy || $policy->getStatus() !== 'SURRENDERED' || !$policy->getSurrenderValue()) {
+            throw $this->createNotFoundException('Surrender record not found.');
+        }
+
+        $html = $this->renderView('Admin/policy/surrender_acknowledgement.html.twig', [
+            'policy' => $policy,
+        ]);
+
+        $options = new Options();
+        $options->set('defaultFont', 'DejaVu Sans');
+        $options->setIsRemoteEnabled(true);
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A5', 'portrait');
+        $dompdf->render();
+
+        return new Response(
+            $dompdf->output(),
+            200,
+            [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="Surrender_' . $policy->getPolicyNumber() . '.pdf"',
+            ]
+        );
     }
 }

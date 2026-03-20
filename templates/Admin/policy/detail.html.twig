@@ -525,6 +525,277 @@
     {% endif %}
 
     {# ══════════════════════════════════════════════════════════
+       SURRENDER ACTION BANNER
+       Shown on IN_FORCE and PAID_UP policies. Lets the agent
+       record a surrender by entering the surrender value from LIC.
+       ══════════════════════════════════════════════════════════ #}
+    {% if policy.status in ['IN_FORCE', 'PAID_UP'] %}
+        <div class="card dt-card dt-card--accent-left dt-surrender" id="surrender-action-banner">
+
+            {# ── TOP: Status info + metrics ── #}
+            <div class="dt-card__body">
+                <div class="d-flex align-items-start gap-3 mb-4">
+                    <div class="dt-icon">
+                        <i class="fas fa-hand-holding-dollar"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <h5 class="mb-0 dt-card__title">Record Surrender</h5>
+                            <span class="dt-badge">SURRENDER</span>
+                        </div>
+                        <p class="mb-0 dt-card__desc">
+                            If the policyholder wishes to exit this policy before maturity, record the surrender value
+                            obtained from LIC. The policy status will be changed to <strong>SURRENDERED</strong>.
+                        </p>
+                    </div>
+                </div>
+
+                {# Key figures #}
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="dt-metric dt-metric--hero">
+                            <div class="dt-metric__label">
+                                <i class="fas fa-indian-rupee-sign me-1"></i> Sum Assured
+                            </div>
+                            <div class="dt-metric__value dt-metric__value--hero">
+                                ₹{{ policy.sumAssured|number_format(0, '.', ',') }}
+                            </div>
+                            <div class="dt-metric__sub">Original benefit</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dt-metric dt-metric--secondary">
+                            <div class="dt-metric__label">
+                                <i class="fas fa-coins me-1"></i> Modal Premium
+                            </div>
+                            <div class="dt-metric__value">
+                                ₹{{ policy.totalPremium|number_format(0, '.', ',') }}
+                            </div>
+                            <div class="dt-metric__sub">{{ policy.premiumMode }} incl. GST</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dt-metric dt-metric--secondary">
+                            <div class="dt-metric__label">
+                                <i class="fas fa-calendar-check me-1"></i> Commencement
+                            </div>
+                            <div class="dt-metric__value">
+                                {{ policy.commencementDate ? policy.commencementDate|date('d M Y') : '-' }}
+                            </div>
+                            <div class="dt-metric__sub">Policy start date</div>
+                        </div>
+                    </div>
+                    {% if policy.status == 'PAID_UP' and policy.paidUpSumAssured %}
+                    <div class="col-md-3">
+                        <div class="dt-metric dt-metric--secondary">
+                            <div class="dt-metric__label">
+                                <i class="fas fa-shield-halved me-1"></i> Paid-Up SA
+                            </div>
+                            <div class="dt-metric__value">
+                                ₹{{ policy.paidUpSumAssured|number_format(0, '.', ',') }}
+                            </div>
+                            <div class="dt-metric__sub">Reduced benefit</div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="col-md-3">
+                        <div class="dt-metric dt-metric--secondary">
+                            <div class="dt-metric__label">
+                                <i class="fas fa-file-contract me-1"></i> Plan
+                            </div>
+                            <div class="dt-metric__value" style="font-size:1rem;">
+                                {{ policy.licPlan ? policy.licPlan.planName : '-' }}
+                            </div>
+                            <div class="dt-metric__sub">
+                                {{ policy.licPlan ? policy.licPlan.tableNumber : '' }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# ── BOTTOM: Surrender value entry tile ── #}
+            <div class="dt-surrender__footer">
+                <form method="POST" action="{{ path('app_admin_policy_record_surrender', { id: policy.id }) }}" id="surrenderForm">
+                    <input type="hidden" name="_token" value="{{ csrf_token('surrender_' ~ policy.id) }}">
+
+                    <div class="dt-arrears">
+                        {# Left: Input tile #}
+                        <div class="dt-arrears__tile dt-surrender__tile">
+                            <div class="dt-arrears__label">
+                                <i class="fas fa-indian-rupee-sign me-1"></i>
+                                Surrender Value (from LIC)
+                            </div>
+                            <div class="dt-arrears__field">
+                                <span class="dt-arrears__currency dt-surrender__currency">₹</span>
+                                <input type="number"
+                                       step="0.01"
+                                       min="0.01"
+                                       name="surrender_value"
+                                       id="surrender_value"
+                                       class="dt-arrears__input"
+                                       required
+                                       autocomplete="off"
+                                       placeholder="0.00">
+                            </div>
+                            <div class="dt-arrears__help">
+                                Enter the surrender value amount as quoted by LIC
+                            </div>
+                        </div>
+
+                        {# Centre: Notes + what happens #}
+                        <div class="dt-surrender__notes-col">
+                            <div class="dt-arrears__label">
+                                <i class="fas fa-sticky-note me-1"></i>
+                                Notes (optional)
+                            </div>
+                            <textarea name="surrender_notes"
+                                      id="surrender_notes"
+                                      class="dt-surrender__notes"
+                                      rows="2"
+                                      placeholder="Reason for surrender, reference number..."></textarea>
+                            <div class="dt-arrears__info" style="margin-top:8px;">
+                                <div class="dt-arrears__info-title">On confirmation</div>
+                                <ul class="dt-arrears__checklist">
+                                    <li><i class="fas fa-check"></i> Status set to <strong>SURRENDERED</strong></li>
+                                    <li><i class="fas fa-check"></i> Surrender value & date recorded</li>
+                                    <li><i class="fas fa-check"></i> Acknowledgement PDF available</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        {# Right: Submit #}
+                        <div class="dt-arrears__submit">
+                            <button type="button" class="dt-revival__btn dt-surrender__btn" onclick="recordSurrender()">
+                                <span class="dt-revival__btn-icon"><i class="fas fa-hand-holding-dollar"></i></span>
+                                <span>Record Surrender</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+        function recordSurrender() {
+            var amt = document.getElementById('surrender_value');
+            if (!amt.value || parseFloat(amt.value) <= 0) {
+                amt.focus();
+                amt.classList.add('dt-arrears__input--error');
+                setTimeout(function () { amt.classList.remove('dt-arrears__input--error'); }, 1500);
+                SimplifySwal.alert('warning', 'Amount Required', 'Please enter the surrender value from LIC.');
+                return;
+            }
+            var formatted = parseFloat(amt.value).toLocaleString('en-IN', {minimumFractionDigits: 2});
+            SimplifySwal.confirm(
+                'Record Surrender?',
+                'Policy {{ policy.policyNumber }} will be marked as SURRENDERED with a surrender value of \u20B9' + formatted + '. This action cannot be undone.',
+                'Yes, Record Surrender',
+                'Cancel'
+            ).then(function (confirmed) {
+                if (confirmed) {
+                    document.getElementById('surrenderForm').submit();
+                }
+            });
+        }
+        </script>
+    {% endif %}
+
+    {# ══════════════════════════════════════════════════════════
+       SURRENDERED INFO BANNER
+       Shown after a policy has been surrendered. Displays the
+       surrender details and offers PDF acknowledgement download.
+       ══════════════════════════════════════════════════════════ #}
+    {% if policy.status == 'SURRENDERED' %}
+        <div class="card dt-card dt-card--accent-left dt-surrendered" id="surrendered-info-banner">
+            <div class="dt-card__body">
+                <div class="d-flex align-items-start gap-3 mb-4">
+                    <div class="dt-icon">
+                        <i class="fas fa-file-circle-check"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <h5 class="mb-0 dt-card__title">Policy Surrendered</h5>
+                            <span class="dt-badge">SURRENDERED</span>
+                        </div>
+                        <p class="mb-0 dt-card__desc">
+                            This policy was surrendered on
+                            <strong>{{ policy.surrenderDate ? policy.surrenderDate|date('d M Y') : 'N/A' }}</strong>.
+                            No further benefits are payable. Download the acknowledgement for your records.
+                        </p>
+                    </div>
+                </div>
+
+                {# Key figures #}
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <div class="dt-metric dt-metric--hero">
+                            <div class="dt-metric__label">
+                                <i class="fas fa-indian-rupee-sign me-1"></i> Surrender Value
+                            </div>
+                            <div class="dt-metric__value dt-metric__value--hero">
+                                {% if policy.surrenderValue %}
+                                    ₹{{ policy.surrenderValue|number_format(2, '.', ',') }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </div>
+                            <div class="dt-metric__sub">Amount payable by LIC</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dt-metric dt-metric--secondary">
+                            <div class="dt-metric__label">
+                                <i class="fas fa-indian-rupee-sign me-1"></i> Original Sum Assured
+                            </div>
+                            <div class="dt-metric__value">
+                                ₹{{ policy.sumAssured|number_format(0, '.', ',') }}
+                            </div>
+                            <div class="dt-metric__sub">Policy benefit at maturity</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dt-metric dt-metric--secondary">
+                            <div class="dt-metric__label">
+                                <i class="fas fa-calendar-xmark me-1"></i> Surrender Date
+                            </div>
+                            <div class="dt-metric__value">
+                                {{ policy.surrenderDate ? policy.surrenderDate|date('d M Y') : '-' }}
+                            </div>
+                            <div class="dt-metric__sub">Date of surrender</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dt-metric dt-metric--secondary">
+                            <div class="dt-metric__label">
+                                <i class="fas fa-file-contract me-1"></i> Plan
+                            </div>
+                            <div class="dt-metric__value" style="font-size:1rem;">
+                                {{ policy.licPlan ? policy.licPlan.planName : '-' }}
+                            </div>
+                            <div class="dt-metric__sub">
+                                {{ policy.licPlan ? policy.licPlan.tableNumber : '' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# Download PDF button #}
+                {% if policy.surrenderValue %}
+                <div class="d-flex justify-content-end">
+                    <a href="{{ path('app_admin_policy_surrender_pdf', { id: policy.id }) }}"
+                       target="_blank"
+                       class="dt-revival__btn dt-surrendered__btn-pdf">
+                        <i class="fas fa-file-pdf me-2"></i> Download Acknowledgement
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+
+    {# ══════════════════════════════════════════════════════════
        DAB DEATH-CLAIM ALERT BANNER
        Shown only when status = DEATH_CLAIM AND an active DAB rider exists.
        Alerts the agent that additional (doubled) sum assured is claimable.

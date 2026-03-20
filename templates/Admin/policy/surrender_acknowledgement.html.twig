@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+
+    <style>
+        body {
+            font-family: "DejaVu Sans", sans-serif;
+            font-size: 12px;
+            color: #333;
+            padding: 20px;
+            border: 2px solid #444;
+        }
+
+        /* HEADER */
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .agency-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #222;
+        }
+
+        .doc-title {
+            font-size: 14px;
+            margin-top: 6px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .sub-title {
+            font-size: 11px;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        /* INFO */
+        .info {
+            margin-top: 20px;
+        }
+
+        .row {
+            display: table;
+            width: 100%;
+            padding: 6px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .label {
+            display: table-cell;
+            width: 45%;
+            font-weight: bold;
+            color: #444;
+        }
+
+        .value {
+            display: table-cell;
+            width: 55%;
+            text-align: right;
+        }
+
+        /* AMOUNT */
+        .amount-box {
+            margin: 25px 0;
+            padding: 12px;
+            text-align: center;
+            background-color: #f8f9fa;
+            border: 2px dashed #555;
+        }
+
+        .amount-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #555;
+        }
+
+        .amount-value {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        /* DISCLAIMER */
+        .disclaimer {
+            margin-top: 20px;
+            padding: 10px;
+            font-size: 10px;
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+        }
+
+        /* FOOTER */
+        .footer {
+            margin-top: 25px;
+            font-size: 10px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #ccc;
+            padding-top: 6px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <div class="header">
+        {% if policy.agency %}
+            <div class="agency-name">{{ policy.agency.businessName }}</div>
+        {% endif %}
+        <div class="doc-title">Policy Surrender Acknowledgement</div>
+        <div class="sub-title">(Agent Record - Not an official LIC document)</div>
+    </div>
+
+    <!-- INFO -->
+    <div class="info">
+        <div class="row">
+            <div class="label">Policy Number</div>
+            <div class="value">{{ policy.policyNumber }}</div>
+        </div>
+
+        <div class="row">
+            <div class="label">Policy Holder Name</div>
+            <div class="value">{{ policy.client ? policy.client.name : '-' }}</div>
+        </div>
+
+        <div class="row">
+            <div class="label">Plan</div>
+            <div class="value">
+                {% if policy.licPlan %}
+                    {{ policy.licPlan.tableNumber }} - {{ policy.licPlan.planName }}
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="label">Sum Assured</div>
+            <div class="value">
+                {{ (policy.sumAssured / 100)|format_currency('INR', {fraction_digit: 2}, 'en_IN') }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="label">Commencement Date</div>
+            <div class="value">
+                {{ policy.commencementDate ? policy.commencementDate|date('d-M-Y') : '-' }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="label">Policy Term</div>
+            <div class="value">{{ policy.policyTerm }} years</div>
+        </div>
+
+        <div class="row">
+            <div class="label">Surrender Date</div>
+            <div class="value">
+                {{ policy.surrenderDate ? policy.surrenderDate|date('d-M-Y') : '-' }}
+            </div>
+        </div>
+    </div>
+
+    <!-- SURRENDER VALUE -->
+    <div class="amount-box">
+        <div class="amount-label">Surrender Value (as quoted by LIC)</div>
+        <div class="amount-value">
+            &#8377;{{ policy.surrenderValue|number_format(2, '.', ',') }}
+        </div>
+    </div>
+
+    <!-- DISCLAIMER -->
+    <div class="disclaimer">
+        <strong>Important Notice:</strong><br>
+        This document is an internal agent record acknowledging the surrender of the above policy.
+        It is NOT an official LIC surrender certificate or discharge voucher.
+        The actual surrender value and settlement will be processed and paid by LIC directly.
+        This acknowledgement should not be presented to LIC or treated as an official document.
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        {% if policy.agency %}
+            <p>Agent Contact: {{ policy.agency.mobile }}</p>
+        {% endif %}
+        <p>This is a computer-generated acknowledgement and does not require a signature.</p>
+    </div>
+
+</body>
+</html>
