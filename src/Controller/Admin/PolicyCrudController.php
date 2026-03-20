@@ -4,6 +4,8 @@ namespace App\Controller\Admin;
 
 use App\Entity\LicPlan;
 use App\Entity\Policy;
+use App\Entity\PolicyStatusLog;
+use App\Entity\PremiumReceipt;
 use App\Entity\User;
 use App\Repository\SaRebateRepository;
 use App\Service\MaturityProjectionService;
@@ -26,6 +28,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -489,5 +492,114 @@ class PolicyCrudController extends BaseCrudController
             'rebatePerThousand' => $rebatePerThousand,
             'rebateAmount' => $rebateAmount,
         ]);
+    }
+
+    #[Route('/admin/policy/{id}/initiate-revival', name: 'app_admin_policy_initiate_revival', methods: ['POST'])]
+    public function initiateRevival(int $id, Request $request): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('revival_' . $id, $request->request->get('_token'))) {
+            $this->addFlash('danger', 'Invalid CSRF token.');
+            return $this->redirectToRoute('admin');
+        }
+
+        $policy = $this->entityManager->getRepository(Policy::class)->find($id);
+
+        if (!$policy || $policy->getStatus() !== 'LAPSED') {
+            $this->addFlash('danger', 'Revival can only be initiated for LAPSED policies.');
+            return $this->redirectToRoute('admin');
+        }
+
+        $oldStatus = $policy->getStatus();
+        $policy->setStatus('REVIVAL_PENDING');
+        $policy->setRevivalRequestDate(new \DateTime());
+
+        // Log the status transition
+        $log = new PolicyStatusLog();
+        $log->setPolicy($policy);
+        $log->setOldStatus($oldStatus);
+        $log->setNewStatus('REVIVAL_PENDING');
+        $log->setTriggeredBy('manual:revival');
+        $log->setReason('Revival initiated by agent');
+        $this->entityManager->persist($log);
+
+        $this->entityManager->flush();
+
+        $this->addFlash('success', sprintf(
+            'Revival initiated for policy %s. Please enter the arrears amount from LIC quote and confirm.',
+            $policy->getPolicyNumber()
+        ));
+
+        return $this->redirect($this->container->get('router')->generate('admin', [
+            'crudController' => self::class,
+            'crudAction' => 'detail',
+            'entityId' => $id,
+        ]));
+    }
+
+    #[Route('/admin/policy/{id}/confirm-revival', name: 'app_admin_policy_confirm_revival', methods: ['POST'])]
+    public function confirmRevival(int $id, Request $request): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('revival_' . $id, $request->request->get('_token'))) {
+            $this->addFlash('danger', 'Invalid CSRF token.');
+            return $this->redirectToRoute('admin');
+        }
+
+        $policy = $this->entityManager->getRepository(Policy::class)->find($id);
+
+        if (!$policy || $policy->getStatus() !== 'REVIVAL_PENDING') {
+            $this->addFlash('danger', 'Revival can only be confirmed for policies with REVIVAL_PENDING status.');
+            return $this->redirectToRoute('admin');
+        }
+
+        $arrearsAmount = (float) $request->request->get('revival_arrears_amount', 0);
+        if ($arrearsAmount <= 0) {
+            $this->addFlash('danger', 'Please enter a valid arrears amount from the LIC quote.');
+            return $this->redirect($this->container->get('router')->generate('admin', [
+                'crudController' => self::class,
+                'crudAction' => 'detail',
+                'entityId' => $id,
+            ]));
+        }
+
+        $oldStatus = $policy->getStatus();
+
+        // Update policy
+        $policy->setStatus('IN_FORCE');
+        $policy->setRevivalArrearsAmount((string) $arrearsAmount);
+        $policy->setFup(null);
+        $policy->setPaidUpSumAssured(null);
+
+        // Create a special PremiumReceipt for the revival payment
+        $receipt = new PremiumReceipt();
+        $receipt->setPolicy($policy);
+        $receipt->setAgency($policy->getAgency());
+        $receipt->setReceiptNumber('RVL-' . date('Y') . '-' . strtoupper(substr(uniqid(), -6)));
+        $receipt->setAmount((string) $arrearsAmount);
+        $receipt->setPaymentDate(new \DateTime());
+        $receipt->setPaymentMode('REVIVAL');
+        $this->entityManager->persist($receipt);
+
+        // Log the status transition
+        $log = new PolicyStatusLog();
+        $log->setPolicy($policy);
+        $log->setOldStatus($oldStatus);
+        $log->setNewStatus('IN_FORCE');
+        $log->setTriggeredBy('manual:revival');
+        $log->setReason(sprintf('Revival confirmed. Arrears paid: ₹%s', number_format($arrearsAmount, 2)));
+        $this->entityManager->persist($log);
+
+        $this->entityManager->flush();
+
+        $this->addFlash('success', sprintf(
+            'Policy %s has been revived successfully. Arrears receipt %s created.',
+            $policy->getPolicyNumber(),
+            $receipt->getReceiptNumber()
+        ));
+
+        return $this->redirect($this->container->get('router')->generate('admin', [
+            'crudController' => self::class,
+            'crudAction' => 'detail',
+            'entityId' => $id,
+        ]));
     }
 }

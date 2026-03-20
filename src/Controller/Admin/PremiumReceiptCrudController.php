@@ -180,11 +180,13 @@ class PremiumReceiptCrudController extends BaseCrudController
                 'UPI/Online'    => 'ONLINE',
                 'LIC Office'    => 'LIC_OFFICE',
                 'Premium Point' => 'PREMIUM_POINT',
+                'Revival'       => 'REVIVAL',
             ])
             ->renderAsBadges([
                 'ONLINE'        => 'info',
                 'LIC_OFFICE'    => 'primary',
                 'PREMIUM_POINT' => 'success',
+                'REVIVAL'       => 'warning',
             ])
             ->setColumns(4)
             ->hideOnIndex();
