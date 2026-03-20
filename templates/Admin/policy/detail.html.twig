@@ -225,6 +225,306 @@
     {% endif %}
 
     {# ══════════════════════════════════════════════════════════
+       LAPSED - INITIATE REVIVAL BANNER
+       Two-section card: top = status info + metrics,
+       bottom = workflow stepper with action.
+       ══════════════════════════════════════════════════════════ #}
+    {% if policy.status == 'LAPSED' %}
+        {% set doc = policy.commencementDate %}
+        {% set ppt = policy.premiumPayingTerm %}
+        {% set yearsElapsed = doc ? (date() | date('Y') - doc | date('Y')) : 0 %}
+        {% set yearsElapsed = yearsElapsed > ppt ? ppt : yearsElapsed %}
+
+        <div class="card dt-card dt-card--accent-left dt-revival" id="revival-initiate-banner">
+
+            {# ── TOP: Status info ── #}
+            <div class="dt-card__body">
+                <div class="d-flex align-items-start gap-3 mb-4">
+                    <div class="dt-icon">
+                        <i class="fas fa-heart-pulse"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <h5 class="mb-0 dt-card__title">This Policy is LAPSED</h5>
+                            <span class="dt-badge">LAPSED</span>
+                        </div>
+                        <p class="mb-0 dt-card__desc">
+                            Premium payments were not received within the grace period. No benefits are payable while
+                            the policy remains lapsed. To restore full cover, initiate a revival and obtain a quote from LIC.
+                        </p>
+                    </div>
+                </div>
+
+                {# Key figures #}
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="dt-metric dt-metric--hero">
+                            <div class="dt-metric__label">
+                                <i class="fas fa-indian-rupee-sign me-1"></i> Sum Assured
+                            </div>
+                            <div class="dt-metric__value dt-metric__value--hero">
+                                ₹{{ policy.sumAssured|number_format(0, '.', ',') }}
+                            </div>
+                            <div class="dt-metric__sub">Benefit restored on revival</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dt-metric dt-metric--secondary">
+                            <div class="dt-metric__label">
+                                <i class="fas fa-calendar-xmark me-1"></i> First Unpaid Premium
+                            </div>
+                            <div class="dt-metric__value">
+                                {{ policy.fup ? policy.fup|date('d M Y') : '-' }}
+                            </div>
+                            <div class="dt-metric__sub">Arrears from this date</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dt-metric dt-metric--secondary">
+                            <div class="dt-metric__label">
+                                <i class="fas fa-coins me-1"></i> Modal Premium
+                            </div>
+                            <div class="dt-metric__value">
+                                ₹{{ policy.totalPremium|number_format(0, '.', ',') }}
+                            </div>
+                            <div class="dt-metric__sub">{{ policy.premiumMode }} incl. GST</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dt-metric dt-metric--secondary">
+                            <div class="dt-metric__label">
+                                <i class="fas fa-clock me-1"></i> Premiums Paid
+                            </div>
+                            <div class="dt-metric__value">
+                                {{ yearsElapsed }} of {{ ppt }} yrs
+                            </div>
+                            <div class="dt-metric__sub">PPT progress</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# ── BOTTOM: Revival workflow stepper + action ── #}
+            <div class="dt-revival__footer">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+
+                    {# Mini workflow stepper #}
+                    <div class="dt-revival__steps">
+                        <div class="dt-revival__step dt-revival__step--next">
+                            <span class="dt-revival__step-num">1</span>
+                            <span class="dt-revival__step-text">Initiate Revival</span>
+                        </div>
+                        <span class="dt-revival__step-arrow"><i class="fas fa-chevron-right"></i></span>
+                        <div class="dt-revival__step dt-revival__step--future">
+                            <span class="dt-revival__step-num">2</span>
+                            <span class="dt-revival__step-text">Enter LIC Quote</span>
+                        </div>
+                        <span class="dt-revival__step-arrow"><i class="fas fa-chevron-right"></i></span>
+                        <div class="dt-revival__step dt-revival__step--future">
+                            <span class="dt-revival__step-num">3</span>
+                            <span class="dt-revival__step-text">Confirm Revival</span>
+                        </div>
+                    </div>
+
+                    {# Action button #}
+                    <form method="POST" action="{{ path('app_admin_policy_initiate_revival', { id: policy.id }) }}" id="initiateRevivalForm">
+                        <input type="hidden" name="_token" value="{{ csrf_token('revival_' ~ policy.id) }}">
+                        <button type="button" class="dt-revival__btn dt-revival__btn--initiate" onclick="initiateRevival()">
+                            <i class="fas fa-rotate-right me-2"></i> Initiate Revival
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        function initiateRevival() {
+            SimplifySwal.confirm(
+                'Initiate Revival?',
+                'Policy {{ policy.policyNumber }} will be marked as REVIVAL PENDING. You will need to obtain a revival quote from LIC to complete the process.',
+                'Yes, Initiate',
+                'Cancel'
+            ).then(function (confirmed) {
+                if (confirmed) {
+                    document.getElementById('initiateRevivalForm').submit();
+                }
+            });
+        }
+        </script>
+    {% endif %}
+
+    {# ══════════════════════════════════════════════════════════
+       REVIVAL PENDING - CONFIRM REVIVAL BANNER
+       Two-section card: top = status + stepper + metrics,
+       bottom = premium arrears entry tile with confirm.
+       ══════════════════════════════════════════════════════════ #}
+    {% if policy.status == 'REVIVAL_PENDING' %}
+        <div class="card dt-card dt-card--accent-left dt-revival-pending" id="revival-confirm-banner">
+
+            {# ── TOP: Status info ── #}
+            <div class="dt-card__body">
+                <div class="d-flex align-items-start gap-3 mb-4">
+                    <div class="dt-icon">
+                        <i class="fas fa-clock-rotate-left"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <h5 class="mb-0 dt-card__title">Revival In Progress</h5>
+                            <span class="dt-badge">REVIVAL PENDING</span>
+                        </div>
+                        <p class="mb-0 dt-card__desc">
+                            Revival requested on
+                            <strong>{{ policy.revivalRequestDate ? policy.revivalRequestDate|date('d M Y') : 'N/A' }}</strong>.
+                            Enter the arrears amount from the LIC revival quote to complete the process.
+                        </p>
+                    </div>
+                </div>
+
+                {# Workflow stepper - step 2 active #}
+                <div class="dt-revival__steps dt-revival__steps--wide mb-4">
+                    <div class="dt-revival__step dt-revival__step--done">
+                        <span class="dt-revival__step-num"><i class="fas fa-check"></i></span>
+                        <span class="dt-revival__step-text">Initiated</span>
+                    </div>
+                    <div class="dt-revival__step-connector dt-revival__step-connector--done"></div>
+                    <div class="dt-revival__step dt-revival__step--next">
+                        <span class="dt-revival__step-num">2</span>
+                        <span class="dt-revival__step-text">Enter Quote</span>
+                    </div>
+                    <div class="dt-revival__step-connector"></div>
+                    <div class="dt-revival__step dt-revival__step--future">
+                        <span class="dt-revival__step-num">3</span>
+                        <span class="dt-revival__step-text">Confirmed</span>
+                    </div>
+                </div>
+
+                {# Key figures #}
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="dt-metric dt-metric--secondary">
+                            <div class="dt-metric__label">
+                                <i class="fas fa-calendar-check me-1"></i> Revival Requested
+                            </div>
+                            <div class="dt-metric__value">
+                                {{ policy.revivalRequestDate ? policy.revivalRequestDate|date('d M Y') : '-' }}
+                            </div>
+                            <div class="dt-metric__sub">Request date</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dt-metric dt-metric--secondary">
+                            <div class="dt-metric__label">
+                                <i class="fas fa-calendar-xmark me-1"></i> First Unpaid Premium
+                            </div>
+                            <div class="dt-metric__value">
+                                {{ policy.fup ? policy.fup|date('d M Y') : '-' }}
+                            </div>
+                            <div class="dt-metric__sub">Arrears from this date</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dt-metric dt-metric--secondary">
+                            <div class="dt-metric__label">
+                                <i class="fas fa-indian-rupee-sign me-1"></i> Sum Assured
+                            </div>
+                            <div class="dt-metric__value">
+                                ₹{{ policy.sumAssured|number_format(0, '.', ',') }}
+                            </div>
+                            <div class="dt-metric__sub">Restored on revival</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dt-metric dt-metric--secondary">
+                            <div class="dt-metric__label">
+                                <i class="fas fa-coins me-1"></i> Modal Premium
+                            </div>
+                            <div class="dt-metric__value">
+                                ₹{{ policy.totalPremium|number_format(0, '.', ',') }}
+                            </div>
+                            <div class="dt-metric__sub">{{ policy.premiumMode }} incl. GST</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# ── BOTTOM: Arrears entry tile ── #}
+            <div class="dt-revival__footer dt-revival__footer--form">
+                <form method="POST" action="{{ path('app_admin_policy_confirm_revival', { id: policy.id }) }}" id="revivalForm">
+                    <input type="hidden" name="_token" value="{{ csrf_token('revival_' ~ policy.id) }}">
+
+                    <div class="dt-arrears">
+                        {# Left: Input tile #}
+                        <div class="dt-arrears__tile">
+                            <div class="dt-arrears__label">
+                                <i class="fas fa-file-invoice-dollar me-1"></i>
+                                Revival Arrears Amount
+                            </div>
+                            <div class="dt-arrears__field">
+                                <span class="dt-arrears__currency">₹</span>
+                                <input type="number"
+                                       step="0.01"
+                                       min="0.01"
+                                       name="revival_arrears_amount"
+                                       id="revival_arrears_amount"
+                                       class="dt-arrears__input"
+                                       required
+                                       autocomplete="off"
+                                       placeholder="0.00"
+                                       value="{{ policy.revivalArrearsAmount ?? '' }}">
+                            </div>
+                            <div class="dt-arrears__help">
+                                Enter total from LIC quote - unpaid premiums + interest + late fee
+                            </div>
+                        </div>
+
+                        {# Centre: What happens #}
+                        <div class="dt-arrears__info">
+                            <div class="dt-arrears__info-title">On confirmation</div>
+                            <ul class="dt-arrears__checklist">
+                                <li><i class="fas fa-check"></i> Status set to <strong>IN_FORCE</strong></li>
+                                <li><i class="fas fa-check"></i> FUP date cleared</li>
+                                <li><i class="fas fa-check"></i> Revival receipt created</li>
+                            </ul>
+                        </div>
+
+                        {# Right: Submit #}
+                        <div class="dt-arrears__submit">
+                            <button type="button" class="dt-revival__btn dt-revival__btn--confirm" onclick="confirmRevival()">
+                                <span class="dt-revival__btn-icon"><i class="fas fa-check-circle"></i></span>
+                                <span>Confirm Revival</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+        function confirmRevival() {
+            var amt = document.getElementById('revival_arrears_amount');
+            if (!amt.value || parseFloat(amt.value) <= 0) {
+                amt.focus();
+                amt.classList.add('dt-arrears__input--error');
+                setTimeout(function () { amt.classList.remove('dt-arrears__input--error'); }, 1500);
+                SimplifySwal.alert('warning', 'Amount Required', 'Please enter the arrears amount from the LIC revival quote.');
+                return;
+            }
+            var formatted = parseFloat(amt.value).toLocaleString('en-IN', {minimumFractionDigits: 2});
+            SimplifySwal.confirm(
+                'Confirm Revival?',
+                'Policy {{ policy.policyNumber }} will be restored to IN_FORCE with arrears of \u20B9' + formatted + '. A revival payment receipt will be created.',
+                'Yes, Confirm Revival',
+                'Cancel'
+            ).then(function (confirmed) {
+                if (confirmed) {
+                    document.getElementById('revivalForm').submit();
+                }
+            });
+        }
+        </script>
+    {% endif %}
+
+    {# ══════════════════════════════════════════════════════════
        DAB DEATH-CLAIM ALERT BANNER
        Shown only when status = DEATH_CLAIM AND an active DAB rider exists.
        Alerts the agent that additional (doubled) sum assured is claimable.
@@ -687,9 +987,9 @@
                                             {{ doc.documentTypeLabel }}
                                         </span>
                                     </td>
-                                    <td>{{ doc.fileName ?? '—' }}</td>
-                                    <td>{{ doc.uploadedBy ?? '—' }}</td>
-                                    <td class="text-muted">{{ doc.uploadedAt ? doc.uploadedAt|date('d M Y') : '—' }}</td>
+                                    <td>{{ doc.fileName ?? '-' }}</td>
+                                    <td>{{ doc.uploadedBy ?? '-' }}</td>
+                                    <td class="text-muted">{{ doc.uploadedAt ? doc.uploadedAt|date('d M Y') : '-' }}</td>
                                     <td class="pe-3">
                                         <div class="d-flex gap-2">
                                             {% if doc.filePath %}
