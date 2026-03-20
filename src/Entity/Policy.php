@@ -158,6 +158,12 @@ class Policy
     #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 2, nullable: true)]
     private ?string $saRebateAmount = null;
 
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
+    private ?\DateTime $revivalRequestDate = null;
+
+    #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 2, nullable: true)]
+    private ?string $revivalArrearsAmount = null;
+
     public function __construct()
     {
         $this->premiumReceipts = new ArrayCollection();
@@ -987,6 +993,28 @@ class Policy
                 $document->setPolicy(null);
             }
         }
+        return $this;
+    }
+
+    public function getRevivalRequestDate(): ?\DateTime
+    {
+        return $this->revivalRequestDate;
+    }
+
+    public function setRevivalRequestDate(?\DateTime $revivalRequestDate): static
+    {
+        $this->revivalRequestDate = $revivalRequestDate;
+        return $this;
+    }
+
+    public function getRevivalArrearsAmount(): ?string
+    {
+        return $this->revivalArrearsAmount;
+    }
+
+    public function setRevivalArrearsAmount(?string $revivalArrearsAmount): static
+    {
+        $this->revivalArrearsAmount = $revivalArrearsAmount;
         return $this;
     }
 
