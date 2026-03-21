@@ -417,7 +417,8 @@ class DashboardController extends AbstractDashboardController
             ->addCssFile('assets/css/admin/dashboard.css')
             ->addCssFile('assets/css/admin/detail.css')
             ->addCssFile('assets/css/admin/ledger.css')
-            ->addCssFile('assets/css/admin/commands.css');
+            ->addCssFile('assets/css/admin/commands.css')
+            ->addJsFile('assets/js/admin/receipt_installments.js');
     }
 
 
