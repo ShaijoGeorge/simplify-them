@@ -27,12 +27,17 @@ use App\Repository\ClientRepository;
 use App\Repository\PolicyRepository;
 use App\Repository\SurvivalBenefitRepository;
 use App\Repository\PremiumReceiptRepository;
+use App\Service\DueListService;
+use App\Service\WhatsAppService;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[AdminDashboard(routePath: '/admin', routeName: 'admin')]
@@ -44,6 +49,8 @@ class DashboardController extends AbstractDashboardController
         private SurvivalBenefitRepository $survivalBenefitRepository,
         private PremiumReceiptRepository $receiptRepository,
         private ClientTransactionRepository $txnRepository,
+        private DueListService $dueListService,
+        private WhatsAppService $whatsAppService,
     ) {}
 
     public function index(): Response
@@ -199,6 +206,207 @@ class DashboardController extends AbstractDashboardController
         ]);
     }
 
+    /**
+     * Parse filter params common to both report and export actions.
+     *
+     * The date range is always fixed: 6 months back to 3 months forward from today.
+     * All three zones (Recovery, Current, Pipeline) are loaded simultaneously.
+     * The fup_month filter narrows within this range (optional).
+     *
+     * @return array{fromDate: \DateTime, toDate: \DateTime, filters: array<string, mixed>}
+     */
+    private function parseDueListParams(Request $request): array
+    {
+        $today = new \DateTime('today');
+        $fromDate = (clone $today)->modify('-6 months')->modify('first day of this month');
+        $toDate = (clone $today)->modify('+3 months')->modify('last day of this month 23:59:59');
+
+        $filters = array_filter([
+            'fup_month'    => $request->query->get('fup_month', ''),
+            'mode'         => $request->query->get('mode', ''),
+            'flag'         => $request->query->get('flag', ''),
+            'grace_status' => $request->query->get('grace_status', ''),
+            'sort'         => $request->query->get('sort', ''),
+        ]);
+
+        return [
+            'fromDate' => $fromDate,
+            'toDate'   => $toDate,
+            'filters'  => $filters,
+        ];
+    }
+
+    #[Route('/admin/renewal-due-report', name: 'admin_renewal_due_report')]
+    public function renewalDueReport(Request $request): Response
+    {
+        $user = $this->getUser();
+        $agency = $user->getAgency();
+
+        if (!$agency) {
+            throw $this->createAccessDeniedException('No agency assigned.');
+        }
+
+        $params = $this->parseDueListParams($request);
+        $entries = $this->dueListService->buildDueList(
+            $agency,
+            $params['fromDate'],
+            $params['toDate'],
+            $params['filters'],
+        );
+        $summary = $this->dueListService->computeSummary($entries);
+
+        // Group entries by zone and generate WhatsApp URLs
+        $zones = ['past' => [], 'current' => [], 'future' => []];
+
+        foreach ($entries as &$entry) {
+            $policy = $entry['policy'];
+            $client = $policy->getClient();
+            $mobile = $client?->getMobile();
+
+            $entry['whatsapp_url'] = null;
+            if ($mobile) {
+                $entry['whatsapp_url'] = $this->whatsAppService->generateWhatsAppUrl(
+                    $mobile,
+                    $client->getName() ?? '',
+                    $policy->getPolicyNumber() ?? '',
+                    $policy->getFup()?->format('d-M-Y') ?? '',
+                    number_format($entry['total_payable'], 2),
+                );
+            }
+
+            $zones[$entry['zone']][] = $entry;
+        }
+        unset($entry);
+
+        // Build FUP month options for filter dropdown (past 6 to future 3)
+        $fupMonthOptions = [];
+        $today = new \DateTime('today');
+        for ($i = -6; $i <= 3; $i++) {
+            $m = (clone $today)->modify("{$i} months");
+            $fupMonthOptions[$m->format('Y-m')] = $m->format('M Y');
+        }
+
+        return $this->render('Admin/renewal_due/index.html.twig', [
+            'zones'             => $zones,
+            'summary'           => $summary,
+            'agency'            => $agency,
+            'filters'           => $params['filters'],
+            'fup_month_options' => $fupMonthOptions,
+        ]);
+    }
+
+    #[Route('/admin/renewal-due-report/export', name: 'admin_renewal_due_export')]
+    public function renewalDueExport(Request $request): Response
+    {
+        $user = $this->getUser();
+        $agency = $user->getAgency();
+
+        if (!$agency) {
+            throw $this->createAccessDeniedException('No agency assigned.');
+        }
+
+        $params = $this->parseDueListParams($request);
+        $entries = $this->dueListService->buildDueList(
+            $agency,
+            $params['fromDate'],
+            $params['toDate'],
+            $params['filters'],
+        );
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Due List');
+
+        $flagLabels = ['FY' => 'First Year', 'ST' => 'Standard', 'LP' => 'Last Premium', 'MT' => 'Matures After Due'];
+        $graceLabels = ['upcoming' => 'Upcoming', 'due_today' => 'Due Today', 'in_grace' => 'In Grace', 'overdue' => 'Overdue'];
+        $zoneLabels = ['past' => 'Recovery', 'current' => 'Current', 'future' => 'Pipeline'];
+
+        // Headers
+        $headers = [
+            '#', 'Zone', 'Name of Assured', 'Mobile', 'Policy Number', 'Plan/Term',
+            'D.o.C', 'FUP', 'Inst. Premium', 'Pending Due',
+            'Late Fee', 'GST', 'GST Rate', 'Total Payable',
+            'Mode', 'Flag', 'Est. Commission', 'Status',
+        ];
+        $sheet->fromArray($headers, null, 'A1');
+        $sheet->getStyle('A1:R1')->getFont()->setBold(true);
+
+        // Data rows
+        $row = 2;
+        foreach ($entries as $i => $entry) {
+            $policy = $entry['policy'];
+            $plan = $policy->getLicPlan();
+            $planTerm = $plan
+                ? $plan->getTableNumber() . '/' . $policy->getPolicyTerm()
+                : '';
+
+            $sheet->fromArray([
+                $i + 1,
+                $zoneLabels[$entry['zone']] ?? $entry['zone'],
+                $policy->getClient()?->getName(),
+                $policy->getClient()?->getMobile(),
+                $policy->getPolicyNumber(),
+                $planTerm,
+                $policy->getCommencementDate()?->format('d-M-Y') ?? '',
+                $policy->getFup()?->format('m/Y') ?? '',
+                $entry['basic_premium'],
+                $entry['pending_installments'],
+                $entry['late_fee'] + $entry['late_fee_gst'],
+                $entry['total_gst'],
+                $entry['gst_reason'],
+                $entry['total_payable'],
+                $policy->getPremiumMode(),
+                $flagLabels[$entry['flag']] ?? $entry['flag'],
+                $entry['est_commission'],
+                $graceLabels[$entry['grace_status']] ?? $entry['grace_status'],
+            ], null, "A{$row}");
+            $row++;
+        }
+
+        // Summary row
+        if (count($entries) > 0) {
+            $summary = $this->dueListService->computeSummary($entries);
+            $sheet->fromArray([
+                '', '', '', '', '', '', '', 'TOTAL', '', '',
+                $summary['total_late_fee'],
+                '', '',
+                $summary['total_payable'],
+                '', '',
+                $summary['total_commission'],
+                '',
+            ], null, "A{$row}");
+            $sheet->getStyle("A{$row}:R{$row}")->getFont()->setBold(true);
+        }
+
+        // Auto-size columns
+        foreach (range('A', 'R') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // Number format for currency columns (I, K, L, N, Q)
+        $lastDataRow = max($row, 2);
+        foreach (['I', 'K', 'L', 'N', 'Q'] as $col) {
+            $sheet->getStyle("{$col}2:{$col}{$lastDataRow}")
+                ->getNumberFormat()->setFormatCode('#,##0.00');
+        }
+
+        $writer = new Xlsx($spreadsheet);
+
+        $response = new StreamedResponse(function () use ($writer) {
+            $writer->save('php://output');
+        });
+
+        $fupFilter = $params['filters']['fup_month'] ?? '';
+        $filename = $fupFilter
+            ? 'Due_List_' . str_replace('-', '_', $fupFilter) . '.xlsx'
+            : 'Due_List_' . date('Ymd') . '.xlsx';
+        $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $response->headers->set('Content-Disposition', "attachment;filename=\"{$filename}\"");
+        $response->headers->set('Cache-Control', 'max-age=0');
+
+        return $response;
+    }
+
     public function configureAssets(): \EasyCorp\Bundle\EasyAdminBundle\Config\Assets
     {
         return parent::configureAssets()
@@ -247,6 +455,7 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToCrud('Claims', 'fa fa-file-medical', Claim::class);
         yield MenuItem::linkToCrud('Documents', 'fa fa-file-pdf', PolicyDocument::class);
         yield MenuItem::linkToRoute('Commission Statement', 'fa fa-file-invoice-dollar', 'admin_commission_statement');
+        yield MenuItem::linkToRoute('Renewal Due Report', 'fa fa-calendar-check', 'admin_renewal_due_report');
 
         // TOOLS
         yield MenuItem::section('TOOLS');
