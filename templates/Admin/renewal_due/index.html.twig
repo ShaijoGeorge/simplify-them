@@ -1,0 +1,547 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title %}
+    <div class="d-flex align-items-center justify-content-between">
+        <div>
+            <h2 class="mb-0">Due List</h2>
+            <small class="text-muted">{{ agency.businessName }} - Recovery | Current | Pipeline</small>
+        </div>
+    </div>
+{% endblock %}
+
+{% block main %}
+<div class="container-fluid lg-container">
+
+    {# SUMMARY CARDS #}
+    <div class="lg-metrics lg-metrics--4">
+        <div class="lg-card lg-card--red">
+            <div class="lg-card__body">
+                <div>
+                    <span class="lg-card__label">Recovery Zone</span>
+                    <span class="lg-card__value lg-card__value--red">{{ summary.count_by_zone.past }}</span>
+                    <span class="lg-card__sub">Past-due FUP (1-6 months)</span>
+                </div>
+                <div class="lg-card__icon lg-card__icon--red">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg-card lg-card--blue">
+            <div class="lg-card__body">
+                <div>
+                    <span class="lg-card__label">Current Target</span>
+                    <span class="lg-card__value lg-card__value--blue">{{ summary.count_by_zone.current }}</span>
+                    <span class="lg-card__sub">This month's collection</span>
+                </div>
+                <div class="lg-card__icon lg-card__icon--blue">
+                    <i class="fas fa-bullseye"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg-card lg-card--teal">
+            <div class="lg-card__body">
+                <div>
+                    <span class="lg-card__label">Pipeline</span>
+                    <span class="lg-card__value lg-card__value--teal">{{ summary.count_by_zone.future }}</span>
+                    <span class="lg-card__sub">Upcoming (1-3 months)</span>
+                </div>
+                <div class="lg-card__icon lg-card__icon--teal">
+                    <i class="fas fa-hourglass-half"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg-card lg-card--green">
+            <div class="lg-card__body">
+                <div>
+                    <span class="lg-card__label">Total Payable</span>
+                    <span class="lg-card__value lg-card__value--green">₹{{ summary.total_payable|number_format(2) }}</span>
+                    <span class="lg-card__sub">Est. Comm: ₹{{ summary.total_commission|number_format(2) }}</span>
+                </div>
+                <div class="lg-card__icon lg-card__icon--green">
+                    <i class="fas fa-rupee-sign"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# FILTER BAR #}
+    <div class="rd-filter-bar rd-filter-bar--sticky mb-4">
+        <form method="get" action="{{ path('admin_renewal_due_report') }}" class="rd-filter-form">
+            <div class="rd-filter-group rd-filter-group--search">
+                <label class="rd-filter-label">Search</label>
+                <input type="text" id="dl-search" class="form-control form-control-sm" placeholder="Client name or policy no." autocomplete="off">
+            </div>
+
+            <div class="rd-filter-group">
+                <label class="rd-filter-label">FUP Month</label>
+                <select name="fup_month" class="form-select form-select-sm">
+                    <option value="">All Months</option>
+                    {% for value, label in fup_month_options %}
+                        <option value="{{ value }}" {{ (filters.fup_month ?? '') == value ? 'selected' }}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="rd-filter-group">
+                <label class="rd-filter-label">Mode</label>
+                <select name="mode" class="form-select form-select-sm">
+                    <option value="">All Modes</option>
+                    {% for m in ['YLY', 'HLY', 'QLY', 'NACH', 'MLY'] %}
+                        <option value="{{ m }}" {{ (filters.mode ?? '') == m ? 'selected' }}>{{ m }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="rd-filter-group">
+                <label class="rd-filter-label">Flag</label>
+                <select name="flag" class="form-select form-select-sm">
+                    <option value="">All Flags</option>
+                    <option value="FY" {{ (filters.flag ?? '') == 'FY' ? 'selected' }}>FY - First Year Prem.</option>
+                    <option value="ST" {{ (filters.flag ?? '') == 'ST' ? 'selected' }}>ST - 2nd/3rd Year Prem.</option>
+                    <option value="LP" {{ (filters.flag ?? '') == 'LP' ? 'selected' }}>LP - Last Premium</option>
+                    <option value="MT" {{ (filters.flag ?? '') == 'MT' ? 'selected' }}>MT - Matures After Due</option>
+                </select>
+            </div>
+
+            <div class="rd-filter-group">
+                <label class="rd-filter-label">Grace Status</label>
+                <select name="grace_status" class="form-select form-select-sm">
+                    <option value="">All</option>
+                    <option value="upcoming" {{ (filters.grace_status ?? '') == 'upcoming' ? 'selected' }}>Upcoming</option>
+                    <option value="due_today" {{ (filters.grace_status ?? '') == 'due_today' ? 'selected' }}>Due Today</option>
+                    <option value="in_grace" {{ (filters.grace_status ?? '') == 'in_grace' ? 'selected' }}>In Grace</option>
+                    <option value="overdue" {{ (filters.grace_status ?? '') == 'overdue' ? 'selected' }}>Overdue</option>
+                </select>
+            </div>
+
+            <div class="rd-filter-group">
+                <label class="rd-filter-label">Sort</label>
+                <select name="sort" class="form-select form-select-sm">
+                    <option value="">FUP Date</option>
+                    <option value="amount_desc" {{ (filters.sort ?? '') == 'amount_desc' ? 'selected' }}>Amount (High to Low)</option>
+                </select>
+            </div>
+
+            <div class="rd-filter-actions">
+                <button type="submit" class="btn btn-sm btn-primary">
+                    <i class="fas fa-filter me-1"></i>Apply
+                </button>
+                <a href="{{ path('admin_renewal_due_report') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-times me-1"></i>Clear
+                </a>
+                <a href="{{ path('admin_renewal_due_export', filters) }}" class="btn btn-sm btn-success">
+                    <i class="fas fa-file-excel me-1"></i>Export
+                </a>
+            </div>
+        </form>
+    </div>
+
+    {# ═══ ZONE SECTIONS ═══ #}
+    {% set zone_config = {
+        past:    { title: 'Recovery Zone', subtitle: 'Past-due FUP (1-6 months) - Highest priority for recovery', icon: 'exclamation-triangle', color: 'red' },
+        current: { title: 'Current Month Target', subtitle: 'FUP this month - Primary collection focus', icon: 'bullseye', color: 'blue' },
+        future:  { title: 'Pipeline', subtitle: 'Upcoming FUP (1-3 months) - Advance notice for large premiums', icon: 'hourglass-half', color: 'teal' }
+    } %}
+
+    {% set all_entries = zones.past|merge(zones.current)|merge(zones.future) %}
+    {% set total_count = all_entries|length %}
+
+    {% for zone_key, zone_entries in zones %}
+    {% set config = zone_config[zone_key] %}
+    {% set default_collapsed = (zone_key == 'future' and total_count > 15) %}
+    <div class="lg-panel mb-4 dl-zone" data-zone="{{ zone_key }}">
+        <div class="lg-panel__header dl-zone__header" role="button" aria-expanded="{{ default_collapsed ? 'false' : 'true' }}">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="lg-panel__icon lg-panel__icon--{{ config.color }}">
+                        <i class="fas fa-{{ config.icon }}"></i>
+                    </div>
+                    <div>
+                        <h6 class="lg-panel__title">{{ config.title }}</h6>
+                        <small class="lg-panel__sub">{{ config.subtitle }}</small>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-{{ zone_key == 'past' ? 'danger' : (zone_key == 'current' ? 'primary' : 'info') }} fs-6">
+                        {{ zone_entries|length }}
+                    </span>
+                    <i class="fas fa-chevron-down dl-zone__chevron"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="dl-zone__body{{ default_collapsed ? ' dl-zone__body--collapsed' : '' }}">
+        {% if zone_entries|length > 0 %}
+
+            {# ── Desktop Table ── #}
+            <div class="table-responsive dl-desktop-view">
+                <table class="table lg-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Name of Assured</th>
+                            <th>Policy No.</th>
+                            <th>Plan/Term</th>
+                            <th>D.o.C</th>
+                            <th>FUP</th>
+                            <th class="text-end">Inst. Prem.</th>
+                            <th class="text-center">Due</th>
+                            <th class="text-end">Late Fee</th>
+                            <th class="text-end">GST</th>
+                            <th class="text-end">Total Payable</th>
+                            <th class="text-center">Mode</th>
+                            <th class="text-center">Flg</th>
+                            <th class="text-center">Grace</th>
+                            <th class="text-end">Est. Comm.</th>
+                            <th class="text-center dl-th-actions"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in zone_entries %}
+                        {% set policy = entry.policy %}
+                        <tr class="dl-row dl-row--{{ entry.flag|lower }} dl-row--grace-{{ entry.grace_status }}"
+                            data-search="{{ (policy.client.name ?? '')|lower }} {{ (policy.policyNumber ?? '')|lower }}">
+                            <td class="text-muted">{{ loop.index }}</td>
+                            <td class="fw-semibold">{{ policy.client.name ?? '-' }}</td>
+                            <td>
+                                <a href="{{ ea_url().setController('App\\\\Controller\\\\Admin\\\\PolicyCrudController').setAction('detail').setEntityId(policy.id) }}" class="fw-semibold text-decoration-none">
+                                    {{ policy.policyNumber }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if policy.licPlan %}
+                                    {{ policy.licPlan.tableNumber }}/{{ policy.policyTerm }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ policy.commencementDate ? policy.commencementDate|date('d-m-Y') : '-' }}</td>
+                            <td>{{ policy.fup ? policy.fup|date('m/Y') : '-' }}</td>
+                            <td class="text-end">₹{{ entry.basic_premium|number_format(2) }}</td>
+                            <td class="text-center">
+                                {% if entry.pending_installments > 1 %}
+                                    <span class="badge bg-danger">{{ entry.pending_installments }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ entry.pending_installments }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if entry.late_fee > 0 %}
+                                    <span class="text-danger">₹{{ (entry.late_fee + entry.late_fee_gst)|number_format(2) }}</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="text-end" title="{{ entry.gst_reason }}">
+                                {% if entry.total_gst > 0 %}
+                                    ₹{{ entry.total_gst|number_format(2) }}
+                                    <br><small class="text-muted">{{ entry.gst_rate }}%</small>
+                                {% else %}
+                                    <span class="text-muted" title="{{ entry.gst_reason }}">0%</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end fw-bold">₹{{ entry.total_payable|number_format(2) }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary">{{ policy.premiumMode }}</span>
+                            </td>
+                            <td class="text-center">
+                                {% if entry.flag == 'FY' %}
+                                    <span class="dl-flag dl-flag--fy" title="First Year Premium - High Commission">FY</span>
+                                {% elseif entry.flag == 'ST' %}
+                                    <span class="dl-flag dl-flag--st" title="2nd/3rd Year Premium">ST</span>
+                                {% elseif entry.flag == 'LP' %}
+                                    <span class="dl-flag dl-flag--lp" title="Last Premium - Congratulate Client!">LP</span>
+                                {% elseif entry.flag == 'MT' %}
+                                    <span class="dl-flag dl-flag--mt" title="Matures After This Due - Reinvestment Opportunity!">MT</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if entry.grace_status == 'overdue' %}
+                                    <span class="dl-grace dl-grace--overdue" title="Grace expired">
+                                        <i class="fas fa-circle-exclamation"></i> Overdue
+                                    </span>
+                                    {% if entry.grace_deadline %}
+                                        <small class="dl-grace__deadline text-danger">Exp {{ entry.grace_deadline|date('d-M') }}</small>
+                                    {% endif %}
+                                {% elseif entry.grace_status == 'in_grace' %}
+                                    <span class="dl-grace dl-grace--in-grace" title="Within grace period">
+                                        <i class="fas fa-clock"></i> In Grace
+                                    </span>
+                                    {% if entry.grace_deadline %}
+                                        <small class="dl-grace__deadline text-warning">Exp {{ entry.grace_deadline|date('d-M') }}</small>
+                                    {% endif %}
+                                {% elseif entry.grace_status == 'due_today' %}
+                                    <span class="dl-grace dl-grace--due-today" title="Due today!">
+                                        <i class="fas fa-bell"></i> Today
+                                    </span>
+                                {% else %}
+                                    <span class="dl-grace dl-grace--upcoming" title="Upcoming">
+                                        <i class="fas fa-calendar"></i> Upcoming
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if entry.est_commission > 0 %}
+                                    ₹{{ entry.est_commission|number_format(2) }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="text-center dl-actions-cell">
+                                <div class="dl-actions">
+                                    <button type="button" class="dl-actions__trigger" aria-label="Actions">
+                                        <i class="fas fa-ellipsis-vertical"></i>
+                                    </button>
+                                    <div class="dl-actions__menu">
+                                        {% if policy.client.mobile %}
+                                            <a href="tel:{{ policy.client.mobile }}" class="dl-actions__item">
+                                                <i class="fas fa-phone"></i> Call {{ policy.client.mobile }}
+                                            </a>
+                                        {% endif %}
+                                        {% if entry.whatsapp_url %}
+                                            <a href="{{ entry.whatsapp_url }}" target="_blank" class="dl-actions__item dl-actions__item--wa">
+                                                <i class="fab fa-whatsapp"></i> WhatsApp Reminder
+                                            </a>
+                                        {% endif %}
+                                        <a href="{{ ea_url().setController('App\\\\Controller\\\\Admin\\\\PolicyCrudController').setAction('detail').setEntityId(policy.id) }}" class="dl-actions__item">
+                                            <i class="fas fa-eye"></i> View Policy
+                                        </a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    {% set zone_total = 0 %}
+                    {% set zone_late = 0 %}
+                    {% set zone_comm = 0 %}
+                    {% for e in zone_entries %}
+                        {% set zone_total = zone_total + e.total_payable %}
+                        {% set zone_late = zone_late + e.late_fee + e.late_fee_gst %}
+                        {% set zone_comm = zone_comm + e.est_commission %}
+                    {% endfor %}
+                    <tfoot class="lg-table__footer">
+                        <tr>
+                            <td colspan="6" class="fw-bold">Subtotal ({{ zone_entries|length }})</td>
+                            <td></td>
+                            <td></td>
+                            <td class="text-end fw-bold text-danger">{% if zone_late > 0 %}₹{{ zone_late|number_format(2) }}{% endif %}</td>
+                            <td></td>
+                            <td class="text-end fw-bold">₹{{ zone_total|number_format(2) }}</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td class="text-end fw-bold">₹{{ zone_comm|number_format(2) }}</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            {# ── Mobile Card Layout ── #}
+            <div class="dl-mobile-view">
+                {% for entry in zone_entries %}
+                {% set policy = entry.policy %}
+                <div class="dl-card dl-card--{{ entry.grace_status }}"
+                     data-search="{{ (policy.client.name ?? '')|lower }} {{ (policy.policyNumber ?? '')|lower }}">
+                    <div class="dl-card__header">
+                        <div class="dl-card__client">
+                            <span class="dl-card__name">{{ policy.client.name ?? '-' }}</span>
+                            <span class="dl-card__policy">{{ policy.policyNumber }}</span>
+                        </div>
+                        <div class="dl-card__actions">
+                            {% if policy.client.mobile %}
+                                <a href="tel:{{ policy.client.mobile }}" class="dl-card__action-btn dl-card__action-btn--call" title="Call">
+                                    <i class="fas fa-phone"></i>
+                                </a>
+                            {% endif %}
+                            {% if entry.whatsapp_url %}
+                                <a href="{{ entry.whatsapp_url }}" target="_blank" class="dl-card__action-btn dl-card__action-btn--wa" title="WhatsApp">
+                                    <i class="fab fa-whatsapp"></i>
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="dl-card__badges">
+                        {% if entry.grace_status == 'overdue' %}
+                            <span class="dl-grace dl-grace--overdue"><i class="fas fa-circle-exclamation"></i> Overdue</span>
+                        {% elseif entry.grace_status == 'in_grace' %}
+                            <span class="dl-grace dl-grace--in-grace"><i class="fas fa-clock"></i> In Grace{% if entry.grace_deadline %} · Exp {{ entry.grace_deadline|date('d-M') }}{% endif %}</span>
+                        {% elseif entry.grace_status == 'due_today' %}
+                            <span class="dl-grace dl-grace--due-today"><i class="fas fa-bell"></i> Due Today</span>
+                        {% else %}
+                            <span class="dl-grace dl-grace--upcoming"><i class="fas fa-calendar"></i> Upcoming</span>
+                        {% endif %}
+                        {% if entry.flag %}<span class="dl-flag dl-flag--{{ entry.flag|lower }}">{{ entry.flag }}</span>{% endif %}
+                        <span class="badge bg-secondary">{{ policy.premiumMode }}</span>
+                    </div>
+
+                    <div class="dl-card__grid">
+                        <div class="dl-card__field">
+                            <span class="dl-card__label">Plan/Term</span>
+                            <span class="dl-card__val">{% if policy.licPlan %}{{ policy.licPlan.tableNumber }}/{{ policy.policyTerm }}{% else %}-{% endif %}</span>
+                        </div>
+                        <div class="dl-card__field">
+                            <span class="dl-card__label">FUP</span>
+                            <span class="dl-card__val">{{ policy.fup ? policy.fup|date('m/Y') : '-' }}</span>
+                        </div>
+                        <div class="dl-card__field">
+                            <span class="dl-card__label">Inst. Premium</span>
+                            <span class="dl-card__val">₹{{ entry.basic_premium|number_format(2) }}</span>
+                        </div>
+                        <div class="dl-card__field">
+                            <span class="dl-card__label">Pending</span>
+                            <span class="dl-card__val">{{ entry.pending_installments }}</span>
+                        </div>
+                    </div>
+
+                    <div class="dl-card__footer">
+                        <div class="dl-card__total">
+                            <span class="dl-card__label">Total Payable</span>
+                            <span class="dl-card__total-val">₹{{ entry.total_payable|number_format(2) }}</span>
+                        </div>
+                        {% if entry.est_commission > 0 %}
+                        <div class="dl-card__comm">
+                            <span class="dl-card__label">Est. Comm.</span>
+                            <span class="dl-card__comm-val">₹{{ entry.est_commission|number_format(2) }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {# Expandable detail #}
+                    <details class="dl-card__details">
+                        <summary class="dl-card__details-toggle">More details</summary>
+                        <div class="dl-card__details-body">
+                            <div class="dl-card__grid">
+                                <div class="dl-card__field">
+                                    <span class="dl-card__label">D.o.C</span>
+                                    <span class="dl-card__val">{{ policy.commencementDate ? policy.commencementDate|date('d-m-Y') : '-' }}</span>
+                                </div>
+                                <div class="dl-card__field">
+                                    <span class="dl-card__label">Late Fee</span>
+                                    <span class="dl-card__val{% if entry.late_fee > 0 %} text-danger{% endif %}">
+                                        {% if entry.late_fee > 0 %}₹{{ (entry.late_fee + entry.late_fee_gst)|number_format(2) }}{% else %}-{% endif %}
+                                    </span>
+                                </div>
+                                <div class="dl-card__field">
+                                    <span class="dl-card__label">GST</span>
+                                    <span class="dl-card__val">
+                                        {% if entry.total_gst > 0 %}₹{{ entry.total_gst|number_format(2) }} ({{ entry.gst_rate }}%){% else %}0%{% endif %}
+                                    </span>
+                                </div>
+                                <div class="dl-card__field">
+                                    <span class="dl-card__label">Mobile</span>
+                                    <span class="dl-card__val">{{ policy.client.mobile ?? '-' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+                {% endfor %}
+            </div>
+
+        {% else %}
+        <div class="lg-empty">
+            <i class="fas fa-check-circle"></i>
+            <p>No policies in this zone.</p>
+        </div>
+        {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+
+    {# GRAND TOTAL #}
+    {% if all_entries|length > 0 %}
+    <div class="rd-filter-bar dl-grand-total">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-4 flex-wrap">
+                <div>
+                    <span class="rd-filter-label d-block">Total Policies</span>
+                    <span class="fw-bold">{{ all_entries|length }}</span>
+                </div>
+                <div>
+                    <span class="rd-filter-label d-block">Late Fees</span>
+                    <span class="fw-bold text-danger">₹{{ summary.total_late_fee|number_format(2) }}</span>
+                </div>
+                <div>
+                    <span class="rd-filter-label d-block">Grand Total Payable</span>
+                    <span class="fw-bold" style="font-size:1.1rem">₹{{ summary.total_payable|number_format(2) }}</span>
+                </div>
+                <div>
+                    <span class="rd-filter-label d-block">Est. Commission</span>
+                    <span class="fw-bold" style="color:#0A7EA4">₹{{ summary.total_commission|number_format(2) }}</span>
+                </div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <span class="dl-flag dl-flag--fy">FY: {{ summary.count_by_flag.FY }}</span>
+                <span class="dl-flag dl-flag--st">ST: {{ summary.count_by_flag.ST }}</span>
+                <span class="dl-flag dl-flag--lp">LP: {{ summary.count_by_flag.LP }}</span>
+                <span class="dl-flag dl-flag--mt">MT: {{ summary.count_by_flag.MT }}</span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+{# ── JavaScript: Collapsible Zones + Client Search ── #}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Collapsible zones
+    document.querySelectorAll('.dl-zone__header').forEach(function(header) {
+        header.addEventListener('click', function() {
+            var body = this.closest('.dl-zone').querySelector('.dl-zone__body');
+            var isExpanded = this.getAttribute('aria-expanded') !== 'false';
+            this.setAttribute('aria-expanded', isExpanded ? 'false' : 'true');
+            body.classList.toggle('dl-zone__body--collapsed');
+        });
+    });
+
+    // Client search (instant filter)
+    var searchInput = document.getElementById('dl-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            var query = this.value.toLowerCase().trim();
+            // Filter table rows
+            document.querySelectorAll('.dl-row[data-search]').forEach(function(row) {
+                row.style.display = !query || row.dataset.search.indexOf(query) !== -1 ? '' : 'none';
+            });
+            // Filter mobile cards
+            document.querySelectorAll('.dl-card[data-search]').forEach(function(card) {
+                card.style.display = !query || card.dataset.search.indexOf(query) !== -1 ? '' : 'none';
+            });
+            // Auto-expand zones when searching
+            if (query) {
+                document.querySelectorAll('.dl-zone__body--collapsed').forEach(function(body) {
+                    body.classList.remove('dl-zone__body--collapsed');
+                    body.closest('.dl-zone').querySelector('.dl-zone__header').setAttribute('aria-expanded', 'true');
+                });
+            }
+        });
+    }
+
+    // 3-dot action menus
+    document.addEventListener('click', function(e) {
+        var trigger = e.target.closest('.dl-actions__trigger');
+        // Close all open menus first
+        document.querySelectorAll('.dl-actions--open').forEach(function(el) {
+            if (!trigger || el !== trigger.closest('.dl-actions')) {
+                el.classList.remove('dl-actions--open');
+            }
+        });
+        // Toggle clicked menu
+        if (trigger) {
+            e.preventDefault();
+            e.stopPropagation();
+            trigger.closest('.dl-actions').classList.toggle('dl-actions--open');
+        }
+    });
+});
+</script>
+{% endblock %}
