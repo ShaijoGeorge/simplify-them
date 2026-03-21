@@ -17,9 +17,14 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\FormField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\MoneyField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use App\Entity\Policy;
+use App\Service\DueListService;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
 
 class PremiumReceiptCrudController extends BaseCrudController
 {
@@ -29,6 +34,7 @@ class PremiumReceiptCrudController extends BaseCrudController
     public function __construct(
         PermissionCheckerService $permissionChecker,
         private LedgerService $ledgerService,
+        private DueListService $dueListService,
     ) {
         parent::__construct($permissionChecker);
     }
@@ -65,6 +71,27 @@ class PremiumReceiptCrudController extends BaseCrudController
         }
 
         return $actions;
+    }
+
+    #[Route('/admin/api/policy/{id}/pending-installments', name: 'admin_api_pending_installments', methods: ['GET'])]
+    public function pendingInstallments(Policy $policy): JsonResponse
+    {
+        $user = $this->getUser();
+        $agency = $user?->getAgency();
+
+        if (!$agency) {
+            return new JsonResponse(['installments' => 1, 'amount_per_installment' => 0, 'late_fee' => 0, 'total_payable' => 0]);
+        }
+
+        $today = new \DateTime('today');
+        $entry = $this->dueListService->enrichPolicyForApi($policy, $today, $agency);
+
+        return new JsonResponse([
+            'installments' => $entry['pending_installments'],
+            'amount_per_installment' => $entry['premium_with_gst'],
+            'late_fee' => round($entry['late_fee'] + $entry['late_fee_gst'], 2),
+            'total_payable' => $entry['total_payable'],
+        ]);
     }
 
     public function createEntity(string $entityFqcn)
@@ -138,11 +165,18 @@ class PremiumReceiptCrudController extends BaseCrudController
             ->setIcon('fa fa-hand-holding-usd')
             ->setHelp('How and when you collected from the client');
 
+        yield IntegerField::new('installmentsCollected', 'Installments')
+            ->setColumns(4)
+            ->setRequired(false)
+            ->setHelp('Dues collected from client')
+            ->setFormTypeOption('attr', ['data-installments-collected' => '1']);
+
         yield MoneyField::new('collectedFromClient', 'Collected Amount')
             ->setCurrency('INR')
             ->setStoredAsCents(false)
             ->setColumns(4)
-            ->setHelp('Actual amount collected from client');
+            ->setHelp('Auto-filled based on installments')
+            ->setFormTypeOption('attr', ['data-collected-field' => '1']);
 
         yield DateField::new('collectionDate', 'Collection Date')
             ->setColumns(4);
@@ -167,10 +201,17 @@ class PremiumReceiptCrudController extends BaseCrudController
             ->setIcon('fa fa-building-columns')
             ->setHelp('Payment made to LIC');
 
+        yield IntegerField::new('installmentsPaid', 'Installments')
+            ->setColumns(4)
+            ->setRequired(false)
+            ->setHelp('Dues paid to LIC')
+            ->setFormTypeOption('attr', ['data-installments-paid' => '1']);
+
         yield MoneyField::new('amount', 'Premium Amount')
             ->setCurrency('INR')
             ->setStoredAsCents(false)
-            ->setColumns(4);
+            ->setColumns(4)
+            ->setFormTypeOption('attr', ['data-amount-field' => '1']);
 
         yield DateField::new('paymentDate', 'Payment Date')
             ->setColumns(4);
@@ -351,16 +392,19 @@ class PremiumReceiptCrudController extends BaseCrudController
             return;
         }
 
+        $installments = $receipt->getInstallmentsPaid();
         $newDueDate = clone $policy->getNextDueDate();
         $mode = strtoupper($policy->getPremiumMode());
 
-        match ($mode) {
+        for ($i = 0; $i < $installments; $i++) {
+            match ($mode) {
                 'YLY', 'YEARLY' => $newDueDate->modify('+1 year'),
                 'HLY', 'HALF-YEARLY' => $newDueDate->modify('+6 months'),
                 'QLY', 'QUARTERLY' => $newDueDate->modify('+3 months'),
-            'MLY', 'MONTHLY', 'NACH' => $newDueDate->modify('+1 month'),
+                'MLY', 'MONTHLY', 'NACH' => $newDueDate->modify('+1 month'),
                 default => null,
-        };
+            };
+        }
 
         $policy->setNextDueDate($newDueDate);
 

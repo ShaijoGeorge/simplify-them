@@ -26,6 +26,10 @@ class PremiumReceipt
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
     private ?string $amount = null;
 
+    /** Number of installments paid to LIC. */
+    #[ORM\Column(type: Types::SMALLINT, options: ['default' => 1])]
+    private int $installmentsPaid = 1;
+
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $paymentMode = null;
 
@@ -45,6 +49,10 @@ class PremiumReceipt
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
     private ?string $netCommission = null;
+
+    /** Number of installments collected from the client. */
+    #[ORM\Column(type: Types::SMALLINT, options: ['default' => 1])]
+    private int $installmentsCollected = 1;
 
     /** Amount actually collected from the client (may differ from LIC payment amount). */
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
@@ -233,6 +241,28 @@ class PremiumReceipt
     {
         $this->netCommission = $netCommission;
 
+        return $this;
+    }
+
+    public function getInstallmentsCollected(): int
+    {
+        return $this->installmentsCollected;
+    }
+
+    public function setInstallmentsCollected(int $installmentsCollected): static
+    {
+        $this->installmentsCollected = max(1, $installmentsCollected);
+        return $this;
+    }
+
+    public function getInstallmentsPaid(): int
+    {
+        return $this->installmentsPaid;
+    }
+
+    public function setInstallmentsPaid(int $installmentsPaid): static
+    {
+        $this->installmentsPaid = max(1, $installmentsPaid);
         return $this;
     }
 

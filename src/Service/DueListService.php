@@ -92,6 +92,16 @@ class DueListService
     }
 
     /**
+     * Public accessor for the API endpoint - returns the same enriched data.
+     *
+     * @return array<string, mixed>
+     */
+    public function enrichPolicyForApi(Policy $policy, \DateTime $today, Agency $agency): array
+    {
+        return $this->enrichPolicy($policy, $today, $agency);
+    }
+
+    /**
      * Enrich a single policy with all due list calculations.
      *
      * @return array<string, mixed>
