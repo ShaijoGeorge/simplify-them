@@ -86,4 +86,35 @@ class PolicyRepository extends ServiceEntityRepository
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    /**
+     * Find policies for the Due List across all three zones:
+     *  - Recovery zone (past): FUP in the past (up to 6 months back)
+     *  - Current target: FUP in the current month
+     *  - Pipeline (future): FUP in the next 1-3 months
+     *
+     * Includes IN_FORCE and LAPSED (for recovery follow-up).
+     * Eager-loads client, licPlan, and licPlan.planType for GST/flag calculations.
+     *
+     * @return Policy[]
+     */
+    public function findDueListPolicies(int $agencyId, \DateTime $fromDate, \DateTime $toDate): array
+    {
+        return $this->createQueryBuilder('p')
+            ->join('p.client', 'c')
+            ->join('p.licPlan', 'lp')
+            ->leftJoin('lp.planType', 'pt')
+            ->addSelect('c', 'lp', 'pt')
+            ->where('p.agency = :agencyId')
+            ->andWhere('p.status IN (:statuses)')
+            ->andWhere('p.fup IS NOT NULL')
+            ->andWhere('p.fup BETWEEN :fromDate AND :toDate')
+            ->setParameter('agencyId', $agencyId)
+            ->setParameter('statuses', ['IN_FORCE', 'LAPSED'])
+            ->setParameter('fromDate', $fromDate)
+            ->setParameter('toDate', $toDate)
+            ->orderBy('p.fup', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }

@@ -363,6 +363,10 @@ class PremiumReceiptCrudController extends BaseCrudController
         };
 
         $policy->setNextDueDate($newDueDate);
+
+        // Advance FUP in sync so the due list reflects the payment
+        $policy->setFup(clone $newDueDate);
+
         $em->persist($policy);
     }
 
