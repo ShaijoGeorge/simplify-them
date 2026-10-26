@@ -126,4 +126,58 @@ class ClientTransactionRepository extends ServiceEntityRepository
 
         return $ledger;
     }
+
+    /**
+     * Returns aggregated ledger balance metrics and top client balances for the dashboard.
+     *
+     * @return array{
+     *     total_receivable: float,
+     *     total_payable: float,
+     *     net_position: float,
+     *     receivable_count: int,
+     *     payable_count: int,
+     *     top_balances: array<array{client: Client, balance: float}>
+     * }
+     */
+    public function getDashboardLedgerSummary(?Agency $agency): array
+    {
+        if (!$agency) {
+            return [
+                'total_receivable' => 0.0,
+                'total_payable'    => 0.0,
+                'net_position'     => 0.0,
+                'receivable_count' => 0,
+                'payable_count'    => 0,
+                'top_balances'     => [],
+            ];
+        }
+
+        $balances = $this->getOutstandingBalances($agency);
+
+        $totalReceivable = 0.0;
+        $totalPayable    = 0.0;
+        $receivableCount = 0;
+        $payableCount    = 0;
+
+        foreach ($balances as $entry) {
+            if ($entry['balance'] > 0) {
+                $totalReceivable += $entry['balance'];
+                $receivableCount++;
+            } elseif ($entry['balance'] < 0) {
+                $totalPayable += abs($entry['balance']);
+                $payableCount++;
+            }
+        }
+
+        usort($balances, static fn(array $a, array $b): int => abs($b['balance']) <=> abs($a['balance']));
+
+        return [
+            'total_receivable' => round($totalReceivable, 2),
+            'total_payable'    => round($totalPayable, 2),
+            'net_position'     => round($totalReceivable - $totalPayable, 2),
+            'receivable_count' => $receivableCount,
+            'payable_count'    => $payableCount,
+            'top_balances'     => array_slice($balances, 0, 5),
+        ];
+    }
 }

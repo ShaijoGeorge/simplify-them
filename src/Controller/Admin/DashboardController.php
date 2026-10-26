@@ -71,6 +71,10 @@ class DashboardController extends AbstractDashboardController
         $totalClients = $this->clientRepository->countByAgency($agencyId);
         $collectedThisMonth = $this->receiptRepository->getCollectedThisMonth($agencyId);
 
+        // Visual reporting data (6-month trends + ledger balances)
+        $chartData = $this->receiptRepository->getDashboardChartData($agencyId, 6);
+        $ledgerSummary = $this->txnRepository->getDashboardLedgerSummary($user->getAgency());
+
         // Time-of-day greeting
         $hour = (int) date('G');
         if ($hour < 12) {
@@ -90,6 +94,8 @@ class DashboardController extends AbstractDashboardController
             'active_policies' => $activePolicies,
             'total_clients' => $totalClients,
             'collected_this_month' => $collectedThisMonth,
+            'chart_data' => $chartData,
+            'ledger_summary' => $ledgerSummary,
             'greeting' => $greeting,
             'user_name' => $user->getFullName() ?? $user->getUserIdentifier(),
             'today_date' => date('l, d F Y'),
@@ -409,16 +415,20 @@ class DashboardController extends AbstractDashboardController
 
     public function configureAssets(): \EasyCorp\Bundle\EasyAdminBundle\Config\Assets
     {
+        $publicDir = \dirname(__DIR__, 3) . '/public/';
+        $ver = static fn(string $relPath): string => $relPath . '?v=' . (@filemtime($publicDir . $relPath) ?: '1');
+
         return parent::configureAssets()
             ->addCssFile('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap')
             ->addCssFile('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap')
             ->addCssFile('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap')
-            ->addCssFile('assets/css/admin/theme.css')
-            ->addCssFile('assets/css/admin/dashboard.css')
-            ->addCssFile('assets/css/admin/detail.css')
-            ->addCssFile('assets/css/admin/ledger.css')
-            ->addCssFile('assets/css/admin/commands.css')
-            ->addJsFile('assets/js/admin/receipt_installments.js');
+            ->addCssFile($ver('assets/css/admin/theme.css'))
+            ->addCssFile($ver('assets/css/admin/dashboard.css'))
+            ->addCssFile($ver('assets/css/admin/detail.css'))
+            ->addCssFile($ver('assets/css/admin/ledger.css'))
+            ->addCssFile($ver('assets/css/admin/commands.css'))
+            ->addJsFile('https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js')
+            ->addJsFile($ver('assets/js/admin/receipt_installments.js'));
     }
 
 

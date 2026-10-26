@@ -72,6 +72,227 @@
         </div>
     </div>
 
+    {# ── Visual Reporting: Premium Receipts & Commissions ── #}
+    <div class="db-charts-row">
+
+        {# 1. Premium Receipts Chart #}
+        <div class="db-panel db-chart-panel">
+            <div class="db-panel__head">
+                <div class="db-panel__icon db-panel__icon--blue">
+                    <i class="fas fa-receipt"></i>
+                </div>
+                <div>
+                    <h6 class="db-section-label">Premium Receipts</h6>
+                    <small class="db-section-sub">Collected from clients vs paid to LIC (6 months)</small>
+                </div>
+                <a href="{{ ea_url()
+                    .setController('App\\Controller\\Admin\\PremiumReceiptCrudController')
+                    .setAction('index') }}"
+                   class="db-panel__link ms-auto">
+                    Receipts <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+
+            <div class="db-chart-kpis">
+                <div class="db-chart-kpi">
+                    <span class="db-chart-kpi__label">Paid to LIC (6M)</span>
+                    <span class="db-chart-kpi__value db-chart-kpi__value--blue">
+                        ₹{{ (chart_data.totals.paid ?? 0)|number_format(2) }}
+                    </span>
+                </div>
+                <div class="db-chart-kpi">
+                    <span class="db-chart-kpi__label">Collected (6M)</span>
+                    <span class="db-chart-kpi__value db-chart-kpi__value--green">
+                        ₹{{ (chart_data.totals.collected ?? 0)|number_format(2) }}
+                    </span>
+                </div>
+                <div class="db-chart-kpi">
+                    <span class="db-chart-kpi__label">Receipts Issued</span>
+                    <span class="db-chart-kpi__value">
+                        {{ chart_data.totals.receipt_count ?? 0 }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="db-chart-canvas-wrap" style="position: relative; height: 250px; width: 100%;">
+                <canvas id="premiumReceiptsChart" aria-label="Premium Receipts 6-Month Chart" role="img"></canvas>
+            </div>
+        </div>
+
+        {# 2. Commissions & TDS Chart #}
+        <div class="db-panel db-chart-panel">
+            <div class="db-panel__head">
+                <div class="db-panel__icon db-panel__icon--teal">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <div>
+                    <h6 class="db-section-label">Commissions &amp; TDS</h6>
+                    <small class="db-section-sub">Gross earnings, TDS deducted &amp; net payout (6 months)</small>
+                </div>
+                <a href="{{ path('admin_commission_statement') }}" class="db-panel__link ms-auto">
+                    Statement <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+
+            <div class="db-chart-kpis">
+                <div class="db-chart-kpi">
+                    <span class="db-chart-kpi__label">Gross Earned (6M)</span>
+                    <span class="db-chart-kpi__value db-chart-kpi__value--gold">
+                        ₹{{ (chart_data.totals.gross_commission ?? 0)|number_format(2) }}
+                    </span>
+                </div>
+                <div class="db-chart-kpi">
+                    <span class="db-chart-kpi__label">TDS Deducted (6M)</span>
+                    <span class="db-chart-kpi__value db-chart-kpi__value--red">
+                        −₹{{ (chart_data.totals.tds ?? 0)|number_format(2) }}
+                    </span>
+                </div>
+                <div class="db-chart-kpi">
+                    <span class="db-chart-kpi__label">Net Commission (6M)</span>
+                    <span class="db-chart-kpi__value db-chart-kpi__value--teal">
+                        ₹{{ (chart_data.totals.net_commission ?? 0)|number_format(2) }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="db-chart-canvas-wrap" style="position: relative; height: 250px; width: 100%;">
+                <canvas id="commissionsChart" aria-label="Commissions 6-Month Chart" role="img"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    {# ── Visual Reporting: Client Ledger Balances ── #}
+    {% set total_rec = ledger_summary.total_receivable ?? 0 %}
+    {% set total_pay = ledger_summary.total_payable ?? 0 %}
+    {% set net_pos   = ledger_summary.net_position ?? 0 %}
+    {% set rec_count = ledger_summary.receivable_count ?? 0 %}
+    {% set pay_count = ledger_summary.payable_count ?? 0 %}
+    {% set top_bal   = ledger_summary.top_balances ?? [] %}
+
+    <div class="db-panel db-ledger-panel">
+        <div class="db-panel__head">
+            <div class="db-panel__icon db-panel__icon--green">
+                <i class="fas fa-scale-balanced"></i>
+            </div>
+            <div>
+                <h6 class="db-section-label">Ledger Balances Overview</h6>
+                <small class="db-section-sub">Agency–client receivables, payables &amp; top outstanding accounts</small>
+            </div>
+            <a href="{{ path('admin_client_balances') }}" class="db-panel__link ms-auto">
+                All Balances <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+        </div>
+
+        <div class="db-ledger-grid">
+            {# Left: Doughnut Chart #}
+            <div class="db-ledger-chart-col">
+                <div class="db-doughnut-wrap" style="position: relative; width: 190px; height: 190px; flex-shrink: 0;">
+                    <div class="db-doughnut-canvas" style="position: relative; width: 190px; height: 190px; overflow: hidden;">
+                        <canvas id="ledgerBalancesChart" width="190" height="190" aria-label="Ledger Balances Doughnut Chart" role="img"></canvas>
+                    </div>
+                    <div class="db-doughnut-center" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; text-align: center;">
+                        <span class="db-doughnut-center__label">Net Position</span>
+                        <span class="db-doughnut-center__value {{ net_pos > 0 ? 'db-text--green' : (net_pos < 0 ? 'db-text--red' : '') }}">
+                            {{ net_pos < 0 ? '−' : '' }}₹{{ net_pos|abs|number_format(0) }}
+                        </span>
+                        <span class="db-doughnut-center__sub">
+                            {% if net_pos > 0 %}
+                                Net Receivable
+                            {% elseif net_pos < 0 %}
+                                Net Payable
+                            {% else %}
+                                Settled
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div class="db-doughnut-legend">
+                    <span class="db-doughnut-legend__item">
+                        <span class="db-doughnut-legend__dot db-doughnut-legend__dot--green"></span>
+                        Receivable
+                    </span>
+                    <span class="db-doughnut-legend__item">
+                        <span class="db-doughnut-legend__dot db-doughnut-legend__dot--red"></span>
+                        Payable
+                    </span>
+                </div>
+            </div>
+
+            {# Middle: Receivable / Payable / Net Summary Cards #}
+            <div class="db-ledger-stats-col">
+                <div class="db-ledger-stat db-ledger-stat--green">
+                    <div class="db-ledger-stat__head">
+                        <span class="db-ledger-stat__dot db-ledger-stat__dot--green"></span>
+                        <span class="db-ledger-stat__title">Total Receivable</span>
+                        <span class="db-badge ms-auto">{{ rec_count }} client{{ rec_count != 1 ? 's' : '' }}</span>
+                    </div>
+                    <div class="db-ledger-stat__amount db-text--green">₹{{ total_rec|number_format(2) }}</div>
+                    <small class="db-ledger-stat__note">Clients owe your agency</small>
+                </div>
+
+                <div class="db-ledger-stat db-ledger-stat--red">
+                    <div class="db-ledger-stat__head">
+                        <span class="db-ledger-stat__dot db-ledger-stat__dot--red"></span>
+                        <span class="db-ledger-stat__title">Total Payable</span>
+                        <span class="db-badge ms-auto">{{ pay_count }} client{{ pay_count != 1 ? 's' : '' }}</span>
+                    </div>
+                    <div class="db-ledger-stat__amount db-text--red">₹{{ total_pay|number_format(2) }}</div>
+                    <small class="db-ledger-stat__note">Agency advance / credit to clients</small>
+                </div>
+
+                <div class="db-ledger-stat db-ledger-stat--blue">
+                    <div class="db-ledger-stat__head">
+                        <span class="db-ledger-stat__dot db-ledger-stat__dot--blue"></span>
+                        <span class="db-ledger-stat__title">Net Ledger Balance</span>
+                    </div>
+                    <div class="db-ledger-stat__amount db-text--blue">
+                        {{ net_pos < 0 ? '−' : '' }}₹{{ net_pos|abs|number_format(2) }}
+                    </div>
+                    <small class="db-ledger-stat__note">
+                        {{ net_pos >= 0 ? 'Receivable exceeds payable' : 'Payable exceeds receivable' }}
+                    </small>
+                </div>
+            </div>
+
+            {# Right: Top Outstanding Clients #}
+            <div class="db-ledger-list-col">
+                <div class="db-ledger-list__head">
+                    <span class="db-ledger-list__title">Top Outstanding Accounts</span>
+                    <span class="db-badge">{{ top_bal|length }}</span>
+                </div>
+
+                {% if top_bal|length > 0 %}
+                    <ul class="db-ledger-list">
+                        {% for entry in top_bal %}
+                            <li class="db-ledger-list__item">
+                                <div class="db-birthdays__avatar">
+                                    {{ entry.client.name|slice(0, 1)|upper }}
+                                </div>
+                                <div class="db-ledger-list__info">
+                                    <a href="{{ path('admin_client_ledger', {id: entry.client.id}) }}" class="db-ledger-list__name">
+                                        {{ entry.client.name }}
+                                    </a>
+                                    <span class="db-ledger-list__tag {{ entry.balance > 0 ? 'db-ledger-list__tag--owes' : 'db-ledger-list__tag--owed' }}">
+                                        {{ entry.balance > 0 ? 'Client Owes' : 'You Owe' }}
+                                    </span>
+                                </div>
+                                <div class="db-ledger-list__bal {{ entry.balance > 0 ? 'db-text--green' : 'db-text--red' }}">
+                                    ₹{{ entry.balance|abs|number_format(2) }}
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="db-empty">
+                        <i class="fas fa-check-circle"></i>
+                        <span>All client ledgers are settled</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
     {# ── Middle Row: Revival + Birthdays ── #}
     <div class="db-middle">
 
@@ -216,4 +437,353 @@
     </div>
 
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var chartPayload = {
+        labels: {{ (chart_data.labels ?? [])|json_encode|raw }},
+        paid: {{ (chart_data.paid ?? [])|json_encode|raw }},
+        collected: {{ (chart_data.collected ?? [])|json_encode|raw }},
+        grossCommission: {{ (chart_data.gross_commission ?? [])|json_encode|raw }},
+        tds: {{ (chart_data.tds ?? [])|json_encode|raw }},
+        netCommission: {{ (chart_data.net_commission ?? [])|json_encode|raw }},
+        receiptCounts: {{ (chart_data.receipt_counts ?? [])|json_encode|raw }},
+        receivable: {{ (ledger_summary.total_receivable ?? 0)|json_encode|raw }},
+        payable: {{ (ledger_summary.total_payable ?? 0)|json_encode|raw }}
+    };
+
+    function isDarkMode() {
+        return document.body.classList.contains('ea-dark-scheme') ||
+               document.documentElement.classList.contains('ea-dark-scheme') ||
+               document.body.getAttribute('data-ea-color-scheme') === 'dark';
+    }
+
+    function getPalette() {
+        var dark = isDarkMode();
+        return {
+            text: dark ? '#7A9CC0' : '#4A6080',
+            heading: dark ? '#E0EAF8' : '#0F1B30',
+            grid: dark ? 'rgba(122, 156, 192, 0.12)' : 'rgba(15, 27, 48, 0.07)',
+            tooltipBg: dark ? '#101828' : '#0F1B30',
+            tooltipBorder: dark ? '#1E2D4A' : '#003580',
+            blue: dark ? '#4A8FE8' : '#003580',
+            blueBg: dark ? 'rgba(74, 143, 232, 0.78)' : 'rgba(0, 53, 128, 0.82)',
+            green: dark ? '#2ECC82' : '#1A7A4A',
+            greenBg: dark ? 'rgba(46, 204, 130, 0.78)' : 'rgba(26, 122, 74, 0.82)',
+            teal: dark ? '#26A5D0' : '#0A7EA4',
+            tealBg: dark ? 'rgba(38, 165, 208, 0.78)' : 'rgba(10, 126, 164, 0.82)',
+            gold: dark ? '#F0A830' : '#D4890A',
+            goldFill: dark ? 'rgba(240, 168, 48, 0.16)' : 'rgba(212, 137, 10, 0.14)',
+            red: dark ? '#E05A4A' : '#C0392B',
+            redBg: dark ? 'rgba(224, 90, 74, 0.78)' : 'rgba(192, 57, 43, 0.82)',
+            emptyRing: dark ? 'rgba(122, 156, 192, 0.2)' : 'rgba(208, 221, 240, 0.7)'
+        };
+    }
+
+    function formatINR(value) {
+        var num = Number(value) || 0;
+        return '₹' + num.toLocaleString('en-IN', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    function formatCompactINR(value) {
+        var num = Math.abs(Number(value) || 0);
+        var sign = value < 0 ? '−' : '';
+        if (num >= 10000000) {
+            return sign + '₹' + (num / 10000000).toFixed(1).replace(/\.0$/, '') + 'Cr';
+        }
+        if (num >= 100000) {
+            return sign + '₹' + (num / 100000).toFixed(1).replace(/\.0$/, '') + 'L';
+        }
+        if (num >= 1000) {
+            return sign + '₹' + (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+        }
+        return sign + '₹' + num;
+    }
+
+    var charts = [];
+
+    function renderCharts() {
+        if (typeof Chart === 'undefined') {
+            return;
+        }
+
+        charts.forEach(function (c) { c.destroy(); });
+        charts = [];
+
+        var pal = getPalette();
+        Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
+        Chart.defaults.color = pal.text;
+
+        // 1. Premium Receipts Chart (Grouped Bar)
+        var receiptsEl = document.getElementById('premiumReceiptsChart');
+        if (receiptsEl) {
+            var receiptsChart = new Chart(receiptsEl, {
+                type: 'bar',
+                data: {
+                    labels: chartPayload.labels,
+                    datasets: [
+                        {
+                            label: 'Paid to LIC',
+                            data: chartPayload.paid,
+                            backgroundColor: pal.blueBg,
+                            borderColor: pal.blue,
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            maxBarThickness: 28
+                        },
+                        {
+                            label: 'Collected from Clients',
+                            data: chartPayload.collected,
+                            backgroundColor: pal.greenBg,
+                            borderColor: pal.green,
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            maxBarThickness: 28
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            align: 'end',
+                            labels: {
+                                boxWidth: 10,
+                                boxHeight: 10,
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                color: pal.text,
+                                font: { size: 11, weight: '600' }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: pal.tooltipBg,
+                            borderColor: pal.tooltipBorder,
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                label: function (ctx) {
+                                    return ' ' + ctx.dataset.label + ': ' + formatINR(ctx.parsed.y);
+                                },
+                                footer: function (items) {
+                                    if (!items.length) return '';
+                                    var idx = items[0].dataIndex;
+                                    var cnt = chartPayload.receiptCounts[idx] || 0;
+                                    return 'Receipts issued: ' + cnt;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: pal.text,
+                                font: { family: "'IBM Plex Mono', monospace", size: 11 }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: pal.grid },
+                            ticks: {
+                                color: pal.text,
+                                font: { family: "'IBM Plex Mono', monospace", size: 11 },
+                                callback: function (val) { return formatCompactINR(val); }
+                            }
+                        }
+                    }
+                }
+            });
+            charts.push(receiptsChart);
+        }
+
+        // 2. Commissions & TDS Chart (Combo Bar + Line)
+        var commEl = document.getElementById('commissionsChart');
+        if (commEl) {
+            var commChart = new Chart(commEl, {
+                type: 'bar',
+                data: {
+                    labels: chartPayload.labels,
+                    datasets: [
+                        {
+                            type: 'line',
+                            label: 'Gross Commission',
+                            data: chartPayload.grossCommission,
+                            borderColor: pal.gold,
+                            backgroundColor: pal.goldFill,
+                            borderWidth: 2.5,
+                            pointBackgroundColor: pal.gold,
+                            pointRadius: 3.5,
+                            pointHoverRadius: 5,
+                            tension: 0.35,
+                            fill: false,
+                            order: 1
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Net Commission',
+                            data: chartPayload.netCommission,
+                            backgroundColor: pal.tealBg,
+                            borderColor: pal.teal,
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            maxBarThickness: 24,
+                            order: 2
+                        },
+                        {
+                            type: 'bar',
+                            label: 'TDS Deducted',
+                            data: chartPayload.tds,
+                            backgroundColor: pal.redBg,
+                            borderColor: pal.red,
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            maxBarThickness: 24,
+                            order: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            align: 'end',
+                            labels: {
+                                boxWidth: 10,
+                                boxHeight: 10,
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                color: pal.text,
+                                font: { size: 11, weight: '600' }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: pal.tooltipBg,
+                            borderColor: pal.tooltipBorder,
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                label: function (ctx) {
+                                    return ' ' + ctx.dataset.label + ': ' + formatINR(ctx.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: pal.text,
+                                font: { family: "'IBM Plex Mono', monospace", size: 11 }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: pal.grid },
+                            ticks: {
+                                color: pal.text,
+                                font: { family: "'IBM Plex Mono', monospace", size: 11 },
+                                callback: function (val) { return formatCompactINR(val); }
+                            }
+                        }
+                    }
+                }
+            });
+            charts.push(commChart);
+        }
+
+        // 3. Ledger Balances Chart (Doughnut)
+        var ledgerEl = document.getElementById('ledgerBalancesChart');
+        if (ledgerEl) {
+            var hasBalances = (chartPayload.receivable > 0 || chartPayload.payable > 0);
+            var doughnutData = hasBalances
+                ? [chartPayload.receivable, chartPayload.payable]
+                : [1];
+            var doughnutColors = hasBalances
+                ? [pal.greenBg, pal.redBg]
+                : [pal.emptyRing];
+            var doughnutBorders = hasBalances
+                ? [pal.green, pal.red]
+                : [pal.emptyRing];
+            var doughnutLabels = hasBalances
+                ? ['Receivable (Clients Owe)', 'Payable (You Owe)']
+                : ['All Settled'];
+
+            var ledgerChart = new Chart(ledgerEl, {
+                type: 'doughnut',
+                data: {
+                    labels: doughnutLabels,
+                    datasets: [{
+                        data: doughnutData,
+                        backgroundColor: doughnutColors,
+                        borderColor: doughnutBorders,
+                        borderWidth: hasBalances ? 1.5 : 0,
+                        hoverOffset: hasBalances ? 6 : 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '72%',
+                    plugins: {
+                        legend: {
+                            display: false
+
+                        },
+                        tooltip: {
+                            enabled: hasBalances,
+                            backgroundColor: pal.tooltipBg,
+                            borderColor: pal.tooltipBorder,
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                label: function (ctx) {
+                                    return ' ' + ctx.label + ': ' + formatINR(ctx.parsed);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            charts.push(ledgerChart);
+        }
+    }
+
+    if (typeof Chart !== 'undefined') {
+        renderCharts();
+    } else {
+        var script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js';
+        script.onload = renderCharts;
+        document.head.appendChild(script);
+    }
+
+    // Re-render charts on EasyAdmin light/dark color scheme change
+    var lastDarkState = isDarkMode();
+    var observer = new MutationObserver(function () {
+        var currentDarkState = isDarkMode();
+        if (currentDarkState !== lastDarkState) {
+            lastDarkState = currentDarkState;
+            renderCharts();
+        }
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class', 'data-ea-color-scheme'] });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-ea-color-scheme'] });
+});
+</script>
 {% endblock %}

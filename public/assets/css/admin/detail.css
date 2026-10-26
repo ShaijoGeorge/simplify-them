@@ -1315,7 +1315,7 @@
     font-weight: 700;
     letter-spacing: .3px;
     cursor: pointer;
-    transition: all .25s cubic-bezier(.4,0,.2,1);
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
     white-space: nowrap;
     text-decoration: none;
 }
@@ -1384,7 +1384,7 @@
     border-radius: var(--dt-radius-sm);
     padding: 1rem 1.25rem;
     background: var(--content-bg);
-    transition: all .25s cubic-bezier(.4,0,.2,1);
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
     position: relative;
 }
 
@@ -1455,9 +1455,21 @@
 }
 
 @keyframes dt-shake {
-    0%, 100% { transform: translateX(0); }
-    20%, 60% { transform: translateX(-6px); }
-    40%, 80% { transform: translateX(6px); }
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    20%,
+    60% {
+        transform: translateX(-6px);
+    }
+
+    40%,
+    80% {
+        transform: translateX(6px);
+    }
 }
 
 .dt-arrears__help {
